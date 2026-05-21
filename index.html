@@ -745,14 +745,45 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div></div>
 
 <!-- Reparação -->
-<div class="ov" id="mRep"><div class="modal">
+<div class="ov" id="mRep"><div class="modal modal-lg">
   <div class="mhdr"><h3 id="mRepT">+ Nova Reparação</h3><button class="mclose" onclick="closeM('mRep')">✕</button></div>
   <div class="mbody">
-    <div class="frow"><div class="fg"><label>Cliente</label><select id="rep_cli"></select></div><div class="fg"><label>Estado</label><select id="rep_est"><option>Pendente</option><option>Em Reparação</option><option>Aguardando Peças</option><option>Pronta</option><option>Entregue</option></select></div></div>
+    <div class="frow">
+      <div class="fg"><label>Cliente</label><select id="rep_cli"></select></div>
+      <div class="fg"><label>Estado</label><select id="rep_est"><option>Pendente</option><option>Em Reparação</option><option>Aguardando Peças</option><option>Pronta</option><option>Entregue</option></select></div>
+    </div>
     <div class="fg"><label>Equipamento *</label><input id="rep_eq" placeholder="Marca + Modelo"></div>
     <div class="fg"><label>Nº de Série</label><input id="rep_serie"></div>
     <div class="fg"><label>Avaria Descrita</label><textarea id="rep_av" placeholder="Descrição da avaria"></textarea></div>
-    <div class="frow"><div class="fg"><label>Valor (€)</label><input type="number" id="rep_val" value="0" step="0.01"></div><div class="fg"><label>Urgência</label><select id="rep_urg"><option>Normal</option><option>Urgente</option><option>Muito Urgente</option></select></div></div>
+    <div class="frow">
+      <div class="fg"><label>Horas Trabalhadas</label><input type="number" id="rep_horas" value="0" step="0.5" min="0" oninput="calcRepMO()"></div>
+      <div class="fg"><label>€/hora</label><input type="number" id="rep_preco_h" value="35" step="1" min="0" oninput="calcRepMO()"></div>
+      <div class="fg"><label>Mão de Obra (€)</label><input type="number" id="rep_val" value="0" step="0.01" oninput="calcRepTotal()"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Urgência</label><select id="rep_urg"><option>Normal</option><option>Urgente</option><option>Muito Urgente</option></select></div>
+    </div>
+
+    <!-- MATERIAIS GASTOS -->
+    <div style="margin-bottom:13px;background:rgba(59,123,246,.06);border:1px solid rgba(59,123,246,.2);border-radius:10px;padding:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <label style="font-size:11px;font-weight:700;color:#60A5FA;text-transform:uppercase;letter-spacing:.5px">📦 Materiais Gastos</label>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addLinhaRep()">+ Material</button>
+      </div>
+      <div id="rep_linhas"></div>
+    </div>
+
+    <!-- DIÁRIO DE TRABALHO -->
+    <div style="margin-bottom:13px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.2);border-radius:10px;padding:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <label style="font-size:11px;font-weight:700;color:#2DD4BF;text-transform:uppercase;letter-spacing:.5px">📋 Diário de Trabalho</label>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addDiarioRep()">+ Dia</button>
+      </div>
+      <div id="rep_diario"></div>
+    </div>
+
+    <!-- TOTAL -->
+    <div id="rep_calc" style="background:var(--card2);border-radius:9px;padding:12px;font-size:13px"></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mRep')">Cancelar</button><button class="btn btn-green" onclick="saveRep()">💾 Guardar</button></div>
 </div></div>
@@ -872,34 +903,6 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div class="frow3"><div class="fg"><label>Mão de Obra (€)</label><input type="number" id="fat_mo" value="0" step="0.01" oninput="calcFatModal()"></div><div class="fg"><label>IVA (%)</label><input type="number" id="fat_iva" value="23" oninput="calcFatModal()"></div><div class="fg"><label>Desconto (%)</label><input type="number" id="fat_desc_pct" value="0" step="0.5" oninput="calcFatModal()"></div></div>
     <div class="calc-wrap" id="fat_calc"></div>
     <div class="frow"><div class="fg"><label>Data Emissão</label><input type="date" id="fat_data"></div><div class="fg"><label>Data Vencimento</label><input type="date" id="fat_venc"></div></div>
-    <div class="fg"><label>Estado</label><select id="fat_est"><option>Pendente</option><option>Paga</option><option>Em Atraso</option></select></div>
-  </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mFat')">Cancelar</button><button class="btn btn-blue" onclick="saveFat()">🧾 Emitir Fatura</button></div>
-</div></div>
-
-<!-- Recebimento -->
-<div class="ov" id="mRec"><div class="modal">
-  <div class="mhdr"><h3 id="mRecT">+ Registar Recebimento</h3><button class="mclose" onclick="closeM('mRec')">✕</button></div>
-  <div class="mbody">
-    <div class="fg"><label>Cliente *</label><select id="rec_cli"></select></div>
-    <div class="fg"><label>Fatura (opç.)</label><select id="rec_fat"></select></div>
-    <div class="fg"><label>Valor (€) *</label><input type="number" id="rec_val" value="0" step="0.01"></div>
-    <div class="fg"><label>Forma de Pagamento</label><select id="rec_forma"><option>Transferência Bancária</option><option>Numerário</option><option>MB Way</option><option>Cheque</option><option>Multibanco</option></select></div>
-    <div class="fg"><label>Referência</label><input id="rec_ref" placeholder="Referência do pagamento"></div>
-    <div class="fg"><label>Data</label><input type="date" id="rec_data"></div>
-  </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mRec')">Cancelar</button><button class="btn btn-green" onclick="saveRec()">💾 Registar</button></div>
-</div></div>
-
-<!-- Despesa -->
-<div class="ov" id="mDesp"><div class="modal">
-  <div class="mhdr"><h3 id="mDespT">+ Nova Despesa</h3><button class="mclose" onclick="closeM('mDesp')">✕</button></div>
-  <div class="mbody">
-    <div class="fg"><label>Categoria</label><select id="desp_cat"><option>Matérias-Primas</option><option>Rendas</option><option>Serviços</option><option>Salários</option><option>Ferramentas</option><option>Outros</option></select></div>
-    <div class="fg"><label>Descrição *</label><input id="desp_desc"></div>
-    <div class="fg"><label>Fornecedor</label><input id="desp_forn"></div>
-    <div class="frow"><div class="fg"><label>Valor s/IVA (€)</label><input type="number" id="desp_val" value="0" step="0.01"></div><div class="fg"><label>IVA (€)</label><input type="number" id="desp_iva" value="0" step="0.01"></div></div>
-
 <script>
 const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
          desp:'m3_desp',rec:'m3_rec',forn:'m3_forn',hist:'m3_hist',desl:'m3_desl',
@@ -1233,10 +1236,12 @@ function saveRep(){
   const eq=gv('rep_eq').trim();if(!eq){toast('Equipamento é obrigatório!','r');return}
   const reps=ld('rep'),editId=_eids['mRep'];
   const clis=ld('cli'),cli_id=gv('rep_cli'),cli=clis.find(c=>c.id===cli_id);
+  const repHoras=parseFloat((document.getElementById('rep_horas')||{}).value)||0;
+  const repPrecoH=parseFloat((document.getElementById('rep_preco_h')||{}).value)||35;
   const repLinhas=getLinhasRep();
   const repDiario=getDiarioRep();
   const matTotal=repLinhas.reduce(function(s,l){return s+l.total;},0);
-  const obj={cli_id,cli:cli?.nome||'—',eq,serie:gv('rep_serie'),av:gv('rep_av'),est:gv('rep_est'),urg:gv('rep_urg'),val:+(gf('rep_val')+matTotal).toFixed(2),mo:gf('rep_val'),mat:matTotal,linhas:repLinhas,diario:repDiario,data:td()};
+  const obj={cli_id,cli:cli?.nome||'—',eq,serie:gv('rep_serie'),av:gv('rep_av'),est:gv('rep_est'),urg:gv('rep_urg'),val:+(gf('rep_val')+matTotal).toFixed(2),mo:gf('rep_val'),horas:repHoras,preco_h:repPrecoH,mat:matTotal,linhas:repLinhas,diario:repDiario,data:td()};
   if(editId){const i=reps.findIndex(r=>r.id===editId);if(i>=0)reps[i]={...reps[i],...obj}}
   else{obj.id=nextRepId();reps.push(obj)}
   sv('rep',reps);closeM('mRep');renderRep();toast(editId?'Reparação actualizada!':'Reparação criada!');
@@ -4626,6 +4631,14 @@ function getLinhasRep(){
   return linhas;
 }
 
+function calcRepMO(){
+  var h = parseFloat((document.getElementById('rep_horas')||{}).value)||0;
+  var ph = parseFloat((document.getElementById('rep_preco_h')||{}).value)||35;
+  var mo_calc = +(h*ph).toFixed(2);
+  var moEl = document.getElementById('rep_val');
+  if(moEl) moEl.value = mo_calc;
+  calcRepTotal();
+}
 function calcRepTotal(){
   var mo = parseFloat((document.getElementById('rep_val')||{}).value)||0;
   var linhas = getLinhasRep();
@@ -4634,6 +4647,9 @@ function calcRepTotal(){
   var el = document.getElementById('rep_calc');
   if(!el) return;
   el.innerHTML = '';
+  var h=parseFloat((document.getElementById('rep_horas')||{}).value)||0;
+  var ph=parseFloat((document.getElementById('rep_preco_h')||{}).value)||35;
+  if(h>0){var rh=document.createElement('div');rh.style.cssText='display:flex;justify-content:space-between;color:var(--muted)';rh.innerHTML='<span>'+h+'h × '+eur(ph)+'/h</span><span>'+eur(h*ph)+'</span>';el.appendChild(rh);}
   if(mo>0){var r=document.createElement('div');r.style.cssText='display:flex;justify-content:space-between;color:var(--muted)';r.innerHTML='<span>Mao de Obra</span><span>'+eur(mo)+'</span>';el.appendChild(r);}
   if(matTotal>0){var r=document.createElement('div');r.style.cssText='display:flex;justify-content:space-between;color:var(--muted)';r.innerHTML='<span>Materiais</span><span>'+eur(matTotal)+'</span>';el.appendChild(r);}
   var tot=document.createElement('div');tot.style.cssText='display:flex;justify-content:space-between;font-weight:700;color:#fff;border-top:1px solid var(--border);margin-top:6px;padding-top:6px';
@@ -4681,10 +4697,18 @@ function getDiarioRep(){
   return diario;
 }
 
+
+
+// Hook openM to load linhas/diario when editing rep
+
+
+
+
+
+
 function clearLinhasRep(){
-  var cont = document.getElementById('rep_linhas'); if(cont) cont.innerHTML='';
-  var diary = document.getElementById('rep_diario'); if(diary) diary.innerHTML='';
-  _repLinhas = 0;
+  var cont=document.getElementById('rep_linhas');if(cont)cont.innerHTML='';
+  var d2=document.getElementById('rep_diario');if(d2)d2.innerHTML='';
   calcRepTotal();
 }
 
@@ -4711,23 +4735,31 @@ function fillLinhasRep(linhas, diario){
 }
 
 // Hook openM to load linhas/diario when editing rep
+
+
+
+
+// Hook openM for mRep
 (function(){
-  var orig = window.openM;
-  if(orig && !window._repHooked){
-    window._repHooked = true;
+  var _origOM = window.openM;
+  if(_origOM && !window._repHookDone){
+    window._repHookDone = true;
     window.openM = function(id, editId, data){
-      orig(id, editId, data);
+      _origOM(id, editId, data);
       if(id==='mRep'){
         clearLinhasRep();
         if(editId){
           var r = ld('rep').find(function(x){return x.id===editId;});
-          if(r) setTimeout(function(){ fillLinhasRep(r.linhas, r.diario); }, 80);
+          if(r) setTimeout(function(){
+            fillLinhasRep(r.linhas, r.diario);
+            var hEl=document.getElementById('rep_horas'); if(hEl) hEl.value=r.horas||0;
+            var phEl=document.getElementById('rep_preco_h'); if(phEl) phEl.value=r.preco_h||35;
+          }, 80);
         }
       }
     };
   }
 })();
-
 </script>
 
 
