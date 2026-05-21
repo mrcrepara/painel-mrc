@@ -871,7 +871,12 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <div class="ov" id="mFat"><div class="modal modal-lg">
   <div class="mhdr"><h3 id="mFatT">🧾 Nova Fatura</h3><button class="mclose" onclick="closeM('mFat')">✕</button></div>
   <div class="mbody">
-    <div class="frow"><div class="fg"><label>Cliente *</label><select id="fat_cli"></select></div><div class="fg"><label>Reparação (opç.)</label><input id="fat_rep" placeholder="ex: R-2025-0001"></div></div>
+    <div class="frow"><div class="fg"><label>Cliente *</label><select id="fat_cli" onchange="fatCliChange()"></select></div></div>
+    <div id="fat_rep_panel" style="display:none;background:rgba(59,123,246,.08);border:1px solid rgba(59,123,246,.25);border-radius:9px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:#60A5FA;margin-bottom:7px">🔧 Reparações em aberto</div>
+      <div id="fat_rep_list"></div>
+    </div>
+    <div class="frow"><div class="fg"><label>Reparação (opç.)</label><input id="fat_rep" placeholder="ex: R-2025-0001"></div></div>
     <div class="fg"><label>Descrição do Serviço *</label><textarea id="fat_desc" placeholder="Descrição do serviço prestado"></textarea></div>
 
     <!-- LISTA DE MATERIAIS -->
@@ -900,10 +905,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
     </div>
 
     <input type="hidden" id="fat_mat" value="0">
-    <div class="frow3"><div class="fg"><label>Mão de Obra (€)</label><input type="number" id="fat_mo" value="0" step="0.01" oninput="calcFatModal()"></div><div class="fg"><label>IVA (%)</label><input type="number" id="fat_iva" value="23" oninput="calcFatModal()"></div><div class="fg"><label>Desconto (%)</label><input type="number" id="fat_desc_pct" value="0" step="0.5" oninput="calcFatModal()"></div></div>
-    <div class="calc-wrap" id="fat_calc"></div>
-    <div class="frow"><div class="fg"><label>Data Emissão</label><input type="date" id="fat_data"></div><div class="fg"><label>Data Vencimento</label><input type="date" id="fat_venc"></div></div>
-<script>
+    <div class="frow3"><div class="fg"><label>Mão de Obra (€)</label><input type="number" id="fat_mo" value="0" step="0.01" oninput="calcFatModal()"></div><div class="fg"><label>IVA (%)</label><input type="number" id="fat_iva" value="23" oninput="calcFatModal()"></div><div 
 const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
          desp:'m3_desp',rec:'m3_rec',forn:'m3_forn',hist:'m3_hist',desl:'m3_desl',
          users:'m3_users',def:'m3_def',cats:'m3_cats',
@@ -4764,6 +4766,17 @@ function fillLinhasRep(linhas, diario){
         clearLinhasRep();
         if(editId){
           var r = ld('rep').find(function(x){return x.id===editId;});
+          if(r) setTimeout(function(){
+            fillLinhasRep(r.linhas, r.diario);
+            var hEl=document.getElementById('rep_horas'); if(hEl) hEl.value=r.horas||0;
+            var phEl=document.getElementById('rep_preco_h'); if(phEl) phEl.value=r.preco_h||35;
+          }, 80);
+        }
+      }
+    };
+  }
+})();
+     var r = ld('rep').find(function(x){return x.id===editId;});
           if(r) setTimeout(function(){
             fillLinhasRep(r.linhas, r.diario);
             var hEl=document.getElementById('rep_horas'); if(hEl) hEl.value=r.horas||0;
