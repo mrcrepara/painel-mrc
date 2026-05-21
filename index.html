@@ -271,6 +271,39 @@ tbody td{padding:9px 12px;vertical-align:middle}
     </div>
     <div class="card"><div class="card-hdr"><h3>📦 Últimos Movimentos Stock</h3></div><div class="card-body" id="dashMov"></div></div>
   </div>
+
+  <!-- MARGEM DE LUCRO -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-hdr">
+      <h3>📈 Margem de Lucro</h3>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select id="dashMargAno" onchange="renderDashMargem()" style="padding:5px 9px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif"></select>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="dashMargKpi" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
+      <div style="height:240px"><canvas id="cMargem"></canvas></div>
+    </div>
+  </div>
+
+  <!-- LUCRO POR CLIENTE -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-hdr"><h3>👤 Lucro por Cliente</h3></div>
+    <div class="card-body">
+      <div id="dashCliKpi" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px"></div>
+      <div style="height:240px"><canvas id="cCliLucro"></canvas></div>
+    </div>
+  </div>
+
+  <!-- MARGEM POR MATERIAL -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-hdr"><h3>📦 Margem por Material</h3></div>
+    <div class="card-body">
+      <div id="dashMatKpi" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px"></div>
+      <div style="height:240px"><canvas id="cMatMargem"></canvas></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- REPARAÇÕES -->
@@ -866,24 +899,6 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div class="fg"><label>Descrição *</label><input id="desp_desc"></div>
     <div class="fg"><label>Fornecedor</label><input id="desp_forn"></div>
     <div class="frow"><div class="fg"><label>Valor s/IVA (€)</label><input type="number" id="desp_val" value="0" step="0.01"></div><div class="fg"><label>IVA (€)</label><input type="number" id="desp_iva" value="0" step="0.01"></div></div>
-    <div class="fg"><label>Data</label><input type="date" id="desp_data"></div>
-  </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mDesp')">Cancelar</button><button class="btn btn-red" onclick="saveDesp()">💾 Registar</button></div>
-</div></div>
-
-<!-- Deslocação -->
-<div class="ov" id="mDesl"><div class="modal">
-  <div class="mhdr"><h3 id="mDeslT">+ Nova Deslocação</h3><button class="mclose" onclick="closeM('mDesl')">✕</button></div>
-  <div class="mbody">
-    <div class="fg"><label>Cliente</label><select id="desl_cli"></select></div>
-    <div class="fg"><label>Destino *</label><input id="desl_dest" placeholder="Morada de destino"></div>
-    <div class="fg"><label>Reparação (opç.)</label><input id="desl_rep" placeholder="ex: R-2025-0001"></div>
-    <div class="frow3"><div class="fg"><label>Distância (km) *</label><input type="number" id="desl_km" value="0" min="0" step="0.1" oninput="calcDeslModal()"></div><div class="fg"><label>€ por km *</label><input type="number" id="desl_preco" value="0.40" min="0" step="0.01" oninput="calcDeslModal()"></div><div class="fg"><label>Total (€)</label><input type="number" id="desl_total" readonly></div></div>
-    <div class="fg"><label>Data</label><input type="date" id="desl_data"></div>
-    <div class="fg"><label>Observações</label><input id="desl_obs"></div>
-  </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mDesl')">Cancelar</button><button class="btn btn-teal" onclick="saveDesl()">💾 Guardar</button></div>
-</div></div>
 
 <script>
 const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
@@ -3923,50 +3938,50 @@ function _supaWrite(key,val){
 
 // MARGEM DE LUCRO
 var _cMarg=null,_cComp=null;
-function renderDashMargem(){
-  var yr=parseInt((document.getElementById('dashMargAno')||{}).value)||new Date().getFullYear();
-  var fats=ld('fat').filter(function(f){return f.est==='Paga'&&f.data&&new Date(f.data).getFullYear()===yr;});
-  var desps=ld('desp').filter(function(d){return d.data&&new Date(d.data).getFullYear()===yr;});
-  var mats_all=ld('mat');
-  var mo=Array(12).fill(null).map(function(){return{mo:0,pvp:0,custo:0,desp:0};});
-  fats.forEach(function(f){
-    var m=new Date(f.data).getMonth();
-    mo[m].mo+=(f.mo||0); mo[m].pvp+=(f.mat||0);
-    var cL=0;
-    (f.linhas||[]).forEach(function(l){var mat=mats_all.find(function(x){return x.desc===l.desc;});cL+=(mat?mat.custo:l.preco*0.6)*(l.qty||1);});
-    if(!(f.linhas||[]).length&&f.mat>0)cL=f.mat*0.6;
-    mo[m].custo+=cL;
-  });
-  desps.forEach(function(d){var m=new Date(d.data).getMonth();mo[m].desp+=((d.val||0)+(d.iva||0));});
-  var tMO=mo.reduce(function(s,m){return s+m.mo;},0);
-  var tPVP=mo.reduce(function(s,m){return s+m.pvp;},0);
-  var tC=mo.reduce(function(s,m){return s+m.custo;},0);
-  var tD=mo.reduce(function(s,m){return s+m.desp;},0);
-  var tL=tMO+(tPVP-tC)-tD;
-  var mG=(tMO+tPVP)>0?(tL/(tMO+tPVP)*100):0;
-  var mM=tPVP>0?((tPVP-tC)/tPVP*100):0;
-  var kpi=document.getElementById('dashMargKpi');
-  if(kpi)kpi.innerHTML=
-    '<div class="kpi"><div class="kpi-lbl">Receita MO</div><div class="kpi-val" style="color:var(--blue);font-size:14px">'+eur(tMO)+'</div></div>'+
-    '<div class="kpi"><div class="kpi-lbl">Material Vendido</div><div class="kpi-val" style="color:var(--purple);font-size:13px">'+eur(tPVP)+'</div><div style="font-size:11px;color:var(--muted)">Custo: '+eur(tC)+' | Margem: '+mM.toFixed(1)+'%</div></div>'+
-    '<div class="kpi"><div class="kpi-lbl">Despesas</div><div class="kpi-val" style="color:var(--red);font-size:14px">'+eur(tD)+'</div></div>'+
-    '<div class="kpi"><div class="kpi-lbl">Margem Global</div><div class="kpi-val" style="color:'+(mG>=0?'var(--green)':'var(--red)')+';font-size:16px">'+mG.toFixed(1)+'%</div><div style="font-size:11px;color:var(--muted)">Lucro: '+eur(tL)+'</div></div>';
-  if(typeof Chart==='undefined')return;
-  if(_cMarg)try{_cMarg.destroy();}catch(e){}
-  if(_cComp)try{_cComp.destroy();}catch(e){}
-  var mns=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  Chart.defaults.color='#5A6B8C';
-  var c1=document.getElementById('cMargem');
-  if(c1){_cMarg=new Chart(c1,{type:'bar',data:{labels:mns,datasets:[
-    {label:'MO',data:mo.map(function(m){return+m.mo.toFixed(2);}),backgroundColor:'rgba(59,123,246,.75)',borderRadius:3},
-    {label:'Mat.PVP',data:mo.map(function(m){return+m.pvp.toFixed(2);}),backgroundColor:'rgba(139,92,246,.75)',borderRadius:3},
-    {label:'Mat.Custo',data:mo.map(function(m){return+m.custo.toFixed(2);}),backgroundColor:'rgba(245,166,35,.6)',borderRadius:3},
-    {label:'Despesas',data:mo.map(function(m){return+m.desp.toFixed(2);}),backgroundColor:'rgba(248,76,106,.5)',borderRadius:3},
-    {label:'Lucro',data:mo.map(function(m){return+(m.mo+(m.pvp-m.custo)-m.desp).toFixed(2);}),type:'line',borderColor:'#10C97A',backgroundColor:'rgba(16,201,122,.08)',borderWidth:2,pointRadius:3,fill:true,tension:.35}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#5A6B8C',font:{size:10},boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:function(v){return v+'€';},font:{size:10}}}}}});}
-  var c2=document.getElementById('cComposicao');
-  if(c2){_cComp=new Chart(c2,{type:'doughnut',data:{labels:['Lucro MO','Lucro Mat.','Custo Mat.','Despesas'],datasets:[{data:[Math.max(0,tMO),Math.max(0,tPVP-tC),Math.max(0,tC),Math.max(0,tD)],backgroundColor:['#3B7BF6','#10C97A','#F5A623','#F84C6A'],borderWidth:2,borderColor:'#131929',hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#5A6B8C',font:{size:10},boxWidth:10}}}}});}
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // FAT CLI CHANGE
 function fatCliChange(){
@@ -4298,6 +4313,207 @@ function importMatCSV(input){
 // Auto sync desactivado - usar botão manual na página Backup
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ═══════════════════════════════════════════════════════
+// ANÁLISE AVANÇADA — Margem Mensal, por Cliente, por Material
+// ═══════════════════════════════════════════════════════
+
+var _cMargem=null, _cCli=null, _cMat=null;
+
+function renderDashMargem(){
+  var yrSel = document.getElementById('dashMargAno');
+  if(yrSel && !yrSel.options.length){
+    var yr = new Date().getFullYear();
+    for(var y=yr; y>=yr-3; y--){
+      var op=document.createElement('option'); op.value=y; op.textContent=y; yrSel.appendChild(op);
+    }
+  }
+  var yr = parseInt((yrSel||{}).value) || new Date().getFullYear();
+  var fats = ld('fat').filter(function(f){return f.est==='Paga'&&f.data&&new Date(f.data).getFullYear()===yr;});
+  var desps = ld('desp').filter(function(d){return d.data&&new Date(d.data).getFullYear()===yr;});
+  var mats_all = ld('mat');
+  var mns = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  var mo = Array(12).fill(null).map(function(){return{mo:0,pvp:0,custo:0,desp:0};});
+
+  fats.forEach(function(f){
+    var m = new Date(f.data).getMonth();
+    mo[m].mo += (f.mo||0);
+    mo[m].pvp += (f.mat||0);
+    var cL=0;
+    (f.linhas||[]).forEach(function(l){var mat=mats_all.find(function(x){return x.desc===l.desc;});cL+=(mat?mat.custo:l.preco*0.6)*(l.qty||1);});
+    if(!(f.linhas||[]).length&&f.mat>0) cL=f.mat*0.6;
+    mo[m].custo += cL;
+  });
+  desps.forEach(function(d){var m=new Date(d.data).getMonth();mo[m].desp+=((d.val||0)+(d.iva||0));});
+
+  var tMO=mo.reduce(function(s,m){return s+m.mo;},0);
+  var tPVP=mo.reduce(function(s,m){return s+m.pvp;},0);
+  var tC=mo.reduce(function(s,m){return s+m.custo;},0);
+  var tD=mo.reduce(function(s,m){return s+m.desp;},0);
+  var tL=tMO+(tPVP-tC)-tD;
+  var mG=(tMO+tPVP)>0?(tL/(tMO+tPVP)*100):0;
+  var mM=tPVP>0?((tPVP-tC)/tPVP*100):0;
+
+  var kpi=document.getElementById('dashMargKpi');
+  if(kpi) kpi.innerHTML=
+    '<div class="kpi"><div class="kpi-lbl">Receita MO</div><div class="kpi-val" style="color:var(--blue)">'+eur(tMO)+'</div></div>'+
+    '<div class="kpi"><div class="kpi-lbl">Material Vendido</div><div class="kpi-val" style="color:var(--purple)">'+eur(tPVP)+'</div><div style="font-size:11px;color:var(--muted)">Margem: '+mM.toFixed(1)+'%</div></div>'+
+    '<div class="kpi"><div class="kpi-lbl">Despesas</div><div class="kpi-val" style="color:var(--red)">'+eur(tD)+'</div></div>'+
+    '<div class="kpi"><div class="kpi-lbl">Lucro '+yr+'</div><div class="kpi-val" style="color:'+(tL>=0?'var(--green)':'var(--red)')+'">'+eur(tL)+'</div><div style="font-size:11px;color:var(--muted)">Margem: '+mG.toFixed(1)+'%</div></div>';
+
+  if(typeof Chart==='undefined') return;
+  if(_cMargem){try{_cMargem.destroy();}catch(e){}}
+  var c1=document.getElementById('cMargem');
+  if(c1){
+    _cMargem=new Chart(c1,{type:'bar',data:{labels:mns,datasets:[
+      {label:'MO',data:mo.map(function(m){return+m.mo.toFixed(2);}),backgroundColor:'rgba(59,123,246,.8)',borderRadius:3},
+      {label:'Mat.Vendido',data:mo.map(function(m){return+m.pvp.toFixed(2);}),backgroundColor:'rgba(139,92,246,.8)',borderRadius:3},
+      {label:'Despesas',data:mo.map(function(m){return+m.desp.toFixed(2);}),backgroundColor:'rgba(248,76,106,.6)',borderRadius:3},
+      {label:'Lucro',data:mo.map(function(m){return+(m.mo+(m.pvp-m.custo)-m.desp).toFixed(2);}),type:'line',borderColor:'#10C97A',backgroundColor:'rgba(16,201,122,.1)',borderWidth:2,pointRadius:3,fill:true,tension:.35}
+    ]},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{color:'#5A6B8C',font:{size:10},boxWidth:10}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:function(v){return v+'€';},font:{size:10}}}}}});
+  }
+
+  // Render client and material charts too
+  renderDashCliente(yr);
+  renderDashMaterial();
+}
+
+function renderDashCliente(yr){
+  var fats = ld('fat').filter(function(f){return f.est==='Paga'&&f.data&&new Date(f.data).getFullYear()===yr;});
+  var mats_all = ld('mat');
+
+  // Group by client
+  var cliData = {};
+  fats.forEach(function(f){
+    var nome = f.cli||'Sem cliente';
+    if(!cliData[nome]) cliData[nome]={receita:0,custo:0,nfat:0};
+    var custo=0;
+    (f.linhas||[]).forEach(function(l){var mat=mats_all.find(function(x){return x.desc===l.desc;});custo+=(mat?mat.custo:l.preco*0.6)*(l.qty||1);});
+    if(!(f.linhas||[]).length&&f.mat>0) custo=f.mat*0.6;
+    cliData[nome].receita += fatTot(f);
+    cliData[nome].custo   += custo;
+    cliData[nome].nfat    ++;
+  });
+
+  // Sort by receita
+  var sorted = Object.entries(cliData).sort(function(a,b){return b[1].receita-a[1].receita;}).slice(0,10);
+  var top3   = sorted.slice(0,3);
+
+  var kpi = document.getElementById('dashCliKpi');
+  if(kpi) kpi.innerHTML = top3.map(function(e,i){
+    var lucro = e[1].receita - e[1].custo;
+    var emoji = ['🥇','🥈','🥉'][i];
+    return '<div class="kpi"><div class="kpi-lbl">'+emoji+' '+e[0]+'</div>'+
+      '<div class="kpi-val" style="font-size:14px;color:var(--green)">'+eur(e[1].receita)+'</div>'+
+      '<div style="font-size:11px;color:var(--muted)">'+e[1].nfat+' fatura(s) | Lucro: '+eur(lucro)+'</div></div>';
+  }).join('');
+
+  if(typeof Chart==='undefined') return;
+  if(_cCli){try{_cCli.destroy();}catch(e){}}
+  var c2=document.getElementById('cCliLucro');
+  if(c2&&sorted.length){
+    _cCli=new Chart(c2,{type:'bar',data:{
+      labels:sorted.map(function(e){return e[0].split(' ')[0];}),
+      datasets:[
+        {label:'Receita',data:sorted.map(function(e){return+e[1].receita.toFixed(2);}),backgroundColor:'rgba(59,123,246,.8)',borderRadius:4},
+        {label:'Lucro',data:sorted.map(function(e){return+(e[1].receita-e[1].custo).toFixed(2);}),backgroundColor:'rgba(16,201,122,.8)',borderRadius:4}
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{color:'#5A6B8C',font:{size:10},boxWidth:10}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:function(v){return v+'€';},font:{size:10}}}}}});
+  }
+}
+
+function renderDashMaterial(){
+  var fats = ld('fat').filter(function(f){return f.est==='Paga';});
+  var mats_all = ld('mat');
+
+  // Group by material
+  var matData = {};
+  fats.forEach(function(f){
+    (f.linhas||[]).forEach(function(l){
+      var desc = l.desc||'?';
+      if(!matData[desc]) matData[desc]={pvp:0,custo:0,qty:0};
+      var mat = mats_all.find(function(x){return x.desc===desc;});
+      var custo = mat ? mat.custo : l.preco*0.6;
+      matData[desc].pvp  += l.preco*(l.qty||1);
+      matData[desc].custo+= custo*(l.qty||1);
+      matData[desc].qty  += (l.qty||1);
+    });
+  });
+
+  var sorted = Object.entries(matData)
+    .map(function(e){return{nome:e[0],pvp:e[1].pvp,custo:e[1].custo,qty:e[1].qty,lucro:e[1].pvp-e[1].custo,margem:e[1].pvp>0?((e[1].pvp-e[1].custo)/e[1].pvp*100):0};})
+    .sort(function(a,b){return b.lucro-a.lucro;})
+    .slice(0,10);
+
+  var top3 = sorted.slice(0,3);
+  var kpi = document.getElementById('dashMatKpi');
+  if(kpi) kpi.innerHTML = top3.map(function(m,i){
+    var emoji = ['🥇','🥈','🥉'][i];
+    return '<div class="kpi"><div class="kpi-lbl">'+emoji+' '+m.nome.slice(0,25)+'</div>'+
+      '<div class="kpi-val" style="font-size:13px;color:var(--green)">'+eur(m.lucro)+'</div>'+
+      '<div style="font-size:11px;color:var(--muted)">Margem: '+m.margem.toFixed(1)+'% | Qty: '+m.qty+'</div></div>';
+  }).join('');
+
+  if(typeof Chart==='undefined') return;
+  if(_cMat){try{_cMat.destroy();}catch(e){}}
+  var c3=document.getElementById('cMatMargem');
+  if(c3&&sorted.length){
+    _cMat=new Chart(c3,{type:'bar',data:{
+      labels:sorted.map(function(m){return m.nome.slice(0,15);}),
+      datasets:[
+        {label:'Vendido (€)',data:sorted.map(function(m){return+m.pvp.toFixed(2);}),backgroundColor:'rgba(139,92,246,.8)',borderRadius:4},
+        {label:'Lucro (€)',data:sorted.map(function(m){return+m.lucro.toFixed(2);}),backgroundColor:'rgba(16,201,122,.8)',borderRadius:4}
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:true,labels:{color:'#5A6B8C',font:{size:10},boxWidth:10}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:function(v){return v+'€';},font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:9}}}}}});
+  }
+}
+
+// Auto sync desactivado - usar botão manual na pagina Backup
+
+
 function _fillMatCatFilter(){
   var sel=document.getElementById('matCat');
   if(!sel) return;
@@ -4331,6 +4547,7 @@ function setMatCat(cat){
   var sel=document.getElementById('matCat');if(sel)sel.value=cat;
   renderMat();
 }
+
 
 
 
