@@ -1233,7 +1233,10 @@ function saveRep(){
   const eq=gv('rep_eq').trim();if(!eq){toast('Equipamento é obrigatório!','r');return}
   const reps=ld('rep'),editId=_eids['mRep'];
   const clis=ld('cli'),cli_id=gv('rep_cli'),cli=clis.find(c=>c.id===cli_id);
-  const obj={cli_id,cli:cli?.nome||'—',eq,serie:gv('rep_serie'),av:gv('rep_av'),est:gv('rep_est'),urg:gv('rep_urg'),val:gf('rep_val'),data:td()};
+  const repLinhas=getLinhasRep();
+  const repDiario=getDiarioRep();
+  const matTotal=repLinhas.reduce(function(s,l){return s+l.total;},0);
+  const obj={cli_id,cli:cli?.nome||'—',eq,serie:gv('rep_serie'),av:gv('rep_av'),est:gv('rep_est'),urg:gv('rep_urg'),val:+(gf('rep_val')+matTotal).toFixed(2),mo:gf('rep_val'),mat:matTotal,linhas:repLinhas,diario:repDiario,data:td()};
   if(editId){const i=reps.findIndex(r=>r.id===editId);if(i>=0)reps[i]={...reps[i],...obj}}
   else{obj.id=nextRepId();reps.push(obj)}
   sv('rep',reps);closeM('mRep');renderRep();toast(editId?'Reparação actualizada!':'Reparação criada!');
@@ -4551,6 +4554,179 @@ function setMatCat(cat){
 
 
 
+
+
+// ═══════════════════════════════════════
+// REPARACAO — MATERIAIS E DIARIO
+// ═══════════════════════════════════════
+var _repLinhas = 0;
+
+function addLinhaRep(){
+  var cont = document.getElementById('rep_linhas');
+  if(!cont) return;
+  var i = _repLinhas++;
+  var outer = document.createElement('div');
+  outer.id = 'rep_linha_'+i;
+  outer.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:6px;align-items:end;margin-bottom:6px;position:relative';
+
+  var descWrap = document.createElement('div');
+  descWrap.style.position = 'relative';
+
+  var descInput = document.createElement('input');
+  descInput.id = 'rep_l'+i+'_desc';
+  descInput.placeholder = 'Material...';
+  descInput.autocomplete = 'off';
+  descInput.style.cssText = 'width:100%;padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif;box-sizing:border-box';
+  descInput.addEventListener('input', function(){ linhaSearch(descInput,'rep',i); calcRepTotal(); });
+
+  var dd = document.createElement('div');
+  dd.id = 'rep_dd_'+i;
+  dd.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--sb);border:1px solid var(--blue);border-radius:8px;max-height:180px;overflow-y:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4)';
+
+  descWrap.appendChild(descInput);
+  descWrap.appendChild(dd);
+
+  var qtyInput = document.createElement('input');
+  qtyInput.id = 'rep_l'+i+'_qty';
+  qtyInput.type = 'number'; qtyInput.value = '1'; qtyInput.min = '0.1'; qtyInput.step = '0.1';
+  qtyInput.placeholder = 'Qtd';
+  qtyInput.style.cssText = 'padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif';
+  qtyInput.addEventListener('input', calcRepTotal);
+
+  var precoInput = document.createElement('input');
+  precoInput.id = 'rep_l'+i+'_preco';
+  precoInput.type = 'number'; precoInput.value = '0'; precoInput.step = '0.01';
+  precoInput.placeholder = 'EUR/un';
+  precoInput.style.cssText = 'padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif';
+  precoInput.addEventListener('input', calcRepTotal);
+
+  var delBtn = document.createElement('button');
+  delBtn.textContent = 'X';
+  delBtn.style.cssText = 'padding:7px 10px;background:var(--red);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:14px';
+  delBtn.addEventListener('click', function(){ outer.remove(); calcRepTotal(); });
+
+  outer.appendChild(descWrap);
+  outer.appendChild(qtyInput);
+  outer.appendChild(precoInput);
+  outer.appendChild(delBtn);
+  cont.appendChild(outer);
+}
+
+function getLinhasRep(){
+  var linhas = [];
+  var cont = document.getElementById('rep_linhas');
+  if(!cont) return linhas;
+  cont.querySelectorAll('[id^="rep_linha_"]').forEach(function(row){
+    var i = row.id.split('_')[2];
+    var desc  = (document.getElementById('rep_l'+i+'_desc')||{}).value||'';
+    var qty   = parseFloat((document.getElementById('rep_l'+i+'_qty')||{}).value)||1;
+    var preco = parseFloat((document.getElementById('rep_l'+i+'_preco')||{}).value)||0;
+    if(desc) linhas.push({desc:desc, qty:qty, preco:preco, total:+(qty*preco).toFixed(2)});
+  });
+  return linhas;
+}
+
+function calcRepTotal(){
+  var mo = parseFloat((document.getElementById('rep_val')||{}).value)||0;
+  var linhas = getLinhasRep();
+  var matTotal = linhas.reduce(function(s,l){return s+l.total;},0);
+  var total = mo + matTotal;
+  var el = document.getElementById('rep_calc');
+  if(!el) return;
+  el.innerHTML = '';
+  if(mo>0){var r=document.createElement('div');r.style.cssText='display:flex;justify-content:space-between;color:var(--muted)';r.innerHTML='<span>Mao de Obra</span><span>'+eur(mo)+'</span>';el.appendChild(r);}
+  if(matTotal>0){var r=document.createElement('div');r.style.cssText='display:flex;justify-content:space-between;color:var(--muted)';r.innerHTML='<span>Materiais</span><span>'+eur(matTotal)+'</span>';el.appendChild(r);}
+  var tot=document.createElement('div');tot.style.cssText='display:flex;justify-content:space-between;font-weight:700;color:#fff;border-top:1px solid var(--border);margin-top:6px;padding-top:6px';
+  tot.innerHTML='<span>Total Estimado</span><span style="color:var(--green)">'+eur(total)+'</span>';
+  el.appendChild(tot);
+}
+
+function addDiarioRep(){
+  var cont = document.getElementById('rep_diario');
+  if(!cont) return;
+  var today = new Date().toISOString().slice(0,10);
+  var row = document.createElement('div');
+  row.style.cssText = 'display:grid;grid-template-columns:130px 1fr auto;gap:6px;align-items:start;margin-bottom:6px';
+
+  var dateInput = document.createElement('input');
+  dateInput.type = 'date'; dateInput.value = today;
+  dateInput.style.cssText = 'padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif';
+
+  var textarea = document.createElement('textarea');
+  textarea.placeholder = 'O que foi feito neste dia...';
+  textarea.rows = 2;
+  textarea.style.cssText = 'padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif;resize:vertical';
+
+  var delBtn = document.createElement('button');
+  delBtn.textContent = 'X';
+  delBtn.style.cssText = 'padding:7px 10px;background:var(--red);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:14px';
+  delBtn.addEventListener('click', function(){ row.remove(); });
+
+  row.appendChild(dateInput);
+  row.appendChild(textarea);
+  row.appendChild(delBtn);
+  cont.appendChild(row);
+}
+
+function getDiarioRep(){
+  var diario = [];
+  var cont = document.getElementById('rep_diario');
+  if(!cont) return diario;
+  cont.querySelectorAll('div').forEach(function(row){
+    var inputs = row.querySelectorAll('input[type=date], textarea');
+    if(inputs.length>=2 && inputs[1].value.trim()){
+      diario.push({data:inputs[0].value, nota:inputs[1].value.trim()});
+    }
+  });
+  return diario;
+}
+
+function clearLinhasRep(){
+  var cont = document.getElementById('rep_linhas'); if(cont) cont.innerHTML='';
+  var diary = document.getElementById('rep_diario'); if(diary) diary.innerHTML='';
+  _repLinhas = 0;
+  calcRepTotal();
+}
+
+function fillLinhasRep(linhas, diario){
+  clearLinhasRep();
+  (linhas||[]).forEach(function(l){
+    addLinhaRep();
+    var i = _repLinhas-1;
+    var d=document.getElementById('rep_l'+i+'_desc'); if(d) d.value=l.desc||'';
+    var q=document.getElementById('rep_l'+i+'_qty');  if(q) q.value=l.qty||1;
+    var p=document.getElementById('rep_l'+i+'_preco');if(p) p.value=l.preco||0;
+  });
+  (diario||[]).forEach(function(entry){
+    addDiarioRep();
+    var rows = document.getElementById('rep_diario').querySelectorAll('div');
+    var row = rows[rows.length-1];
+    if(row){
+      var inputs = row.querySelectorAll('input[type=date], textarea');
+      if(inputs[0]) inputs[0].value = entry.data||'';
+      if(inputs[1]) inputs[1].value = entry.nota||'';
+    }
+  });
+  calcRepTotal();
+}
+
+// Hook openM to load linhas/diario when editing rep
+(function(){
+  var orig = window.openM;
+  if(orig && !window._repHooked){
+    window._repHooked = true;
+    window.openM = function(id, editId, data){
+      orig(id, editId, data);
+      if(id==='mRep'){
+        clearLinhasRep();
+        if(editId){
+          var r = ld('rep').find(function(x){return x.id===editId;});
+          if(r) setTimeout(function(){ fillLinhasRep(r.linhas, r.diario); }, 80);
+        }
+      }
+    };
+  }
+})();
 
 </script>
 
