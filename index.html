@@ -1046,6 +1046,16 @@ function openM(id,editId,data){
   _eids[id]=editId||null;
   // fill client selects
   if(['mRep','mOrc','mFat','mRec','mEq','mDesl'].includes(id))fillCliSel();
+  if(id==='mFat') setTimeout(function(){
+    // Init tipo/IVA toggles
+    if(typeof setFatTipo==='function') setFatTipo('fatura');
+    if(typeof setFatIVA==='function') setFatIVA(true);
+    // If editing, restore tipo/IVA
+    if(data && data.tipo && typeof setFatTipo==='function') setFatTipo(data.tipo);
+    if(data && data.iva_active===false && typeof setFatIVA==='function') setFatIVA(false);
+    // Trigger client change to show reps
+    if(typeof fatCliChange==='function') fatCliChange();
+  }, 60);
   // fill fat select in rec
   if(id==='mRec')fillFatSel();
   // set title
@@ -4640,15 +4650,19 @@ function calcRepMO(){
   calcRepTotal();
 }
 function calcRepTotal(){
-  var mo = parseFloat((document.getElementById('rep_val')||{}).value)||0;
+  var h = parseFloat((document.getElementById('rep_horas')||{}).value)||0;
+  var ph = parseFloat((document.getElementById('rep_preco_h')||{}).value)||35;
+  var mo_auto = +(h*ph).toFixed(2);
+  // Update rep_val with calculated MO
+  var moEl = document.getElementById('rep_val');
+  if(moEl && h>0) moEl.value = mo_auto;
+  var mo = parseFloat((moEl||{}).value)||0;
   var linhas = getLinhasRep();
   var matTotal = linhas.reduce(function(s,l){return s+l.total;},0);
   var total = mo + matTotal;
   var el = document.getElementById('rep_calc');
   if(!el) return;
   el.innerHTML = '';
-  var h=parseFloat((document.getElementById('rep_horas')||{}).value)||0;
-  var ph=parseFloat((document.getElementById('rep_preco_h')||{}).value)||35;
   if(h>0){var rh=document.createElement('div');rh.style.cssText='display:flex;justify-content:space-between;color:var(--muted)';rh.innerHTML='<span>'+h+'h × '+eur(ph)+'/h</span><span>'+eur(h*ph)+'</span>';el.appendChild(rh);}
   if(mo>0){var r=document.createElement('div');r.style.cssText='display:flex;justify-content:space-between;color:var(--muted)';r.innerHTML='<span>Mao de Obra</span><span>'+eur(mo)+'</span>';el.appendChild(r);}
   if(matTotal>0){var r=document.createElement('div');r.style.cssText='display:flex;justify-content:space-between;color:var(--muted)';r.innerHTML='<span>Materiais</span><span>'+eur(matTotal)+'</span>';el.appendChild(r);}
