@@ -877,35 +877,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
       <div id="fat_rep_list"></div>
     </div>
     <div class="frow"><div class="fg"><label>Reparação (opç.)</label><input id="fat_rep" placeholder="ex: R-2025-0001"></div></div>
-    <div class="fg"><label>Descrição do Serviço *</label><textarea id="fat_desc" placeholder="Descrição do serviço prestado"></textarea></div>
-
-    <!-- LISTA DE MATERIAIS -->
-    <div style="margin-bottom:13px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">📦 Lista de Materiais</label>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="addLinhaFat()">+ Adicionar Linha</button>
-      </div>
-      <div id="fat_linhas"></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px">Selecione materiais do stock ou escreva manualmente</div>
-    </div>
-
-    <!-- DESLOCAÇÃO -->
-    <div style="margin-bottom:13px;background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.2);border-radius:10px;padding:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <label style="font-size:11px;font-weight:700;color:#2DD4BF;text-transform:uppercase;letter-spacing:.5px">🚗 Deslocação</label>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="fat_desl_on" onchange="toggleDeslFat()" style="accent-color:var(--teal)"><span style="font-size:12px;color:var(--muted)">Incluir</span></label>
-      </div>
-      <div id="fat_desl_fields" style="display:none">
-        <div class="frow3">
-          <div class="fg"><label>Destino</label><input id="fat_desl_dest" placeholder="Morada"></div>
-          <div class="fg"><label>Km</label><input type="number" id="fat_desl_km" value="0" step="0.1" oninput="calcFatModal()"></div>
-          <div class="fg"><label>€/km</label><input type="number" id="fat_desl_preco" value="0.40" step="0.01" oninput="calcFatModal()"></div>
-        </div>
-      </div>
-    </div>
-
-    <input type="hidden" id="fat_mat" value="0">
-    <div class="frow3"><div class="fg"><label>Mão de Obra (€)</label><input type="number" id="fat_mo" value="0" step="0.01" oninput="calcFatModal()"></div><div class="fg"><label>IVA (%)</label><input type="number" id="fat_iva" value="23" oninput="calcFatModal()"></div><div 
+<script>
 const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
          desp:'m3_desp',rec:'m3_rec',forn:'m3_forn',hist:'m3_hist',desl:'m3_desl',
          users:'m3_users',def:'m3_def',cats:'m3_cats',
@@ -4776,6 +4748,7 @@ function fillLinhasRep(linhas, diario){
     };
   }
 })();
+(function(){ var _origOM = window.openM; if(_origOM && !window._repHookDone){ window._repHookDone = true; window.openM = function(id, editId, data){ _origOM(id, editId, data); if(id==='mRep'){ clearLinhasRep(); if(editId){
      var r = ld('rep').find(function(x){return x.id===editId;});
           if(r) setTimeout(function(){
             fillLinhasRep(r.linhas, r.diario);
@@ -4787,6 +4760,7 @@ function fillLinhasRep(linhas, diario){
     };
   }
 })();
+
 </script>
 
 
