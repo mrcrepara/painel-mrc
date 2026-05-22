@@ -1245,7 +1245,7 @@ function openM(id,editId,data){
   // fill fat select in rec
   if(id==='mRec')fillFatSel();
   // set title
-  const titles={mMat:'+ Novo Material',mRep:'+ Nova Reparação',mOrc:'+ Novo Orçamento',mCli:'+ Novo Cliente',mEq:'+ Novo Equipamento',mForn:'+ Novo Fornecedor',mFat:'🧾 Nova Fatura',mRec:'+ Registar Recebimento',mDesp:'+ Nova Despesa',mDesl:'+ Nova Deslocação'};
+  const titles={mMat:'+ Novo Material',mRep:'+ Nova Reparação',mOrc:'+ Novo Orçamento',mCli:'+ Novo Cliente',mEq:'+ Novo Equipamento',mForn:'+ Novo Fornecedor',mFat:'🧾 Nova Fatura',mRec:'+ Registar Recebimento',mDesp:'+ Nova Despesa',mDesl:'+ Nova Deslocação',mOS:'📋 Nova Ordem de Serviço',mEvt:'+ Novo Evento',mSvc:'+ Novo Serviço',mFiado:'+ Registar Fiado'};
   const tel=document.getElementById(id.replace('m','m')+'T');
   if(tel)tel.textContent=editId?('✏ Editar '+titles[id]?.replace('+ ','').replace('🧾 ','')):(titles[id]||'Novo');
   if(data)fillForm(id,data);
@@ -3169,6 +3169,12 @@ window.clearForm = function(id) {
     const pprow = document.getElementById('fat_pagparcial_row'); if(pprow) pprow.style.display='none';
     const vpago = document.getElementById('fat_val_pago'); if(vpago) vpago.value='0';
     calcFatModal();
+  }
+  if (id === 'mOS') {
+    const osData = document.getElementById('os_data'); if(osData) osData.value = td();
+    const osMO = document.getElementById('os_total_mo'); if(osMO) osMO.value = '0,00';
+    const osTot = document.getElementById('os_total'); if(osTot) osTot.value = '0,00';
+    setTimeout(calcOS, 50);
   }
   if (id === 'mOrc') {
     clearLinhasOrc();
