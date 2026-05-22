@@ -3776,9 +3776,9 @@ ${f.mo?'<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6">Mão de
 ${(f.linhas||[]).length?'<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6">Materiais</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:right">'+eur(f.mat)+'</td></tr>':''}
 ${f.desl_total?'<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6">🚗 Deslocação '+(f.desl_dest?'('+f.desl_dest+')':'')+' — '+f.desl_km+'km × '+eur(f.desl_preco)+'</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:right">'+eur(f.desl_total)+'</td></tr>':''}
 ${pct>0?'<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;color:#d97706">Desconto ('+pct+'%)</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:right;color:#d97706">−'+eur(descVal)+'</td></tr>':''}
-<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;color:#6b7280">Subtotal s/IVA</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:right">'+eur(sivaF)+'</td></tr>
-<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;color:#6b7280">IVA (${f.iva_active===false?0:(f.iva!=null?f.iva:23)}%)</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:right">`+eur(viva)+`</td></tr>
-<tr><td style="padding:11px 10px;font-weight:700;font-size:15px;border-top:2px solid #e5e7eb">TOTAL c/IVA</td><td style="padding:11px 10px;text-align:right;font-weight:800;color:#2563EB;font-size:20px;border-top:2px solid #e5e7eb">`+eur(total)+`</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;color:#6b7280">Subtotal s/IVA</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(sivaF)}</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;color:#6b7280">IVA (${f.iva_active===false?0:(f.iva!=null?f.iva:23)}%)</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(viva)}</td></tr>
+<tr><td style="padding:11px 10px;font-weight:700;font-size:15px;border-top:2px solid #e5e7eb">TOTAL c/IVA</td><td style="padding:11px 10px;text-align:right;font-weight:800;color:#2563EB;font-size:20px;border-top:2px solid #e5e7eb">${eur(total)}</td></tr>
 </tbody></table>
 ${emp.iban?'<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 13px;font-size:12px;margin-bottom:20px">IBAN: <strong>'+emp.iban+'</strong></div>':''}
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:28px">
