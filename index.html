@@ -1197,7 +1197,7 @@ let _eids={};
 function openM(id,editId,data){
   _eids[id]=editId||null;
   // fill client selects
-  if(['mRep','mOrc','mFat','mRec','mEq','mDesl','mOS'].includes(id))fillCliSel();
+  if(['mRep','mOrc','mFat','mRec','mEq','mDesl','mOS','mEvt'].includes(id))fillCliSel();
   // fill fat select in rec
   if(id==='mRec')fillFatSel();
   // set title
@@ -1216,7 +1216,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelec
 function fillCliSel(){
   const clis=ld('cli');
   const opts='<option value="">— Selecionar cliente —</option>'+clis.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('');
-  ['rep_cli','orc_cli','fat_cli','eq_cli','rec_cli','desl_cli','os_cli'].forEach(id=>{const s=document.getElementById(id);if(s)s.innerHTML=opts});
+  ['rep_cli','orc_cli','fat_cli','eq_cli','rec_cli','desl_cli','os_cli','evt_cli'].forEach(id=>{const s=document.getElementById(id);if(s)s.innerHTML=opts});
   // Trigger fatCliChange if mFat is open
   if(document.getElementById('mFat')&&document.getElementById('mFat').classList.contains('open'))setTimeout(fatCliChange,50);
 }
