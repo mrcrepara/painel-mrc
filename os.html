@@ -154,7 +154,12 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
       </div>
       <div class="fg"><label>Materiais Usados</label>
-        <textarea id="f_mat" placeholder="ex: Rolamento 6203 x2, Cabo 2.5mm 5m..." rows="2"></textarea>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <input id="matSearch" placeholder="🔍 Pesquisar material do stock..." oninput="filtrarMats()" style="flex:1;padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif">
+        </div>
+        <div id="matLista" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:8px;max-height:160px;overflow-y:auto;margin-bottom:6px"></div>
+        <div id="matSelecionados" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
+        <textarea id="f_mat" placeholder="Ou escreve materiais manualmente..." rows="2"></textarea>
       </div>
       <div class="frow">
         <div class="fg"><label>Custo Materiais (€)</label>
@@ -199,7 +204,7 @@ firebase.initializeApp({
   appId:"1:4766445522:web:ffd8567ff468e24810620b"
 });
 const db = firebase.firestore();
-let _os = [], _clis = [], _editId = null;
+let _os = [], _clis = [], _mats = [], _editId = null;
 
 // ── Helpers ─────────────────────────────────────────────
 const td = () => new Date().toISOString().slice(0,10);
@@ -223,14 +228,16 @@ function nextNum(){
 // ── Firebase Load ────────────────────────────────────────
 async function carregarDados(){
   try {
-    const [osDoc, cliDoc] = await Promise.all([
+    const [osDoc, cliDoc, matDoc] = await Promise.all([
       db.collection('mrc').doc('os').get(),
-      db.collection('mrc').doc('cli').get()
+      db.collection('mrc').doc('cli').get(),
+      db.collection('mrc').doc('mat').get()
     ]);
     _os   = osDoc.exists  ? (osDoc.data().value  || []) : [];
     _clis = cliDoc.exists ? (cliDoc.data().value || []) : [];
+    _mats = matDoc.exists ? (matDoc.data().value || []) : [];
   } catch(e) {
-    _os = []; _clis = [];
+    _os = []; _clis = []; _mats = [];
     console.warn('Firebase error:', e);
   }
 }
@@ -307,6 +314,11 @@ function abrirModal(os){
   document.getElementById('f_mat').value = os ? (os.materiais||'') : '';
   document.getElementById('f_est').value = os ? os.est : 'Rascunho';
   document.getElementById('f_notas').value = os ? (os.notas||'') : '';
+  // Reset materiais picker
+  _matsSel = os && os.mats_sel ? [...os.mats_sel] : [];
+  renderMatsSel();
+  document.getElementById('matSearch').value='';
+  document.getElementById('matLista').style.display='none';
   calcTotal();
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('f_desc').focus(), 100);
@@ -314,6 +326,78 @@ function abrirModal(os){
 
 function fecharModal(){
   document.getElementById('modal').classList.remove('open');
+}
+
+// ── Materiais Picker ──────────────────────────────────────
+let _matsSel = []; // [{id, ref, desc, qty, preco}]
+
+function filtrarMats(){
+  const q = (document.getElementById('matSearch')?.value||'').toLowerCase().trim();
+  const lista = document.getElementById('matLista');
+  if(!q){lista.style.display='none';return;}
+  const res = _mats.filter(m =>
+    (m.desc||'').toLowerCase().includes(q) ||
+    (m.ref||'').toLowerCase().includes(q)
+  ).slice(0,10);
+  if(!res.length){lista.style.display='none';return;}
+  lista.style.display='block';
+  lista.innerHTML = res.map(m =>
+    `<div onclick="adicionarMat('${m.id}')" style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background=''">
+      <span><strong style="color:#fff">${m.ref||''}</strong> ${m.desc||''}</span>
+      <span style="color:var(--green);font-size:11px">${eur(m.pvp||0)} · Stock: ${m.stock||0}</span>
+    </div>`
+  ).join('');
+}
+
+function adicionarMat(id){
+  const mat = _mats.find(m=>m.id===id);
+  if(!mat) return;
+  const existe = _matsSel.find(m=>m.id===id);
+  if(existe){ existe.qty++; }
+  else { _matsSel.push({id:mat.id, ref:mat.ref||'', desc:mat.desc||'', qty:1, pvp:mat.pvp||0, custo:mat.custo||0}); }
+  document.getElementById('matSearch').value='';
+  document.getElementById('matLista').style.display='none';
+  renderMatsSel();
+  actualizarCampoMat();
+  calcTotal();
+}
+
+function removerMat(id){
+  _matsSel = _matsSel.filter(m=>m.id!==id);
+  renderMatsSel();
+  actualizarCampoMat();
+  calcTotal();
+}
+
+function alterarQty(id, delta){
+  const m = _matsSel.find(x=>x.id===id);
+  if(!m) return;
+  m.qty = Math.max(1, (m.qty||1)+delta);
+  renderMatsSel();
+  actualizarCampoMat();
+  calcTotal();
+}
+
+function renderMatsSel(){
+  const el = document.getElementById('matSelecionados');
+  if(!_matsSel.length){el.innerHTML='';return;}
+  el.innerHTML = _matsSel.map(m =>
+    `<div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:8px;font-size:12px">
+      <span style="color:#fff;font-weight:600">${m.ref} ${m.desc}</span>
+      <button onclick="alterarQty('${m.id}',-1)" style="background:var(--border);border:none;color:#fff;border-radius:4px;padding:1px 6px;cursor:pointer;font-size:12px">−</button>
+      <span style="color:var(--amber);font-weight:700">${m.qty}</span>
+      <button onclick="alterarQty('${m.id}',1)" style="background:var(--border);border:none;color:#fff;border-radius:4px;padding:1px 6px;cursor:pointer;font-size:12px">+</button>
+      <span style="color:var(--muted)">${eur((m.pvp||0)*m.qty)}</span>
+      <button onclick="removerMat('${m.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0">×</button>
+    </div>`
+  ).join('');
+}
+
+function actualizarCampoMat(){
+  const desc = _matsSel.map(m=>`${m.ref} ${m.desc} x${m.qty}`).join(', ');
+  const custo = _matsSel.reduce((s,m)=>s+(m.custo||0)*m.qty,0);
+  document.getElementById('f_mat').value = desc;
+  document.getElementById('f_custo_mat').value = custo.toFixed(2);
 }
 
 function calcTotal(){
@@ -341,6 +425,7 @@ async function guardar(){
     horas: h, valor_hora: vh, custo_mat: mat,
     total: +(h*vh+mat).toFixed(2),
     materiais: document.getElementById('f_mat').value,
+    mats_sel: [..._matsSel],
     est: document.getElementById('f_est').value||'Rascunho',
     notas: document.getElementById('f_notas').value
   };
@@ -384,7 +469,7 @@ Data: ${os.data}
 Descrição: ${os.desc}
 ${os.materiais ? 'Materiais: '+os.materiais : ''}
 Horas: ${os.horas}h × ${eur(os.valor_hora)}/h = ${eur(mo)}
-Custo Mat.: ${eur(os.custo_mat)}
+Custo Mat.: ${eur(os.custo_mat)}${os.mats_sel&&os.mats_sel.length?'\nMateriais: '+os.mats_sel.map(m=>m.ref+' '+m.desc+' x'+m.qty).join(', '):''}
 ─────────────────
 TOTAL: ${eur(os.total)}
 
@@ -414,6 +499,9 @@ carregarDados().then(() => {
   });
   db.collection('mrc').doc('cli').onSnapshot(doc => {
     if(doc.exists) _clis = doc.data().value || [];
+  });
+  db.collection('mrc').doc('mat').onSnapshot(doc => {
+    if(doc.exists) _mats = doc.data().value || [];
   });
 });
 </script>
