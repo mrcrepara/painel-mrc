@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>MRC — Ordens de Serviço</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#0F1117;--sb:#141820;--card:#1A1F2E;--card2:#1E2436;
+  --border:#252D3D;--text:#E8ECF4;--muted:#7B8DB0;
+  --blue:#2563EB;--green:#10B981;--red:#EF4444;
+  --amber:#F59E0B;--purple:#8B5CF6;--teal:#14B8A6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0}
+.app{display:flex;flex-direction:column;min-height:100vh}
+header{background:var(--sb);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header h1{font-size:18px;font-weight:800;color:#fff}
+header a{color:var(--muted);font-size:13px;text-decoration:none;padding:6px 12px;border:1px solid var(--border);border-radius:8px}
+header a:hover{color:#fff;border-color:var(--blue)}
+main{flex:1;padding:20px;max-width:1100px;margin:0 auto;width:100%}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.kpi-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px}
+.kpi-val{font-size:22px;font-weight:800;color:#fff}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:18px}
+.card-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card-hdr h2{font-size:15px;font-weight:700;color:#fff}
+.card-body{padding:16px}
+.sbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.sbar input,.sbar select{padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;flex:1;min-width:150px}
+.sbar select{flex:0 0 auto}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid rgba(37,45,61,.5);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;color:#fff}
+.td-acts{display:flex;gap:5px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-green{background:var(--green);color:#fff}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-ghost{background:rgba(255,255,255,.07);color:var(--text);border:1px solid var(--border)}
+.btn-red{background:var(--red);color:#fff}
+.btn-purple{background:var(--purple);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:4px 8px;font-size:11px;border:none;border-radius:6px;cursor:pointer;font-weight:700;color:#fff;font-family:'Inter',sans-serif}
+
+/* MODAL */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;padding:16px}
+.ov.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.mhdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mhdr h3{font-size:16px;font-weight:700;color:#fff}
+.mclose{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px}
+.mclose:hover{color:#fff}
+.mbody{padding:18px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px}
+.mfoot{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+.fg{display:flex;flex-direction:column;gap:5px;flex:1}
+.fg label{font-size:12px;font-weight:600;color:var(--muted)}
+.fg input,.fg select,.fg textarea{padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;width:100%}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--blue)}
+.fg textarea{resize:vertical;min-height:60px}
+.frow{display:flex;gap:12px;flex-wrap:wrap}
+.frow .fg{min-width:120px}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1E2436;border:1px solid var(--border);border-radius:10px;padding:11px 20px;font-size:13px;font-weight:600;color:#fff;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* OVERLAY SYNC */
+#sync-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:'Inter',sans-serif}
+</style>
+</head>
+<body>
+<div id="sync-overlay">
+  <div style="font-size:36px">📋</div>
+  <div style="font-size:16px;font-weight:800;color:#fff">Ordens de Serviço</div>
+  <div style="font-size:13px;color:var(--muted)">A carregar...</div>
+</div>
+
+<div class="app" id="app" style="display:none">
+  <header>
+    <h1>📋 Ordens de Serviço — MRC</h1>
+    <a href="index.html">← Voltar ao Sistema</a>
+  </header>
+  <main>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div>
+        <h2 style="font-size:20px;font-weight:800;color:#fff">Ordens de Serviço</h2>
+        <p style="font-size:13px;color:var(--muted);margin-top:2px">Registo rápido do trabalho diário</p>
+      </div>
+      <button class="btn btn-green" onclick="abrirModal()">+ Nova O.S.</button>
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="sbar">
+          <input id="searchQ" placeholder="🔍 Pesquisar cliente ou descrição..." oninput="renderTabela()">
+          <select id="filterEst" onchange="renderTabela()">
+            <option value="">Todos os estados</option>
+            <option value="Rascunho">Rascunho</option>
+            <option value="Em Curso">Em Curso</option>
+            <option value="Concluído">Concluído</option>
+            <option value="Faturado">Faturado</option>
+          </select>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>Nº</th><th>Data</th><th>Cliente</th><th>Descrição</th>
+              <th>Horas</th><th>Total</th><th>Estado</th><th>Ações</th>
+            </tr></thead>
+            <tbody id="osTbl"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="ov" id="modal">
+  <div class="modal">
+    <div class="mhdr">
+      <h3 id="modalTitulo">📋 Nova O.S.</h3>
+      <button class="mclose" onclick="fecharModal()">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="frow">
+        <div class="fg"><label>Cliente</label><select id="f_cli"></select></div>
+        <div class="fg"><label>Data</label><input type="date" id="f_data"></div>
+      </div>
+      <div class="fg"><label>Descrição do Trabalho *</label>
+        <input id="f_desc" placeholder="ex: Revisão motor, instalação elétrica...">
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Horas Trabalhadas</label>
+          <input type="number" id="f_horas" value="0" step="0.5" min="0" oninput="calcTotal()">
+        </div>
+        <div class="fg"><label>€ / Hora</label>
+          <input type="number" id="f_vh" value="0" step="0.50" min="0" oninput="calcTotal()">
+        </div>
+        <div class="fg"><label>Total M.O. (€)</label>
+          <input type="text" id="f_total_mo" readonly style="color:var(--green);font-weight:700">
+        </div>
+      </div>
+      <div class="fg"><label>Materiais Usados</label>
+        <textarea id="f_mat" placeholder="ex: Rolamento 6203 x2, Cabo 2.5mm 5m..." rows="2"></textarea>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Custo Materiais (€)</label>
+          <input type="number" id="f_custo_mat" value="0" step="0.01" min="0" oninput="calcTotal()">
+        </div>
+        <div class="fg"><label>Total O.S. (€)</label>
+          <input type="text" id="f_total" readonly style="color:var(--blue);font-weight:800;font-size:16px">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Estado</label>
+          <select id="f_est">
+            <option>Rascunho</option>
+            <option>Em Curso</option>
+            <option>Concluído</option>
+            <option>Faturado</option>
+          </select>
+        </div>
+        <div class="fg"><label>Notas</label>
+          <input id="f_notas" placeholder="Observações...">
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-green" onclick="guardar()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Firebase ────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:"AIzaSyALX9QWi4o89zO0wBd3A3znkP_YD-bPwwA",
+  authDomain:"mrc-47d1f.firebaseapp.com",
+  projectId:"mrc-47d1f",
+  storageBucket:"mrc-47d1f.firebasestorage.app",
+  messagingSenderId:"4766445522",
+  appId:"1:4766445522:web:ffd8567ff468e24810620b"
+});
+const db = firebase.firestore();
+let _os = [], _clis = [], _editId = null;
+
+// ── Helpers ─────────────────────────────────────────────
+const td = () => new Date().toISOString().slice(0,10);
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const eur = v => parseFloat(v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
+
+function toast(msg, tipo='g'){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderColor = tipo==='r' ? 'var(--red)' : tipo==='a' ? 'var(--amber)' : 'var(--green)';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function nextNum(){
+  const yr = new Date().getFullYear();
+  const ns = _os.map(x => parseInt((x.num||'').split('/').pop())||0);
+  return 'OS'+yr+'/'+String((ns.length ? Math.max(...ns) : 0)+1).padStart(3,'0');
+}
+
+// ── Firebase Load ────────────────────────────────────────
+async function carregarDados(){
+  try {
+    const [osDoc, cliDoc] = await Promise.all([
+      db.collection('mrc').doc('os').get(),
+      db.collection('mrc').doc('cli').get()
+    ]);
+    _os   = osDoc.exists  ? (osDoc.data().value  || []) : [];
+    _clis = cliDoc.exists ? (cliDoc.data().value || []) : [];
+  } catch(e) {
+    _os = []; _clis = [];
+    console.warn('Firebase error:', e);
+  }
+}
+
+async function guardarFirebase(){
+  await db.collection('mrc').doc('os').set({ value: _os });
+}
+
+// ── Render ───────────────────────────────────────────────
+function renderKpi(){
+  const el = document.getElementById('kpiGrid');
+  const total = _os.reduce((s,x) => s+(x.total||0), 0);
+  el.innerHTML =
+    kpiBox('Total O.S.', _os.length, '#fff') +
+    kpiBox('Em Curso', _os.filter(x=>x.est==='Em Curso').length, 'var(--amber)') +
+    kpiBox('Concluídas', _os.filter(x=>x.est==='Concluído').length, 'var(--green)') +
+    kpiBox('Faturadas', _os.filter(x=>x.est==='Faturado').length, 'var(--purple)') +
+    kpiBox('Valor Total', eur(total), 'var(--blue)');
+}
+
+function kpiBox(label, val, cor){
+  return `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-val" style="color:${cor};font-size:${typeof val==='string'?'16px':'22px'}">${val}</div></div>`;
+}
+
+function renderTabela(){
+  const q = (document.getElementById('searchQ')?.value||'').toLowerCase();
+  const f = document.getElementById('filterEst')?.value||'';
+  let lista = [..._os];
+  if(q) lista = lista.filter(x => (x.cli||'').toLowerCase().includes(q) || (x.desc||'').toLowerCase().includes(q) || (x.num||'').toLowerCase().includes(q));
+  if(f) lista = lista.filter(x => x.est === f);
+
+  const cor = {'Rascunho':'var(--muted)','Em Curso':'var(--amber)','Concluído':'var(--green)','Faturado':'var(--purple)'};
+  const tb = document.getElementById('osTbl');
+  if(!lista.length){ tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">📭 Sem ordens de serviço</td></tr>'; return; }
+  tb.innerHTML = [...lista].reverse().map(o => `
+    <tr>
+      <td><strong style="color:#fff">${o.num||'—'}</strong></td>
+      <td style="color:var(--muted)">${o.data||''}</td>
+      <td>${o.cli||'—'}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.desc||''}">${o.desc||'—'}</td>
+      <td style="color:var(--muted)">${o.horas||0}h</td>
+      <td style="color:var(--green);font-weight:700">${eur(o.total||0)}</td>
+      <td><span class="badge" style="background:${cor[o.est]||'var(--border)'}">${o.est}</span></td>
+      <td class="td-acts">
+        <button class="btn-xs" style="background:var(--blue)" onclick="editar('${o.id}')">✏</button>
+        ${o.est==='Concluído' ? `<button class="btn-xs" style="background:var(--purple)" onclick="verDetalhes('${o.id}')" title="Ver detalhes para faturar">🧾</button>` : ''}
+        <button class="btn-xs" style="background:var(--red)" onclick="apagar('${o.id}')">🗑</button>
+      </td>
+    </tr>`).join('');
+}
+
+function render(){
+  renderKpi();
+  renderTabela();
+}
+
+// ── Modal ────────────────────────────────────────────────
+function preencherClientes(){
+  const sel = document.getElementById('f_cli');
+  sel.innerHTML = '<option value="">— Selecionar cliente —</option>' +
+    _clis.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+}
+
+function abrirModal(os){
+  _editId = os ? os.id : null;
+  document.getElementById('modalTitulo').textContent = os ? '✏ Editar O.S.' : '📋 Nova O.S.';
+  preencherClientes();
+  document.getElementById('f_data').value = os ? os.data : td();
+  document.getElementById('f_cli').value = os ? (os.cli_id||'') : '';
+  document.getElementById('f_desc').value = os ? os.desc : '';
+  document.getElementById('f_horas').value = os ? os.horas : 0;
+  document.getElementById('f_vh').value = os ? os.valor_hora : 0;
+  document.getElementById('f_custo_mat').value = os ? os.custo_mat : 0;
+  document.getElementById('f_mat').value = os ? (os.materiais||'') : '';
+  document.getElementById('f_est').value = os ? os.est : 'Rascunho';
+  document.getElementById('f_notas').value = os ? (os.notas||'') : '';
+  calcTotal();
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('f_desc').focus(), 100);
+}
+
+function fecharModal(){
+  document.getElementById('modal').classList.remove('open');
+}
+
+function calcTotal(){
+  const h = parseFloat(document.getElementById('f_horas').value)||0;
+  const vh = parseFloat(document.getElementById('f_vh').value)||0;
+  const mat = parseFloat(document.getElementById('f_custo_mat').value)||0;
+  const mo = h * vh;
+  const tot = mo + mat;
+  document.getElementById('f_total_mo').value = mo.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('f_total').value = tot.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// ── CRUD ─────────────────────────────────────────────────
+async function guardar(){
+  const desc = document.getElementById('f_desc').value.trim();
+  if(!desc){ toast('Descrição obrigatória!','r'); return; }
+  const cli_id = document.getElementById('f_cli').value;
+  const cli = _clis.find(c=>c.id===cli_id);
+  const h = parseFloat(document.getElementById('f_horas').value)||0;
+  const vh = parseFloat(document.getElementById('f_vh').value)||0;
+  const mat = parseFloat(document.getElementById('f_custo_mat').value)||0;
+  const obj = {
+    cli_id, cli: cli?.nome||'—',
+    desc, data: document.getElementById('f_data').value||td(),
+    horas: h, valor_hora: vh, custo_mat: mat,
+    total: +(h*vh+mat).toFixed(2),
+    materiais: document.getElementById('f_mat').value,
+    est: document.getElementById('f_est').value||'Rascunho',
+    notas: document.getElementById('f_notas').value
+  };
+  if(_editId){
+    const i = _os.findIndex(x=>x.id===_editId);
+    if(i>=0) _os[i] = {..._os[i], ...obj};
+  } else {
+    obj.id = uid(); obj.num = nextNum();
+    _os.push(obj);
+  }
+  fecharModal();
+  render();
+  try {
+    await guardarFirebase();
+    toast(_editId ? 'O.S. actualizada!' : 'O.S. criada!');
+  } catch(e) {
+    toast('Erro ao guardar no Firebase!','r');
+  }
+}
+
+function editar(id){
+  const os = _os.find(x=>x.id===id);
+  if(os) abrirModal(os);
+}
+
+async function apagar(id){
+  if(!confirm('Apagar esta Ordem de Serviço?')) return;
+  _os = _os.filter(x=>x.id!==id);
+  render();
+  await guardarFirebase();
+  toast('O.S. apagada.','a');
+}
+
+function verDetalhes(id){
+  const os = _os.find(x=>x.id===id);
+  if(!os) return;
+  const mo = (os.horas*os.valor_hora).toFixed(2);
+  const msg = `📋 ${os.num} — ${os.cli}
+  
+Data: ${os.data}
+Descrição: ${os.desc}
+${os.materiais ? 'Materiais: '+os.materiais : ''}
+Horas: ${os.horas}h × ${eur(os.valor_hora)}/h = ${eur(mo)}
+Custo Mat.: ${eur(os.custo_mat)}
+─────────────────
+TOTAL: ${eur(os.total)}
+
+Para faturar, vai ao sistema principal → Faturas → Nova Fatura.`;
+  alert(msg);
+}
+
+// ── Init ─────────────────────────────────────────────────
+document.getElementById('modal').addEventListener('click', e => {
+  if(e.target === document.getElementById('modal')) fecharModal();
+});
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape') fecharModal();
+});
+
+carregarDados().then(() => {
+  document.getElementById('sync-overlay').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  render();
+
+  // Realtime sync
+  db.collection('mrc').doc('os').onSnapshot(doc => {
+    if(doc.exists){
+      _os = doc.data().value || [];
+      render();
+    }
+  });
+  db.collection('mrc').doc('cli').onSnapshot(doc => {
+    if(doc.exists) _clis = doc.data().value || [];
+  });
+});
+</script>
+</body>
+</html>
