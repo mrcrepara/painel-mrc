@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MRC Sistema">
+<meta name="theme-color" content="#0A0E1A">
 <title>MRC — Sistema de Gestão</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -153,6 +156,23 @@ tbody td{padding:9px 12px;vertical-align:middle}
 @media(max-width:1100px){.g3{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
 @media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.mob-open{transform:translateX(0)}.main{margin-left:0}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
+
+<style>
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);z-index:200}
+  .sidebar.mob-open{transform:translateX(0);box-shadow:4px 0 24px rgba(0,0,0,.5)}
+  .main{margin-left:0}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .content{padding-bottom:80px}
+  .pg-hdr{flex-direction:column;align-items:flex-start}
+  table{font-size:11px}
+}
+@media(min-width:769px){#mobNav,#mobOverlay{display:none!important}}
+#mobOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150}
+#mobNav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--sb);border-top:1px solid var(--border);justify-content:space-around;align-items:center;padding:6px 0}
+.mob-ni{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;cursor:pointer;border-radius:8px;color:var(--muted);font-size:10px;font-weight:600;min-width:52px}
+@media(max-width:768px){#mobNav{display:flex!important}}
+</style>
 </head>
 <body>
 
@@ -192,7 +212,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
   <div class="ni" data-p="orcamentos" onclick="goPage('orcamentos')">📋 Orçamentos</div>
   <div class="ni" data-p="clientes" onclick="goPage('clientes')">👤 Clientes</div>
   <div class="ni" data-p="fiado" onclick="goPage('fiado')">💳 Fiado / A Receber</div>
-  <div class="ni" data-p="equipamentos" onclick="goPage('equipamentos')">🖥 Equipamentos</div>
+  
   <div class="nav-sec">Stock</div>
   <div class="ni" data-p="materiais" onclick="goPage('materiais')">📦 Materiais</div>
   <div class="ni" data-p="entrada" onclick="goPage('entrada')">↑ Entrada Stock</div>
@@ -405,7 +425,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 
 <!-- DESPESAS -->
 <div class="page" id="page-despesas">
-  <div class="pg-hdr"><div><h1>💸 Despesas</h1></div><button class="btn btn-red" onclick="openM('mDesp')">+ Nova Despesa</button></div>
+  <div class="pg-hdr"><div><h1>💸 Despesas</h1></div><button class="btn btn-red" onclick="openM('mDesp')">+ Nova Despesa</button><button class="btn btn-ghost btn-sm" onclick="openM('mDespCat')">🏷 Categorias</button></div>
   <div class="kpi-grid" id="despKpi"></div>
   <div class="card"><div class="card-body">
     <div class="sbar"><input id="despQ" placeholder="🔍 Pesquisar..." oninput="renderDesp()"><select id="despF" onchange="renderDesp()"><option value="">Todas as categorias</option><option>Matérias-Primas</option><option>Rendas</option><option>Serviços</option><option>Salários</option><option>Ferramentas</option><option>Outros</option></select></div>
@@ -514,7 +534,9 @@ tbody td{padding:9px 12px;vertical-align:middle}
   <div class="g2" style="align-items:start">
     <div class="card"><div class="card-hdr"><h3>💾 Criar Backup</h3></div><div class="card-body">
       <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Guarda todos os dados num ficheiro JSON.</p>
-      <button class="btn btn-blue" style="width:100%;justify-content:center;margin-bottom:10px" onclick="fazerBackup()">💾 Download Backup</button>
+      <button class="btn btn-blue" style="width:100%;justify-content:center;margin-bottom:10px" onclick="fazerBackup()">💾 Download Backup (disco)</button>
+      <button class="btn btn-green" style="width:100%;justify-content:center;margin-bottom:10px" onclick="backupGoogleDrive()">☁️ Guardar no Google Drive</button>
+      <button class="btn" style="width:100%;justify-content:center;margin-bottom:10px;background:#4285F4;color:#fff" onclick="backupOneDrive()">☁️ Guardar no OneDrive</button>
       <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="exportCSV()">⬇ Exportar CSV</button>
     </div></div>
     <div class="card"><div class="card-hdr"><h3>📂 Restaurar</h3></div><div class="card-body">
@@ -692,7 +714,8 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <div class="ov" id="mMat"><div class="modal">
   <div class="mhdr"><h3 id="mMatT">+ Novo Material</h3><button class="mclose" onclick="closeM('mMat')">✕</button></div>
   <div class="mbody">
-    <div class="frow"><div class="fg"><label>Referência *</label><input id="mat_ref"></div><div class="fg"><label>Unidade</label><input id="mat_un" placeholder="un/caixa/m"></div></div>
+    <div class="frow"><div class="fg"><label>Referência *</label><input id="mat_ref"></div><div class="fg"><label>Unidade</label><input id="mat_un" list="mat_un_list" placeholder="Un/KG/M..." autocomplete="off">
+          <datalist id="mat_un_list"><option value="Un"><option value="KG"><option value="LT"><option value="M3"><option value="M2"><option value="M"><option value="CX"><option value="T"><option value="HA"></datalist></div></div>
     <div class="fg"><label>Descrição *</label><input id="mat_desc"></div>
     <div class="fg"><label>Categoria</label><div style="display:flex;gap:6px"><select id="mat_cat" style="flex:1"></select><button type="button" class="btn btn-ghost btn-sm" onclick="openM('mCats')" style="flex-shrink:0;padding:8px 10px" title="Gerir categorias">⚙</button></div></div>
     <div class="frow"><div class="fg"><label>Custo (€)</label><input type="number" id="mat_custo" value="0" step="0.01"></div><div class="fg"><label>PVP (€)</label><input type="number" id="mat_pvp" value="0" step="0.01"></div></div>
@@ -798,11 +821,11 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <div class="ov" id="mFat"><div class="modal modal-lg">
   <div class="mhdr"><h3 id="mFatT">🧾 Nova Fatura</h3><button class="mclose" onclick="closeM('mFat')">✕</button></div>
   <div class="mbody">
-    <div class="frow"><div class="fg"><label>Cliente *</label><select id="fat_cli" onchange="fatCliChange()"></select></div><div id="fat_rep_panel" style="display:none;background:rgba(59,123,246,.08);border:1px solid rgba(59,123,246,.25);border-radius:9px;padding:10px 12px;margin-bottom:10px">
-      <div style="font-size:11px;font-weight:700;color:#60A5FA;margin-bottom:7px">🔧 Reparações em aberto</div>
+    <div class="frow"><div class="fg"><label>Cliente *</label><select id="fat_cli" onchange="fatCliChange()"></select></div><div class="fg"><label>Reparação (opç.)</label><input id="fat_rep" placeholder="ex: R-2025-0001"></div></div>
+    <div id="fat_rep_panel" style="display:none;background:rgba(59,123,246,.08);border:1px solid rgba(59,123,246,.25);border-radius:9px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:#60A5FA;text-transform:uppercase;margin-bottom:7px">🔧 Reparações em aberto</div>
       <div id="fat_rep_list"></div>
     </div>
-    <div class="fg"><label>Reparação (opç.)</label><input id="fat_rep" placeholder="ex: R-2025-0001"></div></div>
     <div class="fg"><label>Descrição do Serviço *</label><textarea id="fat_desc" placeholder="Descrição do serviço prestado"></textarea></div>
 
     <!-- LISTA DE MATERIAIS -->
@@ -822,21 +845,47 @@ tbody td{padding:9px 12px;vertical-align:middle}
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="fat_desl_on" onchange="toggleDeslFat()" style="accent-color:var(--teal)"><span style="font-size:12px;color:var(--muted)">Incluir</span></label>
       </div>
       <div id="fat_desl_fields" style="display:none">
-        <div class="frow3">
+        <div class="frow">
           <div class="fg"><label>Destino</label><input id="fat_desl_dest" placeholder="Morada"></div>
-          <div class="fg"><label>Km</label><input type="number" id="fat_desl_km" value="0" step="0.1" oninput="calcFatModal()"></div>
-          <div class="fg"><label>€/km</label><input type="number" id="fat_desl_preco" value="0.40" step="0.01" oninput="calcFatModal()"></div>
+          <div class="fg"><label>Total Deslocação (€)</label><input type="number" id="fat_desl_total_manual" value="0" step="0.01" oninput="calcFatModal()" placeholder="ex: 30.00"></div>
+        </div>
+        <div class="frow3" style="margin-top:6px;opacity:.7">
+          <div class="fg"><label style="font-size:10px">Km (opcional)</label><input type="number" id="fat_desl_km" value="0" step="0.1" oninput="calcDeslAuto()"></div>
+          <div class="fg"><label style="font-size:10px">€/km</label><input type="number" id="fat_desl_preco" value="0.40" step="0.01" oninput="calcDeslAuto()"></div>
         </div>
       </div>
     </div>
 
     <input type="hidden" id="fat_mat" value="0">
-    <div class="frow3"><div class="fg"><label>Mão de Obra (€)</label><input type="number" id="fat_mo" value="0" step="0.01" oninput="calcFatModal()"></div><div class="fg"><label>IVA (%)</label><input type="number" id="fat_iva" value="23" oninput="calcFatModal()"></div><div class="fg"><label>Desconto (%)</label><input type="number" id="fat_desc_pct" value="0" step="0.5" oninput="calcFatModal()"></div></div>
+    <div class="frow"><div class="fg"><label>Mão de Obra (€)</label><input type="number" id="fat_mo" value="0" step="0.01" oninput="calcFatModal()"></div><div class="fg"><label>Desconto (%)</label><input type="number" id="fat_desc_pct" value="0" step="0.5" oninput="calcFatModal()"></div></div>
     <div class="calc-wrap" id="fat_calc"></div>
     <div class="frow"><div class="fg"><label>Data Emissão</label><input type="date" id="fat_data"></div><div class="fg"><label>Data Vencimento</label><input type="date" id="fat_venc"></div></div>
+    <!-- TIPO DOCUMENTO + IVA -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Tipo de Documento</div>
+        <div style="display:flex;gap:6px">
+          <button type="button" id="btn_fatura" onclick="setFatTipo('fatura')" class="btn btn-blue btn-sm" style="flex:1">🧾 Fatura</button>
+          <button type="button" id="btn_recibo" onclick="setFatTipo('recibo')" class="btn btn-ghost btn-sm" style="flex:1">🧾 Recibo</button>
+        </div>
+        <input type="hidden" id="fat_tipo" value="fatura">
+        <div id="fat_tipo_label" style="font-size:10px;color:var(--muted);margin-top:4px;text-align:center">FATURA</div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">IVA</div>
+        <div style="display:flex;gap:6px">
+          <button type="button" id="btn_civa" onclick="setFatIVA(true)" class="btn btn-blue btn-sm" style="flex:1">Com IVA</button>
+          <button type="button" id="btn_siva" onclick="setFatIVA(false)" class="btn btn-ghost btn-sm" style="flex:1">Sem IVA</button>
+        </div>
+        <input type="hidden" id="fat_iva_active" value="1">
+      </div>
+    </div>
+    <div id="fat_iva_row" class="frow">
+      <div class="fg"><label>IVA (%)</label><input type="number" id="fat_iva" value="23" min="0" max="23" step="1" oninput="calcFatModal()"></div>
+    </div>
     <div class="fg"><label>Estado</label><select id="fat_est"><option>Pendente</option><option>Paga</option><option>Em Atraso</option></select></div>
   </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mFat')">Cancelar</button><button class="btn btn-blue" onclick="saveFat()">🧾 Emitir Fatura</button></div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mFat')">Cancelar</button><button class="btn btn-blue" onclick="saveFat()">🧾 Emitir</button></div>
 </div></div>
 
 <!-- Recebimento -->
@@ -895,20 +944,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
     </div>
     <div id="import-step2" style="display:none">
       <div id="import-summary" style="margin-bottom:12px"></div>
-      <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
-        <table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr id="import-thead" style="background:var(--bg)"></tr></thead><tbody id="import-tbody"></tbody></table>
-      </div>
-    </div>
-  </div>
-  <div class="mfoot">
-    <button onclick="resetImport()" class="btn btn-ghost">← Recomeçar</button>
-    <button onclick="closeM('mImportCli')" class="btn btn-ghost">Cancelar</button>
-    <button id="btn-import-ok" onclick="confirmImport()" class="btn btn-green" style="display:none">✅ Importar</button>
-  </div>
-</div></div>
-
 <script>
-
 // ══════════════════════════════════════════════════════════
 // DATA LAYER
 // ══════════════════════════════════════════════════════════
@@ -1054,7 +1090,6 @@ function openM(id,editId,data){
   _eids[id]=editId||null;
   // fill client selects
   if(['mRep','mOrc','mFat','mRec','mEq','mDesl'].includes(id))fillCliSel();
-  if(id==='mFat') setTimeout(function(){if(typeof fatCliChange==='function')fatCliChange();},80);
   // fill fat select in rec
   if(id==='mRec')fillFatSel();
   // set title
@@ -1074,6 +1109,8 @@ function fillCliSel(){
   const clis=ld('cli');
   const opts='<option value="">— Selecionar cliente —</option>'+clis.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('');
   ['rep_cli','orc_cli','fat_cli','eq_cli','rec_cli','desl_cli'].forEach(id=>{const s=document.getElementById(id);if(s)s.innerHTML=opts});
+  // Trigger fatCliChange if mFat is open
+  if(document.getElementById('mFat')&&document.getElementById('mFat').classList.contains('open'))setTimeout(fatCliChange,50);
 }
 function fillFatSel(){
   const fats=ld('fat').filter(f=>f.est!=='Paga');
@@ -1088,6 +1125,7 @@ function clearForm(id){
     else el.value='';
   });
   if(id==='mFat'){
+    setFatTipo('fatura');setFatIVA(true);
     document.getElementById('fat_data').value=td();
     document.getElementById('fat_venc').value=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
     calcFatModal();
@@ -1181,7 +1219,12 @@ function toast(msg,type='g'){
 // ══════════════════════════════════════════════════════════
 function ebadge(e){const m={Pronta:'bg','Em Reparação':'bb',Pendente:'ba','Aguardando Peças':'bp',Entregue:'bc',Paga:'bg','Em Atraso':'br',Aprovado:'bg',Recusado:'br',Normal:'bg',Urgente:'ba','Muito Urgente':'br'};return'<span class="badge '+(m[e]||'bb')+'">'+e+'</span>'}
 function sbadge(m){if(m.stock<=0)return'<span class="badge br">Sem Stock</span>';if(m.stock<m.min)return'<span class="badge br">⚠ Baixo ('+m.stock+')</span>';if(m.stock<=m.min)return'<span class="badge ba">⚠ Mín ('+m.stock+')</span>';return'<span class="badge bg">OK ('+m.stock+')</span>'}
-function fatTot(f){return((f.mo||0)+(f.mat||0))*(1+(f.iva||23)/100)}
+function fatTot(f){
+  var base=(f.mo||0)+(f.mat||0)+(f.desl_total||0);
+  var ivaRate=f.iva_active===false?0:(f.iva!=null?f.iva:23);
+  var desc=base*(( f.desc_pct||0)/100);
+  return+(base-desc+((base-desc)*ivaRate/100)).toFixed(2);
+}
 function eRow(n,msg){return'<tr><td colspan="'+n+'" class="empty">📭 '+msg+'</td></tr>'}
 function notifBadge(){const n=ld('mat').filter(m=>m.stock<=m.min).length;const b=document.getElementById('notifBadge');if(b){b.textContent=n;b.style.display=n>0?'flex':'none'}}
 function nextRepId(){const r=ld('rep');const yr=new Date().getFullYear();const ns=r.map(x=>parseInt(x.id.replace('R-'+yr+'-',''))||0);return'R-'+yr+'-'+String((ns.length?Math.max(...ns):0)+1).padStart(4,'0')}
@@ -1221,7 +1264,11 @@ function renderMat(){
   const q=gv('matQ').toLowerCase(),cat=gv('matCat');
   if(q)mats=mats.filter(m=>m.ref.toLowerCase().includes(q)||m.desc.toLowerCase().includes(q));
   if(cat)mats=mats.filter(m=>m.cat===cat);
-  mats=mats.slice().sort((a,b)=>a.desc.localeCompare(b.desc,'pt',{sensitivity:'base'}));
+  mats=mats.slice().sort((a,b)=>{
+    // Natural/sequential sort: numbers within strings compared numerically
+    const na=a.ref||'', nb=b.ref||'';
+    return na.localeCompare(nb,'pt',{numeric:true,sensitivity:'base'});
+  });
   const tb=g('matTbl');if(!tb)return;
   if(!mats.length){tb.innerHTML=eRow(10,'Nenhum material encontrado');return}
   let html='';
@@ -1809,7 +1856,7 @@ function printFatura(id) {
   if (!f) { toast('Fatura não encontrada!', 'r'); return; }
   const emp = getEmpresa();
   const siva = (f.mo||0) + (f.mat||0);
-  const viva = siva * (f.iva||23) / 100;
+  const viva = siva * (f.iva_active===false?0:(f.iva!=null?f.iva:23)) / 100;
   const total = siva + viva;
   const cli = ld('cli').find(c => c.id === f.cli_id) || {};
   const estCor = {Paga:'#065f46', Pendente:'#78350f', 'Em Atraso':'#7f1d1d'};
@@ -1854,14 +1901,24 @@ function printFatura(id) {
         ${f.mat?`<tr><td>Materiais</td><td style="text-align:right">${eur(f.mat)}</td></tr>`:''}
         ${f.desc?`<tr><td style="color:#6b7280;font-size:12px" colspan="2">${f.desc}</td></tr>`:''}
         <tr><td style="color:#6b7280">Subtotal</td><td style="text-align:right">${eur(siva)}</td></tr>
-        <tr><td style="color:#6b7280">IVA (${f.iva||23}%)</td><td style="text-align:right">${eur(viva)}</td></tr>
+        <tr><td style="color:#6b7280">IVA (${f.iva_active===false?0:(f.iva!=null?f.iva:23)}%)</td><td style="text-align:right">${eur(viva)}</td></tr>
         <tr class="total-row"><td>TOTAL</td><td style="text-align:right;color:#2563EB;font-size:18px">${eur(total)}</td></tr>
       </tbody>
     </table>
     <div style="margin-top:40px;padding-top:20px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center">
       ${emp.nome||'MRC'} ${emp.nif?'· NIF '+emp.nif:''} ${emp.morada?'· '+emp.morada:''}
     </div>
-  </body></html>`;
+  
+<div id="mobOverlay" onclick="closeMobSidebar()"></div>
+<div id="mobNav">
+  <div class="mob-ni" data-p="dashboard"><span style="font-size:20px">📊</span>Dashboard</div>
+  <div class="mob-ni" data-p="pdv"><span style="font-size:20px">🛒</span>PDV</div>
+  <div class="mob-ni" data-p="reparacoes"><span style="font-size:20px">🔧</span>OS</div>
+  <div class="mob-ni" data-p="faturas"><span style="font-size:20px">🧾</span>Faturas</div>
+  <div class="mob-ni" onclick="toggleMobSidebar()"><span style="font-size:20px">☰</span>Menu</div>
+</div>
+
+</body></html>`;
 
   const w = window.open('', '_blank', 'width=900,height=700');
   w.document.write(html);
@@ -2039,14 +2096,9 @@ function printReparacao(id) {
 // ══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',function(){
   setDate();
-  document.getElementById('loginScreen').style.display='none';
-  document.getElementById('app').classList.add('on');
-  CU={id:'admin',nome:'Rui Veloso',perfil:'Administrador'};
-  ['tbAv','tbName','tbRole','umName','umRole'].forEach(function(id,i){
-    var el=document.getElementById(id);
-    if(el) el.textContent=['R','Rui Veloso','Administrador','Rui Veloso','Administrador'][i];
-  });
-  setTimeout(function(){ try{fillCatSelects();}catch(e){} try{renderAll();}catch(e){} }, 50);
+  // Abrir directamente sem login
+  var defaultUser = {id:'admin',nome:'Rui Veloso',perfil:'Administrador',pass:''};
+  enterApp(defaultUser);
 });
 
 // ══════════════════════════════════════════════════════════
@@ -2318,8 +2370,9 @@ function linhaHTML(prefix, idx) {
   return `<div id="${prefix}_linha_${idx}" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:7px;align-items:end;margin-bottom:7px;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:9px">
     <div>
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Descrição</div>
-      <div style="display:flex;gap:5px">
-        <input id="${prefix}_l${idx}_desc" placeholder="Descrição do material" style="flex:1;padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif" oninput="recalcLinhas('${prefix}')">
+      <div style="display:flex;gap:5px;position:relative">
+        <input id="${prefix}_l${idx}_desc" placeholder="Escreva para pesquisar..." style="flex:1;padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif" autocomplete="off" oninput="linhaSearch(this,'${prefix}',${idx});recalcLinhas('${prefix}')" onfocus="linhaSearch(this,'${prefix}',${idx})" onblur="setTimeout(function(){var d=document.getElementById('${prefix}_dd_${idx}');if(d)d.style.display='none';},200)">
+        <div id="${prefix}_dd_${idx}" style="position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--sb);border:1px solid var(--blue);border-radius:8px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
         <select id="${prefix}_l${idx}_stock" style="padding:7px 6px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;font-family:'Inter',sans-serif;cursor:pointer;max-width:120px" onchange="pickMatLinha('${prefix}',${idx})">${matOpts}</select>
       </div>
     </div>
@@ -2436,12 +2489,17 @@ function calcFatModal() {
   const mat = linhasFat.length > 0
     ? linhasFat.reduce((s, l) => s + l.total, 0)
     : gf('fat_mat');
-  const iva = gf('fat_iva');
+  const ivaRate = gf('fat_iva');
+  const ivaActiveEl = document.getElementById('fat_iva_active');
+  const ivaActive = ivaActiveEl ? (ivaActiveEl.value === '1') : (ivaRate > 0);
+  const iva = ivaActive ? ivaRate : 0;
   const pct = gf('fat_desc_pct');
   const deslOn = document.getElementById('fat_desl_on')?.checked;
   const deslKm = deslOn ? gf('fat_desl_km') : 0;
   const deslPreco = deslOn ? (gf('fat_desl_preco') || 0.40) : 0;
-  const deslTotal = deslKm * deslPreco;
+  // Use manual total if set, otherwise km * preco
+  const deslManual = deslOn ? gf('fat_desl_total_manual') : 0;
+  const deslTotal = deslManual > 0 ? deslManual : (deslKm * deslPreco);
 
   const siva = mo + mat + deslTotal;
   const descVal = siva * (pct / 100);
@@ -2451,13 +2509,13 @@ function calcFatModal() {
 
   const el = document.getElementById('fat_calc');
   if (el) el.innerHTML =
-    `<div class="calc-row"><span style="color:var(--muted)">Mão de Obra</span><span>${eur(mo)}</span></div>` +
-    `<div class="calc-row"><span style="color:var(--muted)">Materiais</span><span>${eur(mat)}</span></div>` +
+    (mo > 0 ? `<div class="calc-row"><span style="color:var(--muted)">Mão de Obra</span><span>${eur(mo)}</span></div>` : '') +
+    (mat > 0 ? `<div class="calc-row"><span style="color:var(--muted)">Materiais</span><span>${eur(mat)}</span></div>` : '') +
     (deslTotal > 0 ? `<div class="calc-row"><span style="color:var(--muted)">🚗 Deslocação (${deslKm}km × ${eur(deslPreco)})</span><span>${eur(deslTotal)}</span></div>` : '') +
     (pct > 0 ? `<div class="calc-row"><span style="color:var(--amber)">Desconto (${pct}%)</span><span style="color:var(--amber)">−${eur(descVal)}</span></div>` : '') +
-    `<div class="calc-row"><span style="color:var(--muted)">Subtotal s/IVA</span><span>${eur(sivaFinal)}</span></div>` +
-    `<div class="calc-row"><span style="color:var(--muted)">IVA (${iva}%)</span><span>${eur(viva)}</span></div>` +
-    `<div class="calc-row"><span>TOTAL c/IVA</span><span>${eur(total)}</span></div>`;
+    (ivaActive && iva > 0 ? `<div class="calc-row"><span style="color:var(--muted)">Subtotal s/IVA</span><span>${eur(sivaFinal)}</span></div>` : '') +
+    (ivaActive && iva > 0 ? `<div class="calc-row"><span style="color:var(--muted)">IVA (${ivaRate}%)</span><span>${eur(viva)}</span></div>` : '') +
+    `<div class="calc-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px"><span style="font-weight:700">TOTAL ${ivaActive && iva>0 ? 'c/IVA' : 's/IVA'}</span><span style="font-weight:700;color:var(--green)">${eur(total)}</span></div>`;
 }
 
 function calcOrcModal() {
@@ -2506,9 +2564,14 @@ function saveFat() {
   const deslKm = deslOn ? gf('fat_desl_km') : 0;
   const deslPreco = deslOn ? gf('fat_desl_preco') : 0;
   const deslDest = deslOn ? gv('fat_desl_dest') : '';
-  const deslTotal = deslKm * deslPreco;
+  const deslManualTotal = deslOn ? gf('fat_desl_total_manual') : 0;
+  const deslTotal = deslManualTotal > 0 ? deslManualTotal : (deslKm * deslPreco);
 
-  const mo = gf('fat_mo'), iva = gf('fat_iva'), pct = gf('fat_desc_pct');
+  const mo = gf('fat_mo'), pct = gf('fat_desc_pct');
+  const ivaRateSave = gf('fat_iva');
+  const ivaActiveField = document.getElementById('fat_iva_active');
+  const ivaActiveSave = ivaActiveField ? (ivaActiveField.value === '1') : (ivaRateSave > 0);
+  const iva = ivaActiveSave ? ivaRateSave : 0;
   const siva = mo + totalMat + deslTotal;
   const sivaFinal = siva * (1 - pct / 100);
 
@@ -2518,6 +2581,9 @@ function saveFat() {
     desl_on: deslOn || false, desl_km: deslKm, desl_preco: deslPreco, desl_dest: deslDest, desl_total: deslTotal,
     linhas,
     est: gv('fat_est'), data: gv('fat_data') || td(), venc: gv('fat_venc')
+  ,
+    iva_active: ivaActiveSave,
+    tipo: document.getElementById('fat_tipo')?.value || 'fatura'
   };
 
   if (editId) {
@@ -2582,6 +2648,11 @@ window.clearForm = function(id) {
     const df = document.getElementById('fat_desl_fields'); if (df) df.style.display = 'none';
     const dp = document.getElementById('fat_desl_preco'); if (dp) dp.value = ldO('def').km || 0.40;
     const dp2 = document.getElementById('fat_desc_pct'); if (dp2) dp2.value = '0';
+    const mo = document.getElementById('fat_mo'); if (mo) mo.value = '0';
+    const rep = document.getElementById('fat_rep'); if (rep) rep.value = '';
+    const desc = document.getElementById('fat_desc'); if (desc) desc.value = '';
+    const panel = document.getElementById('fat_rep_panel'); if (panel) panel.style.display = 'none';
+    calcFatModal();
   }
   if (id === 'mOrc') {
     clearLinhasOrc();
@@ -2639,7 +2710,7 @@ window.fatTot = function(f) {
   const mo = f.mo || 0;
   const mat = f.mat || 0;
   const desl = f.desl_total || 0;
-  const iva = f.iva || 23;
+  const iva = (f.iva_active===false?0:(f.iva!=null?f.iva:23));
   const pct = f.desc_pct || 0;
   const siva = (mo + mat + desl) * (1 - pct / 100);
   return siva * (1 + iva / 100);
@@ -2655,7 +2726,7 @@ window.printFatura = function(id) {
   const pct = f.desc_pct || 0;
   const descVal = siva * (pct/100);
   const sivaFinal = siva - descVal;
-  const viva = sivaFinal * ((f.iva||23) / 100);
+  const viva = sivaFinal * ((f.iva_active===false?0:(f.iva!=null?f.iva:23)) / 100);
   const total = sivaFinal + viva;
   const cli = ld('cli').find(c => c.id === f.cli_id) || {};
   const estCor = {Paga:'#065f46',Pendente:'#78350f','Em Atraso':'#7f1d1d'};
@@ -2685,7 +2756,7 @@ window.printFatura = function(id) {
     ${f.desl_total ? `<tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6">🚗 Deslocação ${f.desl_dest?'('+f.desl_dest+')':''} — ${f.desl_km}km × ${eur(f.desl_preco)}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(f.desl_total)}</td></tr>` : ''}
     ${pct > 0 ? `<tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#d97706">Desconto (${pct}%)</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right;color:#d97706">−${eur(descVal)}</td></tr>` : ''}
     <tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">Subtotal s/IVA</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(sivaFinal)}</td></tr>
-    <tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">IVA (${f.iva||23}%)</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(viva)}</td></tr>
+    <tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">IVA (${f.iva_active===false?0:(f.iva!=null?f.iva:23)}%)</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(viva)}</td></tr>
     <tr><td style="padding:12px;font-weight:700;font-size:15px;border-top:2px solid #e5e7eb">TOTAL c/IVA</td><td style="padding:12px;text-align:right;font-weight:800;color:#2563EB;font-size:20px;border-top:2px solid #e5e7eb">${eur(total)}</td></tr>
   </tbody></table>
   <div style="margin-top:40px;padding-top:20px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center">${emp.nome||'MRC'} ${emp.nif?'· NIF '+emp.nif:''} ${emp.morada?'· '+emp.morada:''}</div>
@@ -3307,21 +3378,7 @@ function delFiado(id) {
 
 // Fill fiado cli select when modal opens
 const _origOpenM_fiado = openM;
-window.openM = function(id, editId, data) {
-  _origOpenM_fiado(id, editId, data);
-  if (id === 'mFiado' && !editId) {
-    const clis = ld('cli');
-    const sel = document.getElementById('fiado_cli');
-    if (sel) sel.innerHTML = '<option value="">— Selecionar cliente —</option>' + clis.map(c => '<option value="'+c.id+'">'+c.nome+'</option>').join('');
-    const today = new Date().toISOString().slice(0,10);
-    const vd = document.getElementById('fiado_data'); if(vd) vd.value = today;
-    const vv = document.getElementById('fiado_venc'); if(vv) vv.value = new Date(Date.now()+30*864e5).toISOString().slice(0,10);
-    const vval = document.getElementById('fiado_val'); if(vval) vval.value = '0';
-    const vdesc = document.getElementById('fiado_desc'); if(vdesc) vdesc.value = '';
-    const vref = document.getElementById('fiado_ref'); if(vref) vref.value = '';
-    _eids['mFiado'] = null;
-  }
-};
+
 
 // Seed sample fiado data
 (function seedFiado() {
@@ -3600,7 +3657,7 @@ window.printFatura = function(id) {
   const pct = f.desc_pct || 0;
   const descVal = +(siva*(pct/100)).toFixed(2);
   const sivaF = +(siva - descVal).toFixed(2);
-  const viva = +(sivaF*((f.iva||23)/100)).toFixed(2);
+  const viva = +(sivaF*((f.iva_active===false?0:(f.iva!=null?f.iva:23))/100)).toFixed(2);
   const total = +(sivaF + viva).toFixed(2);
   const cli = ld('cli').find(c => c.id === f.cli_id) || {};
   const estCor = {Paga:'#065f46',Pendente:'#78350f','Em Atraso':'#7f1d1d'};
@@ -3648,7 +3705,7 @@ ${(f.linhas||[]).length?'<tr><td style="padding:8px 10px;border-bottom:1px solid
 ${f.desl_total?'<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6">🚗 Deslocação '+(f.desl_dest?'('+f.desl_dest+')':'')+' — '+f.desl_km+'km × '+eur(f.desl_preco)+'</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:right">'+eur(f.desl_total)+'</td></tr>':''}
 ${pct>0?'<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;color:#d97706">Desconto ('+pct+'%)</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:right;color:#d97706">−'+eur(descVal)+'</td></tr>':''}
 <tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;color:#6b7280">Subtotal s/IVA</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:right">'+eur(sivaF)+'</td></tr>
-<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;color:#6b7280">IVA (${f.iva||23}%)</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:right">`+eur(viva)+`</td></tr>
+<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;color:#6b7280">IVA (${f.iva_active===false?0:(f.iva!=null?f.iva:23)}%)</td><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:right">`+eur(viva)+`</td></tr>
 <tr><td style="padding:11px 10px;font-weight:700;font-size:15px;border-top:2px solid #e5e7eb">TOTAL c/IVA</td><td style="padding:11px 10px;text-align:right;font-weight:800;color:#2563EB;font-size:20px;border-top:2px solid #e5e7eb">`+eur(total)+`</td></tr>
 </tbody></table>
 ${emp.iban?'<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 13px;font-size:12px;margin-bottom:20px">IBAN: <strong>'+emp.iban+'</strong></div>':''}
@@ -3898,47 +3955,519 @@ window.pdvAdd = function(type, id) {
 
 // Fix openM for mFiado: when opening fresh (no editId), reset fields
 const _prevOpenM = openM;
-window.openM = function(id, editId, data) {
-  _prevOpenM(id, editId, data);
-  if (id === 'mFiado' && !editId) {
-    // reset title
-    const t = document.getElementById('mFiadoT');
-    if (t) t.textContent = '+ Registar Fiado';
-    _eids['mFiado'] = null;
+
+
+
+
+// ===================================================================
+// MRC v5 ADDON - Todas as funcionalidades novas
+// ===================================================================
+
+// SUPABASE SYNC
+const _SUPA_URL='https://eozeehgftbgvixnfacfw.supabase.co';
+const _SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvemVlaGdmdGJndml4bmZhY2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzA2NjEsImV4cCI6MjA5NDM0NjY2MX0.GThHUAqdxdNxcmPjKpkNTiojjIVC75JtyZ9CX_WSjzY';
+
+async function _supaSync(){
+  var bar=document.createElement('div');
+  bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#3B7BF6;color:#fff;text-align:center;padding:10px;font-size:13px;font-weight:600';
+  bar.textContent='☁️ A sincronizar com a nuvem...';
+  document.body.appendChild(bar);
+  try{
+    var r=await fetch(_SUPA_URL+'/rest/v1/mrc_dados?select=chave,valor',{headers:{'apikey':_SUPA_KEY,'Authorization':'Bearer '+_SUPA_KEY}});
+    if(r.ok){
+      var rows=await r.json();var loaded=0;
+      rows.forEach(function(row){try{localStorage.setItem(row.chave,row.valor);loaded++;}catch(e){}});
+      bar.textContent='✅ Sincronizado! ('+loaded+' registos)';
+      bar.style.background='#10C97A';
+      setTimeout(function(){bar.remove();location.reload();},1500);
+    }else{
+      bar.textContent='⚠️ Sem ligação — dados locais';
+      bar.style.background='#F5A623';
+      setTimeout(function(){bar.remove();},2000);
+    }
+  }catch(e){
+    bar.textContent='⚠️ Sem ligação — dados locais';
+    bar.style.background='#F5A623';
+    setTimeout(function(){bar.remove();},2000);
   }
-};
+}
 
+function _supaWrite(key,val){
+  fetch(_SUPA_URL+'/rest/v1/mrc_dados',{
+    method:'POST',
+    headers:{'apikey':_SUPA_KEY,'Authorization':'Bearer '+_SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+    body:JSON.stringify({chave:key,valor:JSON.stringify(val),atualizado:new Date().toISOString()})
+  }).catch(function(){});
+}
 
+// Wrap sv to sync to Supabase
+(function(){
+  var _origSv=window.sv;
+  window.sv=function(k,d){
+    if(_origSv)_origSv(k,d);
+    if(typeof K!=='undefined'&&K[k])_supaWrite(K[k],d);
+  };
+})();
 
+// MARGEM DE LUCRO
+var _cMarg=null,_cComp=null;
+function renderDashMargem(){
+  var yr=parseInt((document.getElementById('dashMargAno')||{}).value)||new Date().getFullYear();
+  var fats=ld('fat').filter(function(f){return f.est==='Paga'&&f.data&&new Date(f.data).getFullYear()===yr;});
+  var desps=ld('desp').filter(function(d){return d.data&&new Date(d.data).getFullYear()===yr;});
+  var mats_all=ld('mat');
+  var mo=Array(12).fill(null).map(function(){return{mo:0,pvp:0,custo:0,desp:0};});
+  fats.forEach(function(f){
+    var m=new Date(f.data).getMonth();
+    mo[m].mo+=(f.mo||0); mo[m].pvp+=(f.mat||0);
+    var cL=0;
+    (f.linhas||[]).forEach(function(l){var mat=mats_all.find(function(x){return x.desc===l.desc;});cL+=(mat?mat.custo:l.preco*0.6)*(l.qty||1);});
+    if(!(f.linhas||[]).length&&f.mat>0)cL=f.mat*0.6;
+    mo[m].custo+=cL;
+  });
+  desps.forEach(function(d){var m=new Date(d.data).getMonth();mo[m].desp+=((d.val||0)+(d.iva||0));});
+  var tMO=mo.reduce(function(s,m){return s+m.mo;},0);
+  var tPVP=mo.reduce(function(s,m){return s+m.pvp;},0);
+  var tC=mo.reduce(function(s,m){return s+m.custo;},0);
+  var tD=mo.reduce(function(s,m){return s+m.desp;},0);
+  var tL=tMO+(tPVP-tC)-tD;
+  var mG=(tMO+tPVP)>0?(tL/(tMO+tPVP)*100):0;
+  var mM=tPVP>0?((tPVP-tC)/tPVP*100):0;
+  var kpi=document.getElementById('dashMargKpi');
+  if(kpi)kpi.innerHTML=
+    '<div class="kpi"><div class="kpi-lbl">Receita MO</div><div class="kpi-val" style="color:var(--blue);font-size:14px">'+eur(tMO)+'</div></div>'+
+    '<div class="kpi"><div class="kpi-lbl">Material Vendido</div><div class="kpi-val" style="color:var(--purple);font-size:13px">'+eur(tPVP)+'</div><div style="font-size:11px;color:var(--muted)">Custo: '+eur(tC)+' | Margem: '+mM.toFixed(1)+'%</div></div>'+
+    '<div class="kpi"><div class="kpi-lbl">Despesas</div><div class="kpi-val" style="color:var(--red);font-size:14px">'+eur(tD)+'</div></div>'+
+    '<div class="kpi"><div class="kpi-lbl">Margem Global</div><div class="kpi-val" style="color:'+(mG>=0?'var(--green)':'var(--red)')+';font-size:16px">'+mG.toFixed(1)+'%</div><div style="font-size:11px;color:var(--muted)">Lucro: '+eur(tL)+'</div></div>';
+  if(typeof Chart==='undefined')return;
+  if(_cMarg)try{_cMarg.destroy();}catch(e){}
+  if(_cComp)try{_cComp.destroy();}catch(e){}
+  var mns=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  Chart.defaults.color='#5A6B8C';
+  var c1=document.getElementById('cMargem');
+  if(c1){_cMarg=new Chart(c1,{type:'bar',data:{labels:mns,datasets:[
+    {label:'MO',data:mo.map(function(m){return+m.mo.toFixed(2);}),backgroundColor:'rgba(59,123,246,.75)',borderRadius:3},
+    {label:'Mat.PVP',data:mo.map(function(m){return+m.pvp.toFixed(2);}),backgroundColor:'rgba(139,92,246,.75)',borderRadius:3},
+    {label:'Mat.Custo',data:mo.map(function(m){return+m.custo.toFixed(2);}),backgroundColor:'rgba(245,166,35,.6)',borderRadius:3},
+    {label:'Despesas',data:mo.map(function(m){return+m.desp.toFixed(2);}),backgroundColor:'rgba(248,76,106,.5)',borderRadius:3},
+    {label:'Lucro',data:mo.map(function(m){return+(m.mo+(m.pvp-m.custo)-m.desp).toFixed(2);}),type:'line',borderColor:'#10C97A',backgroundColor:'rgba(16,201,122,.08)',borderWidth:2,pointRadius:3,fill:true,tension:.35}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#5A6B8C',font:{size:10},boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:function(v){return v+'€';},font:{size:10}}}}}});}
+  var c2=document.getElementById('cComposicao');
+  if(c2){_cComp=new Chart(c2,{type:'doughnut',data:{labels:['Lucro MO','Lucro Mat.','Custo Mat.','Despesas'],datasets:[{data:[Math.max(0,tMO),Math.max(0,tPVP-tC),Math.max(0,tC),Math.max(0,tD)],backgroundColor:['#3B7BF6','#10C97A','#F5A623','#F84C6A'],borderWidth:2,borderColor:'#131929',hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#5A6B8C',font:{size:10},boxWidth:10}}}}});}
+}
+
+// FAT CLI CHANGE
 function fatCliChange(){
   var cli_id=(document.getElementById('fat_cli')||{}).value||'';
   var panel=document.getElementById('fat_rep_panel');
   var list=document.getElementById('fat_rep_list');
   if(!panel||!list)return;
   if(!cli_id){panel.style.display='none';return;}
-  var cli_nome=(document.getElementById('fat_cli').options[document.getElementById('fat_cli').selectedIndex]||{}).text||'';
-  var reps=ld('rep').filter(function(r){
-    return (r.cli_id===cli_id||(r.cli&&r.cli===cli_nome))&&r.est!=='Entregue';
-  });
+  var reps=ld('rep').filter(function(r){return r.cli_id===cli_id&&r.est!=='Entregue';});
   if(!reps.length){panel.style.display='none';return;}
-  panel.style.display='block';list.innerHTML='';
+  panel.style.display='block';
+  var html='';
   reps.forEach(function(r){
-    var lbl=(r.eq||'Rep')+(r.av?' — '+r.av.slice(0,40):'');
-    var el=document.createElement('div');
-    el.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card2);border-radius:7px;margin-bottom:5px;cursor:pointer;font-size:12px;border:2px solid var(--border)';
-    el.innerHTML='<span style="flex:1"><strong style="color:#fff">'+r.id.slice(-6).toUpperCase()+'</strong> — '+lbl+'<br><small style="color:var(--muted)">'+r.est+'</small></span>';
+    var lbl=(r.eq||'Reparacao')+(r.av?' — '+r.av.slice(0,40):'');
+    html+='<div class="rep-sel-item" data-rep-id="'+r.id+'" style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card2);border-radius:7px;margin-bottom:5px;cursor:pointer;font-size:12px;border:1px solid var(--border)"><span style="width:14px;height:14px;border:2px solid var(--blue);border-radius:50%;flex-shrink:0;display:inline-block"></span><span style="flex:1"><strong style="color:#fff">'+r.id.slice(-6).toUpperCase()+'</strong> — '+lbl+'</span></div>';
+  });
+  list.innerHTML=html;
+  list.querySelectorAll('.rep-sel-item').forEach(function(el){
     el.addEventListener('click',function(){
-      list.querySelectorAll('div').forEach(function(e){e.style.borderColor='var(--border)';});
+      list.querySelectorAll('.rep-sel-item').forEach(function(e){e.style.borderColor='var(--border)';});
       el.style.borderColor='var(--blue)';
-      var rf=document.getElementById('fat_rep');if(rf)rf.value=r.id.slice(-6).toUpperCase();
-      var mf=document.getElementById('fat_mo');if(mf&&r.val)mf.value=r.val;
-      var df=document.getElementById('fat_desc');if(df&&(r.av||r.eq))df.value=(r.eq||'')+(r.av?' — '+r.av:'');
-      if(typeof calcFatModal==='function')calcFatModal();
+      selFatRep(el.dataset.repId);
     });
-    list.appendChild(el);
   });
 }
+function selFatRep(rep_id){
+  var r=ld('rep').find(function(x){return x.id===rep_id;});if(!r)return;
+  var rf=document.getElementById('fat_rep');if(rf)rf.value=r.id.slice(-6).toUpperCase();
+  var mf=document.getElementById('fat_mo');if(mf&&r.val)mf.value=r.val;
+  var df=document.getElementById('fat_desc');if(df&&(r.av||r.eq))df.value=(r.eq||'')+(r.av?' — '+r.av:'');
+  if(typeof calcFatModal==='function')calcFatModal();
+  if(typeof toast==='function')toast('Reparacao carregada!');
+}
+
+// PARTILHAR
+function shareFat(id){
+  if(typeof printFatura==='function')printFatura(id);
+  else if(typeof printFat==='function')printFat(id);
+  setTimeout(function(){if(typeof toast==='function')toast('Na janela clica em Partilhar!');},700);
+}
+function shareOrc(id){
+  if(typeof printOrcamento==='function')printOrcamento(id);
+  else if(typeof printOrc==='function')printOrc(id);
+}
+
+// EAN13
+function gerarEAN13(ref){
+  var h=0;for(var i=0;i<ref.length;i++){h=((h<<5)-h)+ref.charCodeAt(i);h|=0;}
+  var n='200'+Math.abs(h).toString().padStart(9,'0').slice(0,9);
+  var s=0;for(var i=0;i<12;i++)s+=parseInt(n[i])*(i%2===0?1:3);
+  return n+((10-s%10)%10);
+}
+function validarEAN13(e){if(!e||e.length!==13||!/^\d{13}$/.test(e))return false;var s=0;for(var i=0;i<12;i++)s+=parseInt(e[i])*(i%2===0?1:3);return(10-s%10)%10===parseInt(e[12]);}
+function gerarEANTodos(){
+  var mats=ld('mat');var ct=0;
+  mats.forEach(function(m){if(!m.barcode||m.barcode.length!==13||!validarEAN13(m.barcode)){m.barcode=gerarEAN13(m.ref+'_'+m.id);ct++;}});
+  if(ct>0){sv('mat',mats);if(typeof renderMat==='function')renderMat();if(typeof toast==='function')toast(ct+' EAN13 gerados!');}
+  else if(typeof toast==='function')toast('Todos ja tem EAN13.','a');
+}
+
+// EXPORT
+function exportMatCSV(){
+  var mats=ld('mat');if(!mats.length){if(typeof toast==='function')toast('Sem materiais.','a');return;}
+  var rows=['Referencia;Descricao;Categoria;Unidade;Custo;PVP;Stock;Stock Min;EAN13'];
+  mats.forEach(function(m){rows.push([m.ref||'',m.desc||'',m.cat||'',m.un||'',(m.custo||0).toFixed(2).replace('.',','),(m.pvp||0).toFixed(2).replace('.',','),m.stock||0,m.min||0,m.barcode||''].map(function(v){return'"'+String(v).replace(/"/g,'""')+'"';}).join(';'));});
+  var blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='materiais_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  if(typeof toast==='function')toast('CSV exportado! ('+mats.length+' materiais)');
+}
+function exportMatExcel(){
+  var mats=ld('mat');if(!mats.length){if(typeof toast==='function')toast('Sem materiais.','a');return;}
+  var xml='<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="h"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#1a1a2e" ss:Pattern="Solid"/></Style><Style ss:ID="m"><NumberFormat ss:Format="#,##0.00 EUR"/></Style></Styles><Worksheet ss:Name="Materiais"><Table>';
+  xml+='<Column ss:Width="80"/><Column ss:Width="200"/><Column ss:Width="120"/><Column ss:Width="50"/><Column ss:Width="80"/><Column ss:Width="80"/><Column ss:Width="60"/><Column ss:Width="70"/><Column ss:Width="120"/>';
+  xml+='<Row><Cell ss:StyleID="h"><Data ss:Type="String">Referencia</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">Descricao</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">Categoria</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">Unidade</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">Custo</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">PVP</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">Stock</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">Stock Min</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">EAN13</Data></Cell></Row>';
+  mats.forEach(function(m){xml+='<Row><Cell><Data ss:Type="String">'+(m.ref||'')+'</Data></Cell><Cell><Data ss:Type="String">'+(m.desc||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</Data></Cell><Cell><Data ss:Type="String">'+(m.cat||'')+'</Data></Cell><Cell><Data ss:Type="String">'+(m.un||'')+'</Data></Cell><Cell ss:StyleID="m"><Data ss:Type="Number">'+(m.custo||0)+'</Data></Cell><Cell ss:StyleID="m"><Data ss:Type="Number">'+(m.pvp||0)+'</Data></Cell><Cell><Data ss:Type="Number">'+(m.stock||0)+'</Data></Cell><Cell><Data ss:Type="Number">'+(m.min||0)+'</Data></Cell><Cell><Data ss:Type="String">'+(m.barcode||'')+'</Data></Cell></Row>';});
+  xml+='</Table></Worksheet></Workbook>';
+  var blob=new Blob([xml],{type:'application/vnd.ms-excel;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='materiais_'+new Date().toISOString().slice(0,10)+'.xls';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  if(typeof toast==='function')toast('Excel exportado! ('+mats.length+' materiais)');
+}
+
+// UTILITARIOS
+function fmtCP(el){var v=el.value.replace(/[^0-9]/g,'');if(v.length>4)v=v.slice(0,4)+'-'+v.slice(4,7);el.value=v;}
+function setFatTipo(tipo){
+  var isRec=tipo==='recibo';
+  var el=document.getElementById('fat_tipo_label');if(el)el.textContent=isRec?'RECIBO':'FATURA';
+  var inp=document.getElementById('fat_tipo');if(inp)inp.value=tipo||'fatura';
+  var bf=document.getElementById('btn_fatura');var br=document.getElementById('btn_recibo');
+  if(bf){bf.className='btn btn-sm '+(isRec?'btn-ghost':'btn-blue');bf.style.flex='1';}
+  if(br){br.className='btn btn-sm '+(isRec?'btn-blue':'btn-ghost');br.style.flex='1';}
+  var title=document.getElementById('mFatT');if(title)title.textContent=(isRec?'🧾 Nova Recibo':'🧾 Nova Fatura');
+}
+function setFatIVA(active){
+  var r=document.getElementById('fat_iva_row');if(r)r.style.display=active?'':'none';
+  var inp=document.getElementById('fat_iva_active');if(inp)inp.value=active?'1':'0';
+  var bc=document.getElementById('btn_civa');var bs=document.getElementById('btn_siva');
+  if(bc){bc.className='btn btn-sm '+(active?'btn-blue':'btn-ghost');bc.style.flex='1';}
+  if(bs){bs.className='btn btn-sm '+(active?'btn-ghost':'btn-blue');bs.style.flex='1';}
+  if(typeof calcFatModal==='function')calcFatModal();
+}
+
+// CATEGORIAS DESPESAS
+var _DC_DEF=[
+  {id:'dc1',nome:'Materias-Primas',subs:['Electricidade','Cabos','Componentes','Outros']},
+  {id:'dc2',nome:'Rendas',subs:['Escritorio','Armazem','Outros']},
+  {id:'dc3',nome:'Servicos',subs:['Electricidade','Agua','Internet','Contabilidade','Outros']},
+  {id:'dc4',nome:'Salarios',subs:['Ordenados','Subsidios','Seguros Sociais']},
+  {id:'dc5',nome:'Ferramentas',subs:['Compra','Aluguer','Reparacao']},
+  {id:'dc6',nome:'Combustivel',subs:['Gasolina','Gasoleo','Outros']},
+  {id:'dc7',nome:'Impostos',subs:['IVA','IRC','IRS','Outros']},
+  {id:'dc8',nome:'Seguros',subs:['Viatura','Responsabilidade Civil','Outros']},
+  {id:'dc9',nome:'Outros',subs:[]}
+];
+function loadDespCats(){try{var s=localStorage.getItem('m3_despcat');return(s&&JSON.parse(s).length)?JSON.parse(s):_DC_DEF;}catch(e){return _DC_DEF;}}
+function saveDespCatsData(c){try{localStorage.setItem('m3_despcat',JSON.stringify(c));}catch(e){}}
+function fillDespCatSelect(){
+  var cats=loadDespCats();var sel=document.getElementById('desp_cat');if(!sel)return;
+  sel.innerHTML=cats.map(function(c){return'<option value="'+c.nome+'">'+c.nome+'</option>';}).join('');
+  fillDespSubCat();
+}
+function fillDespSubCat(){
+  var cats=loadDespCats();var cn=(document.getElementById('desp_cat')||{}).value||'';
+  var cat=cats.find(function(c){return c.nome===cn;});
+  var wrap=document.getElementById('desp_subcat_wrap');var sel=document.getElementById('desp_subcat');
+  if(!wrap||!sel)return;
+  if(cat&&cat.subs&&cat.subs.length){wrap.style.display='';sel.innerHTML='<option value="">Opconal</option>'+cat.subs.map(function(s){return'<option>'+s+'</option>';}).join('');}
+  else wrap.style.display='none';
+}
+function renderDespCatsList(){
+  var cats=loadDespCats();var el=document.getElementById('despCatsList');if(!el)return;el.innerHTML='';
+  cats.forEach(function(cat,idx){
+    var d=document.createElement('div');
+    d.style.cssText='background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px';
+    var subs=(cat.subs||[]).map(function(s,si){return'<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:rgba(59,123,246,.12);border:1px solid rgba(59,123,246,.25);border-radius:6px;font-size:11px;margin:2px">'+s+'<button onclick="delDespSub('+idx+','+si+')" style="border:none;background:none;color:var(--muted);cursor:pointer;font-size:11px">x</button></span>';}).join('');
+    d.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="flex:1;font-size:13px;font-weight:700;color:#fff">'+cat.nome+'</div><button class="btn-xs" style="background:var(--blue)" onclick="editDespCat('+idx+')">Edit</button><button class="btn-xs" style="background:var(--red)" onclick="delDespCat('+idx+')">Del</button></div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">'+subs+'</div><div style="display:flex;gap:6px"><input id="dsub_'+idx+'" placeholder="+ Nova sub..." style="flex:1;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:Inter,sans-serif"><button class="btn-xs" style="background:var(--green)" onclick="addDespSub('+idx+')">+ Sub</button></div>';
+    el.appendChild(d);
+  });
+}
+function editDespCat(idx){var cats=loadDespCats();var n=prompt('Nome:',cats[idx].nome);if(!n)return;cats[idx].nome=n.trim();saveDespCatsData(cats);fillDespCatSelect();renderDespCatsList();}
+function delDespCat(idx){var cats=loadDespCats();if(!confirm('Apagar?'))return;cats.splice(idx,1);saveDespCatsData(cats);fillDespCatSelect();renderDespCatsList();}
+function addDespCat(){var nome=(document.getElementById('newDespCat2')||{}).value;if(!nome||!nome.trim())return;var cats=loadDespCats();cats.push({id:'dc'+Date.now(),nome:nome.trim(),subs:[]});saveDespCatsData(cats);document.getElementById('newDespCat2').value='';fillDespCatSelect();renderDespCatsList();}
+function addDespSub(idx){var inp=document.getElementById('dsub_'+idx);if(!inp)return;var n=inp.value.trim();if(!n)return;var cats=loadDespCats();if(!cats[idx].subs)cats[idx].subs=[];cats[idx].subs.push(n);inp.value='';saveDespCatsData(cats);fillDespCatSelect();renderDespCatsList();}
+function delDespSub(ci,si){var cats=loadDespCats();cats[ci].subs.splice(si,1);saveDespCatsData(cats);fillDespCatSelect();renderDespCatsList();}
+
+// DESPESAS RECORRENTES
+function processarDespesasAgendadas(){
+  try{
+    var ags=JSON.parse(localStorage.getItem('m3_despag')||'[]');if(!ags.length)return;
+    var today=new Date().toISOString().slice(0,10);var desps=ld('desp');var ct=0;
+    ags.forEach(function(ag){
+      if(!ag.ativa)return;if(ag.termina&&ag.termina<today){ag.ativa=false;return;}
+      var prox=proxDespData(ag,ag.ultima||today);
+      if(prox<=today){desps.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),cat:ag.cat,desc:ag.desc+' (auto)',forn:ag.forn||'',val:ag.val,iva:ag.iva||0,data:prox});ag.ultima=prox;ct++;}
+    });
+    if(ct>0){sv('desp',desps);localStorage.setItem('m3_despag',JSON.stringify(ags));if(typeof toast==='function')toast(ct+' despesa(s) recorrente(s) criada(s)!');}
+  }catch(e){}
+}
+function proxDespData(ag,u){
+  var d=new Date(u+'T12:00:00');
+  if(ag.recorre==='mensal'){d.setMonth(d.getMonth()+1);d.setDate(ag.dia||1);}
+  else if(ag.recorre==='semanal')d.setDate(d.getDate()+7);
+  else if(ag.recorre==='trimestral'){d.setMonth(d.getMonth()+3);d.setDate(ag.dia||1);}
+  else if(ag.recorre==='anual'){d.setFullYear(d.getFullYear()+1);d.setDate(ag.dia||1);}
+  return d.toISOString().slice(0,10);
+}
+
+// MOBILE
+function toggleMobSidebar(){
+  var sb=document.getElementById('sidebar');var ov=document.getElementById('mobOverlay');
+  if(sb&&sb.classList.contains('mob-open')){sb.classList.remove('mob-open');if(ov)ov.style.display='none';}
+  else{if(sb)sb.classList.add('mob-open');if(ov)ov.style.display='block';}
+}
+function closeMobSidebar(){
+  var sb=document.getElementById('sidebar');var ov=document.getElementById('mobOverlay');
+  if(sb)sb.classList.remove('mob-open');if(ov)ov.style.display='none';
+}
+
+// LIVE SEARCH LINHAS
+function linhaSearch(el,px,i){
+  var q=el.value.toLowerCase();var ddId=px+'_dd_'+i;var dd=document.getElementById(ddId);
+  if(!dd)return;if(!q){dd.style.display='none';return;}
+  var res=ld('mat').filter(function(m){return m.desc.toLowerCase().includes(q)||m.ref.toLowerCase().includes(q);}).slice(0,15);
+  if(!res.length){dd.style.display='none';return;}
+  dd.innerHTML=res.map(function(m){return'<div class="ls-it" data-p="'+m.pvp+'" data-d="'+m.desc.replace(/"/g,'&quot;')+'" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px;display:flex;justify-content:space-between"><span><strong>'+m.desc+'</strong><br><small style="color:var(--muted)">['+m.ref+'] '+m.cat+'</small></span><span style="color:var(--green);font-weight:700;flex-shrink:0;margin-left:8px">'+eur(m.pvp)+'</span></div>';}).join('');
+  dd.style.display='block';
+  dd.querySelectorAll('.ls-it').forEach(function(item){
+    item.onmouseover=function(){this.style.background='rgba(59,123,246,.15)';};
+    item.onmouseout=function(){this.style.background='transparent';};
+    item.onmousedown=function(e){
+      e.preventDefault();el.value=item.dataset.d;
+      var pEl=document.getElementById(px+'_l'+i+'_preco');if(pEl)pEl.value=parseFloat(item.dataset.p).toFixed(2);
+      var qEl=document.getElementById(px+'_l'+i+'_qty');if(qEl&&(qEl.value==='0'||!qEl.value))qEl.value='1';
+      dd.style.display='none';if(typeof recalcLinhas==='function')recalcLinhas(px);
+    };
+  });
+}
+
+// HOOKS E INIT
+document.addEventListener('DOMContentLoaded',function(){
+  // Swipe mobile
+  var sx=0,sy=0;
+  document.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+  document.addEventListener('touchend',function(e){
+    var dx=e.changedTouches[0].clientX-sx,dy=Math.abs(e.changedTouches[0].clientY-sy);
+    if(dy>40)return;if(dx>60&&sx<30)toggleMobSidebar();else if(dx<-60)closeMobSidebar();
+  },{passive:true});
+  // Bottom nav
+  document.querySelectorAll('#mobNav .mob-ni[data-p]').forEach(function(el){
+    el.addEventListener('click',function(){
+      if(typeof goPage==='function')goPage(el.dataset.p);
+      document.querySelectorAll('#mobNav .mob-ni').forEach(function(e){e.style.color='var(--muted)';});
+      el.style.color='var(--blue)';closeMobSidebar();
+    });
+  });
+  // Desp modals observer
+  var mDesp=document.getElementById('mDesp');
+  if(mDesp)new MutationObserver(function(ms){ms.forEach(function(m){if(m.target.classList.contains('open'))fillDespCatSelect();});}).observe(mDesp,{attributes:true,attributeFilter:['class']});
+  var mDespCat=document.getElementById('mDespCat');
+  if(mDespCat)new MutationObserver(function(ms){ms.forEach(function(m){if(m.target.classList.contains('open'))renderDespCatsList();});}).observe(mDespCat,{attributes:true,attributeFilter:['class']});
+  // fat_cli observer
+  var mFat=document.getElementById('mFat');
+  if(mFat)new MutationObserver(function(ms){ms.forEach(function(m){if(m.target.classList.contains('open'))setTimeout(fatCliChange,100);});}).observe(mFat,{attributes:true,attributeFilter:['class']});
+});
+
+// Hook renderDash for margem
+(function(){
+  var _o=window.renderDash;
+  if(_o&&!window._dashMargHooked){
+    window._dashMargHooked=true;
+    window.renderDash=function(){
+      _o();
+      var sel=document.getElementById('dashMargAno');
+      if(sel&&!sel.options.length){var yr=new Date().getFullYear();for(var y=yr;y>=yr-3;y--){var op=document.createElement('option');op.value=y;op.textContent=y;sel.appendChild(op);}}
+      renderDashMargem();
+    };
+  }
+})();
+
+// Auto sync Supabase on load
+window.addEventListener('load',function(){setTimeout(_supaSync,1200);});
+
+
+
+
+function calcDeslAuto(){
+  var km=gf('fat_desl_km'), preco=gf('fat_desl_preco')||0.40;
+  var total=km*preco;
+  var tf=document.getElementById('fat_desl_total_manual');
+  if(tf&&total>0)tf.value=total.toFixed(2);
+  calcFatModal();
+}
+
+
+
+
+
+// Auto sync Supabase on load
+window.addEventListener('load',function(){setTimeout(_supaSync,1200);});
+
+
+
+
+// ═══════════════════════════════════════════════
+// BACKUP GOOGLE DRIVE / ONEDRIVE
+// ═══════════════════════════════════════════════
+function backupGoogleDrive(){
+  // Build backup JSON
+  var data = buildBackupData();
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], {type:'application/json'});
+  var filename = 'MRC_backup_' + new Date().toISOString().slice(0,10) + '.json';
+
+  // Google Drive uses the Web Share API or picker
+  // First try Web Share API (mobile/tablet)
+  if(navigator.share && navigator.canShare && navigator.canShare({files:[new File([blob], filename)]})){
+    var file = new File([blob], filename, {type:'application/json'});
+    navigator.share({
+      title: 'MRC Backup ' + new Date().toISOString().slice(0,10),
+      files: [file]
+    }).then(function(){
+      toast('Backup partilhado! Guarda no Google Drive.');
+    }).catch(function(e){
+      // Fallback to download + instructions
+      _downloadAndShowDriveInstructions(blob, filename);
+    });
+  } else {
+    _downloadAndShowDriveInstructions(blob, filename);
+  }
+}
+
+function _downloadAndShowDriveInstructions(blob, filename){
+  // Download the file
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  // Show instructions modal
+  _showDriveModal(filename);
+}
+
+function _showDriveModal(filename){
+  var existing = document.getElementById('mDriveInstr');
+  if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'mDriveInstr';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = '<div style="background:var(--card);border-radius:14px;padding:28px;max-width:420px;width:100%">' +
+    '<div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px">☁️ Guardar no Google Drive</div>' +
+    '<div style="font-size:13px;color:var(--muted);margin-bottom:16px">O ficheiro <strong style="color:#fff">' + filename + '</strong> foi descarregado. Agora:</div>' +
+    '<div style="background:var(--card2);border-radius:9px;padding:14px;margin-bottom:16px;font-size:13px;line-height:2">' +
+      '<div>1️⃣ Abre <a href="https://drive.google.com" target="_blank" style="color:#4285F4">drive.google.com</a></div>' +
+      '<div>2️⃣ Clica em <strong style="color:#fff">+ Novo → Carregar ficheiro</strong></div>' +
+      '<div>3️⃣ Seleciona <strong style="color:#fff">' + filename + '</strong></div>' +
+      '<div>4️⃣ ✅ Backup guardado na nuvem!</div>' +
+    '</div>' +
+    '<div style="background:rgba(66,133,244,.1);border:1px solid rgba(66,133,244,.3);border-radius:9px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--muted)">' +
+      '💡 <strong style="color:#fff">Dica:</strong> Cria uma pasta "MRC Backups" no Drive para organizar os ficheiros.' +
+    '</div>' +
+    '<div style="display:flex;gap:8px">' +
+      '<a href="https://drive.google.com" target="_blank" class="btn btn-blue" style="flex:1;justify-content:center;text-decoration:none">Abrir Google Drive</a>' +
+      '<button data-close="mDriveInstr" class="btn btn-ghost" style="flex:1;justify-content:center">Fechar</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if(e.target===modal) modal.remove(); });
+}
+
+function backupOneDrive(){
+  var data = buildBackupData();
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], {type:'application/json'});
+  var filename = 'MRC_backup_' + new Date().toISOString().slice(0,10) + '.json';
+
+  if(navigator.share && navigator.canShare && navigator.canShare({files:[new File([blob], filename)]})){
+    navigator.share({title:'MRC Backup', files:[new File([blob], filename, {type:'application/json'})]})
+      .then(function(){toast('Backup partilhado!');})
+      .catch(function(){ _downloadOneDrive(blob, filename); });
+  } else {
+    _downloadOneDrive(blob, filename);
+  }
+}
+
+function _downloadOneDrive(blob, filename){
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  var existing = document.getElementById('mOneDriveInstr');
+  if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'mOneDriveInstr';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = '<div style="background:var(--card);border-radius:14px;padding:28px;max-width:420px;width:100%">' +
+    '<div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px">☁️ Guardar no OneDrive</div>' +
+    '<div style="font-size:13px;color:var(--muted);margin-bottom:16px">O ficheiro <strong style="color:#fff">' + filename + '</strong> foi descarregado. Agora:</div>' +
+    '<div style="background:var(--card2);border-radius:9px;padding:14px;margin-bottom:16px;font-size:13px;line-height:2">' +
+      '<div>1️⃣ Abre <a href="https://onedrive.live.com" target="_blank" style="color:#0078d4">onedrive.live.com</a></div>' +
+      '<div>2️⃣ Clica em <strong style="color:#fff">+ Novo → Carregar</strong></div>' +
+      '<div>3️⃣ Seleciona <strong style="color:#fff">' + filename + '</strong></div>' +
+      '<div>4️⃣ ✅ Backup guardado!</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px">' +
+      '<a href="https://onedrive.live.com" target="_blank" class="btn" style="flex:1;justify-content:center;text-decoration:none;background:#0078d4;color:#fff">Abrir OneDrive</a>' +
+      '<button data-close="mOneDriveInstr" class="btn btn-ghost" style="flex:1;justify-content:center">Fechar</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if(e.target===modal) modal.remove(); });
+}
+
+// Build full backup data object
+function buildBackupData(){
+  var data = {};
+  Object.keys(K).forEach(function(k){ data[k] = ld(k); });
+  data.def = ldO('def');
+  data.data = new Date().toISOString();
+  data.versao = '5.0';
+  return data;
+}
+
+
+
+
+function calcDeslAuto(){
+  var km=gf('fat_desl_km'), preco=gf('fat_desl_preco')||0.40;
+  var total=km*preco;
+  var tf=document.getElementById('fat_desl_total_manual');
+  if(tf&&total>0)tf.value=total.toFixed(2);
+  calcFatModal();
+}
+
+
+
+
+
+// Auto sync Supabase on load
+window.addEventListener('load',function(){setTimeout(_supaSync,1200);});
+
+
+
+
+function closeModalById(id){var el=document.getElementById(id);if(el)el.remove();}
+
+
+
+
 </script>
+
+
+
 
 
 <!-- MODAL EVENTO AGENDA -->
