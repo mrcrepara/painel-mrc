@@ -3,8 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0A0E1A">
 <title>MRC — Sistema de Gestão</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -265,30 +263,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div class="card"><div class="card-hdr"><h3>📊 Faturação por Estado</h3></div><div class="card-body" style="height:220px"><canvas id="cFat"></canvas></div></div>
     <div class="card"><div class="card-hdr"><h3>💰 Resumo Financeiro</h3></div><div class="card-body" id="dashFin"></div></div>
   </div>
-    <div class="card" style="margin-bottom:16px">
-    <div class="card-hdr"><h3>📈 Margem de Lucro</h3>
-      <select id="dashMargAno" onchange="renderDashMargem()" style="padding:5px 9px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif"></select>
-    </div>
-    <div class="card-body">
-      <div id="dashMargKpi" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px"></div>
-      <div style="height:240px"><canvas id="cMargem"></canvas></div>
-    </div>
-  </div>
-  <div class="card" style="margin-bottom:16px">
-    <div class="card-hdr"><h3>👤 Lucro por Cliente</h3></div>
-    <div class="card-body">
-      <div id="dashCliKpi" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px"></div>
-      <div style="height:220px"><canvas id="cCliLucro"></canvas></div>
-    </div>
-  </div>
-  <div class="card" style="margin-bottom:16px">
-    <div class="card-hdr"><h3>📦 Margem por Material</h3></div>
-    <div class="card-body">
-      <div id="dashMatKpi" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px"></div>
-      <div style="height:220px"><canvas id="cMatMargem"></canvas></div>
-    </div>
-  </div>
-<div class="g2">
+  <div class="g2">
     <div class="card"><div class="card-hdr"><h3>🔧 Últimas Reparações</h3></div>
       <div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Cliente</th><th>Equipamento</th><th>Estado</th><th>Valor</th></tr></thead><tbody id="dashRepTbl"></tbody></table></div>
     </div>
@@ -346,16 +321,10 @@ tbody td{padding:9px 12px;vertical-align:middle}
       <button class="btn btn-green" onclick="openM('mMat')">+ Novo Material</button>
       <button class="btn btn-amber btn-sm" onclick="goPage('entrada')">↑ Entrada</button>
       <button class="btn btn-red btn-sm" onclick="goPage('saida')">↓ Saída</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportMatCSV()">⬇ CSV</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportMatExcel()">⬇ Excel</button>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importMatFile').click()">⬆ Importar</button>
-      <input type="file" id="importMatFile" accept=".csv" style="display:none" onchange="importMatCSV(this)">
-      <button class="btn btn-ghost btn-sm" onclick="gerarEANTodos()">🔢 EAN13</button>
     </div>
   </div>
   <div class="card"><div class="card-body">
-    <div class="sbar"><input id="matQ" placeholder="🔍 Pesquisar..." oninput="renderMat()"><select id="matCat" onchange="renderMat()" style="min-width:160px"></select></div>
-    <div id="matCatTabs" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"></div>
+    <div class="sbar"><input id="matQ" placeholder="🔍 Pesquisar..." oninput="renderMat()"><select id="matCat" onchange="renderMat()"></select></div>
     <div class="tbl-wrap"><table><thead><tr><th>Ref.</th><th>Descrição</th><th>Categoria</th><th>Un.</th><th>Custo</th><th>PVP</th><th>Stock</th><th>Mín.</th><th>Estado</th><th>Ações</th></tr></thead><tbody id="matTbl"></tbody></table></div>
   </div></div>
 </div>
@@ -546,8 +515,6 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div class="card"><div class="card-hdr"><h3>💾 Criar Backup</h3></div><div class="card-body">
       <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Guarda todos os dados num ficheiro JSON.</p>
       <button class="btn btn-blue" style="width:100%;justify-content:center;margin-bottom:10px" onclick="fazerBackup()">💾 Download Backup</button>
-      <button id="btnBackupSupa" class="btn" style="width:100%;justify-content:center;margin-bottom:10px;background:#3ECF8E;color:#1a1a2e;font-weight:700" onclick="backupDoSupabase()">☁️ Backup do Supabase</button>
-      <button class="btn btn-green" style="width:100%;justify-content:center;margin-bottom:10px" onclick="backupGoogleDrive()">☁️ Google Drive</button>
       <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="exportCSV()">⬇ Exportar CSV</button>
     </div></div>
     <div class="card"><div class="card-hdr"><h3>📂 Restaurar</h3></div><div class="card-body">
@@ -725,7 +692,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <div class="ov" id="mMat"><div class="modal">
   <div class="mhdr"><h3 id="mMatT">+ Novo Material</h3><button class="mclose" onclick="closeM('mMat')">✕</button></div>
   <div class="mbody">
-    <div class="frow"><div class="fg"><label>Referência *</label><input id="mat_ref"></div><div class="fg"><label>Unidade</label><input id="mat_un" list="mat_un_list" placeholder="Un/KG/M..." autocomplete="off"><datalist id="mat_un_list"><option value="Un"><option value="KG"><option value="LT"><option value="M"><option value="M2"><option value="M3"><option value="CX"><option value="T"></datalist></div></div>
+    <div class="frow"><div class="fg"><label>Referência *</label><input id="mat_ref"></div><div class="fg"><label>Unidade</label><input id="mat_un" placeholder="un/caixa/m"></div></div>
     <div class="fg"><label>Descrição *</label><input id="mat_desc"></div>
     <div class="fg"><label>Categoria</label><div style="display:flex;gap:6px"><select id="mat_cat" style="flex:1"></select><button type="button" class="btn btn-ghost btn-sm" onclick="openM('mCats')" style="flex-shrink:0;padding:8px 10px" title="Gerir categorias">⚙</button></div></div>
     <div class="frow"><div class="fg"><label>Custo (€)</label><input type="number" id="mat_custo" value="0" step="0.01"></div><div class="fg"><label>PVP (€)</label><input type="number" id="mat_pvp" value="0" step="0.01"></div></div>
@@ -736,37 +703,14 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div></div>
 
 <!-- Reparação -->
-<div class="ov" id="mRep"><div class="modal modal-lg">
+<div class="ov" id="mRep"><div class="modal">
   <div class="mhdr"><h3 id="mRepT">+ Nova Reparação</h3><button class="mclose" onclick="closeM('mRep')">✕</button></div>
   <div class="mbody">
-    <div class="frow">
-      <div class="fg"><label>Cliente</label><select id="rep_cli"></select></div>
-      <div class="fg"><label>Estado</label><select id="rep_est"><option>Pendente</option><option>Em Reparação</option><option>Aguardando Peças</option><option>Pronta</option><option>Entregue</option></select></div>
-    </div>
+    <div class="frow"><div class="fg"><label>Cliente</label><select id="rep_cli"></select></div><div class="fg"><label>Estado</label><select id="rep_est"><option>Pendente</option><option>Em Reparação</option><option>Aguardando Peças</option><option>Pronta</option><option>Entregue</option></select></div></div>
     <div class="fg"><label>Equipamento *</label><input id="rep_eq" placeholder="Marca + Modelo"></div>
     <div class="fg"><label>Nº de Série</label><input id="rep_serie"></div>
     <div class="fg"><label>Avaria Descrita</label><textarea id="rep_av" placeholder="Descrição da avaria"></textarea></div>
-    <div class="frow">
-      <div class="fg"><label>Horas</label><input type="number" id="rep_horas" value="0" step="0.5" min="0" oninput="calcRepMO()"></div>
-      <div class="fg"><label>€/hora</label><input type="number" id="rep_preco_h" value="35" step="1" min="0" oninput="calcRepMO()"></div>
-      <div class="fg"><label>MO (€)</label><input type="number" id="rep_val" value="0" step="0.01" oninput="calcRepTotal()"></div>
-    </div>
-    <div style="background:rgba(59,123,246,.06);border:1px solid rgba(59,123,246,.2);border-radius:10px;padding:12px;margin-bottom:13px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <label style="font-size:11px;font-weight:700;color:#60A5FA;text-transform:uppercase">📦 Materiais Gastos</label>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="addLinhaRep()">+ Material</button>
-      </div>
-      <div id="rep_linhas"></div>
-    </div>
-    <div style="background:rgba(20,184,166,.06);border:1px solid rgba(20,184,166,.2);border-radius:10px;padding:12px;margin-bottom:13px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <label style="font-size:11px;font-weight:700;color:#2DD4BF;text-transform:uppercase">📋 Diário de Trabalho</label>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="addDiarioRep()">+ Dia</button>
-      </div>
-      <div id="rep_diario"></div>
-    </div>
-    <div id="rep_calc" style="background:var(--card2);border-radius:9px;padding:12px;font-size:13px"></div>
-    <div class="fg" style="margin-top:8px"><label>Urgência</label><select id="rep_urg"><option>Normal</option><option>Urgente</option><option>Muito Urgente</option></select></div>
+    <div class="frow"><div class="fg"><label>Valor (€)</label><input type="number" id="rep_val" value="0" step="0.01"></div><div class="fg"><label>Urgência</label><select id="rep_urg"><option>Normal</option><option>Urgente</option><option>Muito Urgente</option></select></div></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mRep')">Cancelar</button><button class="btn btn-green" onclick="saveRep()">💾 Guardar</button></div>
 </div></div>
@@ -854,8 +798,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <div class="ov" id="mFat"><div class="modal modal-lg">
   <div class="mhdr"><h3 id="mFatT">🧾 Nova Fatura</h3><button class="mclose" onclick="closeM('mFat')">✕</button></div>
   <div class="mbody">
-    <div class="frow"><div class="fg"><label>Cliente *</label><select id="fat_cli" onchange="fatCliChange()"></select></div><div id="fat_rep_panel" style="display:none;background:rgba(59,123,246,.08);border:1px solid rgba(59,123,246,.25);border-radius:9px;padding:10px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#60A5FA;margin-bottom:7px">🔧 Reparações em aberto</div><div id="fat_rep_list"></div></div>
-    <div class="fg"><label>Reparação (opç.)</label><input id="fat_rep" placeholder="ex: R-2025-0001"></div></div>
+    <div class="frow"><div class="fg"><label>Cliente *</label><select id="fat_cli"></select></div><div class="fg"><label>Reparação (opç.)</label><input id="fat_rep" placeholder="ex: R-2025-0001"></div></div>
     <div class="fg"><label>Descrição do Serviço *</label><textarea id="fat_desc" placeholder="Descrição do serviço prestado"></textarea></div>
 
     <!-- LISTA DE MATERIAIS -->
@@ -887,24 +830,9 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div class="frow3"><div class="fg"><label>Mão de Obra (€)</label><input type="number" id="fat_mo" value="0" step="0.01" oninput="calcFatModal()"></div><div class="fg"><label>IVA (%)</label><input type="number" id="fat_iva" value="23" oninput="calcFatModal()"></div><div class="fg"><label>Desconto (%)</label><input type="number" id="fat_desc_pct" value="0" step="0.5" oninput="calcFatModal()"></div></div>
     <div class="calc-wrap" id="fat_calc"></div>
     <div class="frow"><div class="fg"><label>Data Emissão</label><input type="date" id="fat_data"></div><div class="fg"><label>Data Vencimento</label><input type="date" id="fat_venc"></div></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">TIPO</div>
-        <div style="display:flex;gap:6px">
-          <button type="button" id="btn_fatura" onclick="setFatTipo('fatura')" class="btn btn-blue btn-sm" style="flex:1">Fatura</button>
-          <button type="button" id="btn_recibo" onclick="setFatTipo('recibo')" class="btn btn-ghost btn-sm" style="flex:1">Recibo</button>
-        </div><input type="hidden" id="fat_tipo" value="fatura">
-      </div>
-      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">IVA</div>
-        <div style="display:flex;gap:6px">
-          <button type="button" id="btn_civa" onclick="setFatIVA(true)" class="btn btn-blue btn-sm" style="flex:1">Com IVA</button>
-          <button type="button" id="btn_siva" onclick="setFatIVA(false)" class="btn btn-ghost btn-sm" style="flex:1">Sem IVA</button>
-        </div><input type="hidden" id="fat_iva_active" value="1">
-      </div>
-    </div>
-    <div id="fat_iva_row" class="frow"><div class="fg"><label>IVA (%)</label><input type="number" id="fat_iva" value="23" min="0" max="23" oninput="calcFatModal()"></div></div>
     <div class="fg"><label>Estado</label><select id="fat_est"><option>Pendente</option><option>Paga</option><option>Em Atraso</option></select></div>
   </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mFat')">Cancelar</button><button class="btn btn-blue" onclick="saveFat()">🧾 Emitir</button></div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mFat')">Cancelar</button><button class="btn btn-blue" onclick="saveFat()">🧾 Emitir Fatura</button></div>
 </div></div>
 
 <!-- Recebimento -->
@@ -1122,11 +1050,6 @@ function openM(id,editId,data){
   _eids[id]=editId||null;
   // fill client selects
   if(['mRep','mOrc','mFat','mRec','mEq','mDesl'].includes(id))fillCliSel();
-  if(id==='mFat') setTimeout(function(){
-    if(typeof setFatTipo==='function') setFatTipo(data&&data.tipo||'fatura');
-    if(typeof setFatIVA==='function') setFatIVA(!(data&&data.iva_active===false));
-    if(typeof fatCliChange==='function') fatCliChange();
-  }, 60);
   // fill fat select in rec
   if(id==='mRec')fillFatSel();
   // set title
@@ -1253,7 +1176,7 @@ function toast(msg,type='g'){
 // ══════════════════════════════════════════════════════════
 function ebadge(e){const m={Pronta:'bg','Em Reparação':'bb',Pendente:'ba','Aguardando Peças':'bp',Entregue:'bc',Paga:'bg','Em Atraso':'br',Aprovado:'bg',Recusado:'br',Normal:'bg',Urgente:'ba','Muito Urgente':'br'};return'<span class="badge '+(m[e]||'bb')+'">'+e+'</span>'}
 function sbadge(m){if(m.stock<=0)return'<span class="badge br">Sem Stock</span>';if(m.stock<m.min)return'<span class="badge br">⚠ Baixo ('+m.stock+')</span>';if(m.stock<=m.min)return'<span class="badge ba">⚠ Mín ('+m.stock+')</span>';return'<span class="badge bg">OK ('+m.stock+')</span>'}
-function fatTot(f){var base=(f.mo||0)+(f.mat||0)+(f.desl_total||0);var ivaRate=f.iva_active===false?0:(f.iva!=null?f.iva:23);var desc=base*((f.desc_pct||0)/100);return+(base-desc+((base-desc)*ivaRate/100)).toFixed(2);}
+function fatTot(f){return((f.mo||0)+(f.mat||0))*(1+(f.iva||23)/100)}
 function eRow(n,msg){return'<tr><td colspan="'+n+'" class="empty">📭 '+msg+'</td></tr>'}
 function notifBadge(){const n=ld('mat').filter(m=>m.stock<=m.min).length;const b=document.getElementById('notifBadge');if(b){b.textContent=n;b.style.display=n>0?'flex':'none'}}
 function nextRepId(){const r=ld('rep');const yr=new Date().getFullYear();const ns=r.map(x=>parseInt(x.id.replace('R-'+yr+'-',''))||0);return'R-'+yr+'-'+String((ns.length?Math.max(...ns):0)+1).padStart(4,'0')}
@@ -1291,10 +1214,9 @@ function saveMat(){
 function renderMat(){
   let mats=ld('mat');
   const q=gv('matQ').toLowerCase(),cat=gv('matCat');
-  if(q)mats=mats.filter(m=>m.ref.toLowerCase().includes(q)||m.desc.toLowerCase().includes(q)||(m.cat||'').toLowerCase().includes(q));
+  if(q)mats=mats.filter(m=>m.ref.toLowerCase().includes(q)||m.desc.toLowerCase().includes(q));
   if(cat)mats=mats.filter(m=>m.cat===cat);
-  mats=mats.slice().sort((a,b)=>(a.desc||'').localeCompare(b.desc||'','pt',{sensitivity:'base'}));
-  _fillMatCatFilter();
+  mats=mats.slice().sort((a,b)=>a.desc.localeCompare(b.desc,'pt',{sensitivity:'base'}));
   const tb=g('matTbl');if(!tb)return;
   if(!mats.length){tb.innerHTML=eRow(10,'Nenhum material encontrado');return}
   let html='';
@@ -1309,12 +1231,7 @@ function saveRep(){
   const eq=gv('rep_eq').trim();if(!eq){toast('Equipamento é obrigatório!','r');return}
   const reps=ld('rep'),editId=_eids['mRep'];
   const clis=ld('cli'),cli_id=gv('rep_cli'),cli=clis.find(c=>c.id===cli_id);
-  const repHoras=parseFloat((document.getElementById('rep_horas')||{}).value)||0;
-  const repPrecoH=parseFloat((document.getElementById('rep_preco_h')||{}).value)||35;
-  const repLinhas=typeof getLinhasRep==='function'?getLinhasRep():[];
-  const repDiario=typeof getDiarioRep==='function'?getDiarioRep():[];
-  const matTotal=repLinhas.reduce(function(s,l){return s+l.total;},0);
-  const obj={cli_id,cli:cli?.nome||'—',eq,serie:gv('rep_serie'),av:gv('rep_av'),est:gv('rep_est'),urg:gv('rep_urg'),val:+(gf('rep_val')+matTotal).toFixed(2),mo:gf('rep_val'),horas:repHoras,preco_h:repPrecoH,mat:matTotal,linhas:repLinhas,diario:repDiario,data:td()};
+  const obj={cli_id,cli:cli?.nome||'—',eq,serie:gv('rep_serie'),av:gv('rep_av'),est:gv('rep_est'),urg:gv('rep_urg'),val:gf('rep_val'),data:td()};
   if(editId){const i=reps.findIndex(r=>r.id===editId);if(i>=0)reps[i]={...reps[i],...obj}}
   else{obj.id=nextRepId();reps.push(obj)}
   sv('rep',reps);closeM('mRep');renderRep();toast(editId?'Reparação actualizada!':'Reparação criada!');
@@ -1939,16 +1856,7 @@ function printFatura(id) {
     <div style="margin-top:40px;padding-top:20px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center">
       ${emp.nome||'MRC'} ${emp.nif?'· NIF '+emp.nif:''} ${emp.morada?'· '+emp.morada:''}
     </div>
-  <div id="mobOverlay" onclick="closeMobSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150"></div>
-<div id="mobNav" style="position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--sb);border-top:1px solid var(--border);justify-content:space-around;align-items:center;padding:6px 0">
-  <div class="mob-ni" data-p="dashboard" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;cursor:pointer;color:var(--blue);font-size:10px;font-weight:600"><span style="font-size:20px">📊</span>Dashboard</div>
-  <div class="mob-ni" data-p="reparacoes" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600"><span style="font-size:20px">🔧</span>OS</div>
-  <div class="mob-ni" data-p="faturas" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600"><span style="font-size:20px">🧾</span>Faturas</div>
-  <div class="mob-ni" data-p="materiais" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600"><span style="font-size:20px">📦</span>Mat.</div>
-  <div class="mob-ni" onclick="toggleMobSidebar()" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600"><span style="font-size:20px">☰</span>Menu</div>
-</div>
-<style>@media(max-width:768px){#mobNav{display:flex!important}.content{padding-bottom:80px}.sidebar{transform:translateX(-100%);position:fixed;height:100%;z-index:200}.sidebar.mob-open{transform:translateX(0)}}</style>
-</body></html>`;
+  </body></html>`;
 
   const w = window.open('', '_blank', 'width=900,height=700');
   w.document.write(html);
@@ -2126,16 +2034,14 @@ function printReparacao(id) {
 // ══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',function(){
   setDate();
-  var loginEl=document.getElementById('loginScreen');
-  var appEl=document.getElementById('app');
-  if(loginEl) loginEl.style.display='none';
-  if(appEl) appEl.classList.add('on');
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').classList.add('on');
   CU={id:'admin',nome:'Rui Veloso',perfil:'Administrador'};
-  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
-  _s('tbAv','R');_s('tbName','Rui Veloso');_s('tbRole','Administrador');
-  _s('umName','Rui Veloso');_s('umRole','Administrador');
-  try{fillCatSelects();}catch(e){}
-  try{renderAll();}catch(e){}
+  ['tbAv','tbName','tbRole','umName','umRole'].forEach(function(id,i){
+    var el=document.getElementById(id);
+    if(el) el.textContent=['R','Rui Veloso','Administrador','Rui Veloso','Administrador'][i];
+  });
+  setTimeout(function(){ try{fillCatSelects();}catch(e){} try{renderAll();}catch(e){} }, 50);
 });
 
 // ══════════════════════════════════════════════════════════
@@ -3396,7 +3302,21 @@ function delFiado(id) {
 
 // Fill fiado cli select when modal opens
 const _origOpenM_fiado = openM;
-
+window.openM = function(id, editId, data) {
+  _origOpenM_fiado(id, editId, data);
+  if (id === 'mFiado' && !editId) {
+    const clis = ld('cli');
+    const sel = document.getElementById('fiado_cli');
+    if (sel) sel.innerHTML = '<option value="">— Selecionar cliente —</option>' + clis.map(c => '<option value="'+c.id+'">'+c.nome+'</option>').join('');
+    const today = new Date().toISOString().slice(0,10);
+    const vd = document.getElementById('fiado_data'); if(vd) vd.value = today;
+    const vv = document.getElementById('fiado_venc'); if(vv) vv.value = new Date(Date.now()+30*864e5).toISOString().slice(0,10);
+    const vval = document.getElementById('fiado_val'); if(vval) vval.value = '0';
+    const vdesc = document.getElementById('fiado_desc'); if(vdesc) vdesc.value = '';
+    const vref = document.getElementById('fiado_ref'); if(vref) vref.value = '';
+    _eids['mFiado'] = null;
+  }
+};
 
 // Seed sample fiado data
 (function seedFiado() {
@@ -3973,411 +3893,16 @@ window.pdvAdd = function(type, id) {
 
 // Fix openM for mFiado: when opening fresh (no editId), reset fields
 const _prevOpenM = openM;
-
-
-
-
-// =================================================================
-// MRC v5 ADDON — Todas as funcionalidades
-// =================================================================
-
-const _SUPA_URL='https://eozeehgftbgvixnfacfw.supabase.co';
-const _SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvemVlaGdmdGJndml4bmZhY2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzA2NjEsImV4cCI6MjA5NDM0NjY2MX0.GThHUAqdxdNxcmPjKpkNTiojjIVC75JtyZ9CX_WSjzY';
-
-// SUPABASE
-function _supaWrite(key,val){
-  fetch(_SUPA_URL+'/rest/v1/mrc_dados',{method:'POST',headers:{'apikey':_SUPA_KEY,'Authorization':'Bearer '+_SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},body:JSON.stringify({chave:key,valor:JSON.stringify(val),atualizado:new Date().toISOString()})}).catch(function(){});
-}
-async function backupDoSupabase(){
-  var btn=document.getElementById('btnBackupSupa');
-  if(btn){btn.textContent='A carregar...';btn.disabled=true;}
-  try{
-    var r=await fetch(_SUPA_URL+'/rest/v1/mrc_dados?select=chave,valor',{headers:{'apikey':_SUPA_KEY,'Authorization':'Bearer '+_SUPA_KEY}});
-    if(!r.ok)throw new Error('Erro '+r.status);
-    var rows=await r.json();
-    var data={_data:new Date().toISOString(),_fonte:'Supabase'};
-    rows.forEach(function(row){try{data[row.chave]=JSON.parse(row.valor);}catch(e){data[row.chave]=row.valor;}});
-    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-    var fname='MRC_backup_supabase_'+new Date().toISOString().slice(0,10)+'.json';
-    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();document.body.removeChild(a);
-    if(typeof toast==='function')toast('Backup do Supabase OK! ('+rows.length+' registos)');
-  }catch(e){if(typeof toast==='function')toast('Erro Supabase: '+e.message,'r');}
-  finally{if(btn){btn.textContent='Backup do Supabase';btn.disabled=false;}}
-}
-function buildBackupData(){
-  var data={};
-  if(typeof K!=='undefined')Object.keys(K).forEach(function(k){if(typeof ld==='function')data[k]=ld(k);});
-  data.def=typeof ldO==='function'?ldO('def'):{};
-  data.data=new Date().toISOString();
-  return data;
-}
-function backupGoogleDrive(){
-  var data=buildBackupData();
-  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  var fname='MRC_backup_'+new Date().toISOString().slice(0,10)+'.json';
-  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],fname)]})){
-    navigator.share({title:'MRC Backup',files:[new File([blob],fname,{type:'application/json'})]}).catch(function(){_dlAndShowDrive(blob,fname);});
-  }else{_dlAndShowDrive(blob,fname);}
-}
-function _dlAndShowDrive(blob,fname){
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();document.body.removeChild(a);
-  var m=document.createElement('div');
-  m.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
-  m.innerHTML='<div style="background:var(--card);border-radius:14px;padding:28px;max-width:400px;width:100%"><div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:12px">Google Drive</div><div style="font-size:13px;color:var(--muted);margin-bottom:16px">Ficheiro <strong style="color:#fff">'+fname+'</strong> descarregado.<br><br>1. Abre <a href="https://drive.google.com" target="_blank" style="color:#4285F4">drive.google.com</a><br>2. Novo → Carregar ficheiro<br>3. Seleciona o ficheiro</div><button onclick="this.closest(\'div\').parentElement.remove()" style="width:100%;padding:10px;background:var(--blue);border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:14px;font-weight:600">Fechar</button></div>';
-  document.body.appendChild(m);m.addEventListener('click',function(e){if(e.target===m)m.remove();});
-}
-function closeModalById(id){var el=document.getElementById(id);if(el)el.remove();}
-
-// DASHBOARD MARGEM
-var _cMarg=null,_cCli=null,_cMat2=null;
-function renderDashMargem(){
-  var yrSel=document.getElementById('dashMargAno');
-  if(yrSel&&!yrSel.options.length){var yr=new Date().getFullYear();for(var y=yr;y>=yr-3;y--){var op=document.createElement('option');op.value=y;op.textContent=y;yrSel.appendChild(op);}}
-  var yr=parseInt((yrSel||{}).value)||new Date().getFullYear();
-  var fats=ld('fat').filter(function(f){return f.est==='Paga'&&f.data&&new Date(f.data).getFullYear()===yr;});
-  var desps=ld('desp').filter(function(d){return d.data&&new Date(d.data).getFullYear()===yr;});
-  var mats_all=ld('mat');
-  var mo=Array(12).fill(null).map(function(){return{mo:0,pvp:0,custo:0,desp:0};});
-  fats.forEach(function(f){
-    var m=new Date(f.data).getMonth();mo[m].mo+=(f.mo||0);mo[m].pvp+=(f.mat||0);
-    var cL=0;(f.linhas||[]).forEach(function(l){var mat=mats_all.find(function(x){return x.desc===l.desc;});cL+=(mat?mat.custo:l.preco*0.6)*(l.qty||1);});
-    if(!(f.linhas||[]).length&&f.mat>0)cL=f.mat*0.6;mo[m].custo+=cL;
-  });
-  desps.forEach(function(d){var m=new Date(d.data).getMonth();mo[m].desp+=((d.val||0)+(d.iva||0));});
-  var tMO=mo.reduce(function(s,m){return s+m.mo;},0),tPVP=mo.reduce(function(s,m){return s+m.pvp;},0),tC=mo.reduce(function(s,m){return s+m.custo;},0),tD=mo.reduce(function(s,m){return s+m.desp;},0);
-  var tL=tMO+(tPVP-tC)-tD,mG=(tMO+tPVP)>0?(tL/(tMO+tPVP)*100):0,mM=tPVP>0?((tPVP-tC)/tPVP*100):0;
-  var kpi=document.getElementById('dashMargKpi');
-  if(kpi)kpi.innerHTML='<div class="kpi"><div class="kpi-lbl">Receita MO</div><div class="kpi-val" style="color:var(--blue)">'+eur(tMO)+'</div></div><div class="kpi"><div class="kpi-lbl">Material Vendido</div><div class="kpi-val" style="color:var(--purple)">'+eur(tPVP)+'</div><div style="font-size:11px;color:var(--muted)">Margem: '+mM.toFixed(1)+'%</div></div><div class="kpi"><div class="kpi-lbl">Despesas</div><div class="kpi-val" style="color:var(--red)">'+eur(tD)+'</div></div><div class="kpi"><div class="kpi-lbl">Lucro '+yr+'</div><div class="kpi-val" style="color:'+(tL>=0?'var(--green)':'var(--red)')+'">'+eur(tL)+'</div><div style="font-size:11px;color:var(--muted)">'+mG.toFixed(1)+'%</div></div>';
-  if(typeof Chart==='undefined')return;
-  if(_cMarg)try{_cMarg.destroy();}catch(e){}
-  if(_cCli)try{_cCli.destroy();}catch(e){}
-  if(_cMat2)try{_cMat2.destroy();}catch(e){}
-  var mns=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  Chart.defaults.color='#5A6B8C';
-  var c1=document.getElementById('cMargem');
-  if(c1){_cMarg=new Chart(c1,{type:'bar',data:{labels:mns,datasets:[{label:'MO',data:mo.map(function(m){return+m.mo.toFixed(2);}),backgroundColor:'rgba(59,123,246,.8)',borderRadius:3},{label:'Mat.',data:mo.map(function(m){return+m.pvp.toFixed(2);}),backgroundColor:'rgba(139,92,246,.8)',borderRadius:3},{label:'Desp.',data:mo.map(function(m){return+m.desp.toFixed(2);}),backgroundColor:'rgba(248,76,106,.6)',borderRadius:3},{label:'Lucro',data:mo.map(function(m){return+(m.mo+(m.pvp-m.custo)-m.desp).toFixed(2);}),type:'line',borderColor:'#10C97A',backgroundColor:'rgba(16,201,122,.1)',borderWidth:2,pointRadius:3,fill:true,tension:.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#5A6B8C',font:{size:10},boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:function(v){return v+'€';},font:{size:10}}}}}});}
-  // Clients
-  var cliData={};
-  fats.forEach(function(f){var n=f.cli||'Sem cliente';if(!cliData[n])cliData[n]={r:0,c:0,nf:0};var custo=0;(f.linhas||[]).forEach(function(l){var mat=mats_all.find(function(x){return x.desc===l.desc;});custo+=(mat?mat.custo:l.preco*0.6)*(l.qty||1);});if(!(f.linhas||[]).length&&f.mat>0)custo=f.mat*0.6;cliData[n].r+=fatTot(f);cliData[n].c+=custo;cliData[n].nf++;});
-  var cliSorted=Object.entries(cliData).sort(function(a,b){return b[1].r-a[1].r;}).slice(0,10);
-  var kpiCli=document.getElementById('dashCliKpi');
-  if(kpiCli)kpiCli.innerHTML=cliSorted.slice(0,3).map(function(e,i){return'<div class="kpi"><div class="kpi-lbl">'+['🥇','🥈','🥉'][i]+' '+e[0]+'</div><div class="kpi-val" style="color:var(--green);font-size:14px">'+eur(e[1].r)+'</div><div style="font-size:11px;color:var(--muted)">'+e[1].nf+' fat | Lucro: '+eur(e[1].r-e[1].c)+'</div></div>';}).join('');
-  var c2=document.getElementById('cCliLucro');
-  if(c2&&cliSorted.length){_cCli=new Chart(c2,{type:'bar',data:{labels:cliSorted.map(function(e){return e[0].split(' ')[0];}),datasets:[{label:'Receita',data:cliSorted.map(function(e){return+e[1].r.toFixed(2);}),backgroundColor:'rgba(59,123,246,.8)',borderRadius:4},{label:'Lucro',data:cliSorted.map(function(e){return+(e[1].r-e[1].c).toFixed(2);}),backgroundColor:'rgba(16,201,122,.8)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#5A6B8C',font:{size:10},boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:function(v){return v+'€';},font:{size:10}}}}}});}
-  // Materials
-  var matData={};
-  fats.forEach(function(f){(f.linhas||[]).forEach(function(l){var d=l.desc||'?';if(!matData[d])matData[d]={pvp:0,custo:0,qty:0};var mat=mats_all.find(function(x){return x.desc===d;});matData[d].pvp+=l.preco*(l.qty||1);matData[d].custo+=(mat?mat.custo:l.preco*0.6)*(l.qty||1);matData[d].qty+=(l.qty||1);});});
-  var matSorted=Object.entries(matData).map(function(e){return{nome:e[0],pvp:e[1].pvp,lucro:e[1].pvp-e[1].custo,qty:e[1].qty};}).sort(function(a,b){return b.lucro-a.lucro;}).slice(0,10);
-  var kpiMat=document.getElementById('dashMatKpi');
-  if(kpiMat)kpiMat.innerHTML=matSorted.slice(0,3).map(function(m,i){return'<div class="kpi"><div class="kpi-lbl">'+['🥇','🥈','🥉'][i]+' '+m.nome.slice(0,20)+'</div><div class="kpi-val" style="color:var(--green);font-size:14px">'+eur(m.lucro)+'</div><div style="font-size:11px;color:var(--muted)">Qty: '+m.qty+'</div></div>';}).join('');
-  var c3=document.getElementById('cMatMargem');
-  if(c3&&matSorted.length){_cMat2=new Chart(c3,{type:'bar',data:{labels:matSorted.map(function(m){return m.nome.slice(0,15);}),datasets:[{label:'Vendido',data:matSorted.map(function(m){return+m.pvp.toFixed(2);}),backgroundColor:'rgba(139,92,246,.8)',borderRadius:4},{label:'Lucro',data:matSorted.map(function(m){return+m.lucro.toFixed(2);}),backgroundColor:'rgba(16,201,122,.8)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:true,labels:{color:'#5A6B8C',font:{size:10},boxWidth:10}}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:function(v){return v+'€';},font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:9}}}}}});}
-}
-
-// FATURA — CLIENTE → REPARACOES
-function fatCliChange(){
-  var cli_id=(document.getElementById('fat_cli')||{}).value||'';
-  var panel=document.getElementById('fat_rep_panel');
-  var list=document.getElementById('fat_rep_list');
-  if(!panel||!list)return;
-  if(!cli_id){panel.style.display='none';return;}
-  var reps=ld('rep').filter(function(r){return r.cli_id===cli_id&&r.est!=='Entregue';});
-  if(!reps.length){panel.style.display='none';return;}
-  panel.style.display='block';
-  list.innerHTML='';
-  reps.forEach(function(r){
-    var lbl=(r.eq||'Reparacao')+(r.av?' — '+r.av.slice(0,40):'');
-    var el=document.createElement('div');
-    el.className='rep-sel-item';
-    el.dataset.repId=r.id;
-    el.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card2);border-radius:7px;margin-bottom:5px;cursor:pointer;font-size:12px;border:2px solid var(--border)';
-    el.innerHTML='<span style="width:12px;height:12px;border:2px solid var(--blue);border-radius:50%;flex-shrink:0;display:inline-block"></span><span style="flex:1"><strong style="color:#fff">'+r.id.slice(-6).toUpperCase()+'</strong> — '+lbl+'</span>';
-    el.addEventListener('click',function(){
-      list.querySelectorAll('.rep-sel-item').forEach(function(e){e.style.borderColor='var(--border)';});
-      el.style.borderColor='var(--blue)';
-      selFatRep(r.id);
-    });
-    list.appendChild(el);
-  });
-}
-
-function selFatRep(rep_id){
-  var r=ld('rep').find(function(x){return x.id===rep_id;});if(!r)return;
-  var rf=document.getElementById('fat_rep');if(rf)rf.value=r.id.slice(-6).toUpperCase();
-  var mf=document.getElementById('fat_mo');if(mf&&r.val)mf.value=r.val;
-  var df=document.getElementById('fat_desc');if(df&&(r.av||r.eq))df.value=(r.eq||'')+(r.av?' — '+r.av:'');
-  if(typeof calcFatModal==='function')calcFatModal();
-  if(typeof toast==='function')toast('Reparacao carregada!');
-}
-
-// FAT TIPO / IVA TOGGLES
-function setFatTipo(tipo){
-  var isRec=tipo==='recibo';
-  var bf=document.getElementById('btn_fatura');var br=document.getElementById('btn_recibo');
-  if(bf){bf.className='btn btn-sm '+(isRec?'btn-ghost':'btn-blue');bf.style.flex='1';}
-  if(br){br.className='btn btn-sm '+(isRec?'btn-blue':'btn-ghost');br.style.flex='1';}
-  var inp=document.getElementById('fat_tipo');if(inp)inp.value=tipo||'fatura';
-  var lbl=document.getElementById('fat_tipo_label');if(lbl)lbl.textContent=isRec?'RECIBO':'FATURA';
-}
-function setFatIVA(active){
-  var bc=document.getElementById('btn_civa');var bs=document.getElementById('btn_siva');
-  if(bc){bc.className='btn btn-sm '+(active?'btn-blue':'btn-ghost');bc.style.flex='1';}
-  if(bs){bs.className='btn btn-sm '+(active?'btn-ghost':'btn-blue');bs.style.flex='1';}
-  var r=document.getElementById('fat_iva_row');if(r)r.style.display=active?'':'none';
-  var inp=document.getElementById('fat_iva_active');if(inp)inp.value=active?'1':'0';
-  if(typeof calcFatModal==='function')calcFatModal();
-}
-
-// EAN13
-function gerarEAN13(ref){var h=0;for(var i=0;i<ref.length;i++){h=((h<<5)-h)+ref.charCodeAt(i);h|=0;}var n='200'+Math.abs(h).toString().padStart(9,'0').slice(0,9);var s=0;for(var i=0;i<12;i++)s+=parseInt(n[i])*(i%2===0?1:3);return n+((10-s%10)%10);}
-function validarEAN13(e){if(!e||e.length!==13||!/^\d{13}$/.test(e))return false;var s=0;for(var i=0;i<12;i++)s+=parseInt(e[i])*(i%2===0?1:3);return(10-s%10)%10===parseInt(e[12]);}
-function gerarEANTodos(){var mats=ld('mat');var ct=0;mats.forEach(function(m){if(!m.barcode||m.barcode.length!==13||!validarEAN13(m.barcode)){m.barcode=gerarEAN13(m.ref+'_'+m.id);ct++;}});if(ct>0){sv('mat',mats);if(typeof renderMat==='function')renderMat();if(typeof toast==='function')toast(ct+' EAN13 gerados!');}else if(typeof toast==='function')toast('Todos ja tem EAN13.','a');}
-
-// EXPORT MATERIAIS
-function exportMatCSV(){var mats=ld('mat');if(!mats.length){if(typeof toast==='function')toast('Sem materiais.','a');return;}var rows=['Referencia;Descricao;Categoria;Unidade;Custo;PVP;Stock;Min;EAN13'];mats.forEach(function(m){rows.push([m.ref||'',m.desc||'',m.cat||'',m.un||'',(m.custo||0).toFixed(2).replace('.',','),(m.pvp||0).toFixed(2).replace('.',','),m.stock||0,m.min||0,m.barcode||''].map(function(v){return'"'+String(v).replace(/"/g,'""')+'"';}).join(';'));});var blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='materiais_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);if(typeof toast==='function')toast('CSV exportado! ('+mats.length+')');}
-function exportMatExcel(){var mats=ld('mat');if(!mats.length){if(typeof toast==='function')toast('Sem materiais.','a');return;}var xml='<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="h"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#1a1a2e" ss:Pattern="Solid"/></Style><Style ss:ID="m"><NumberFormat ss:Format="#,##0.00 EUR"/></Style></Styles><Worksheet ss:Name="Materiais"><Table><Column ss:Width="80"/><Column ss:Width="200"/><Column ss:Width="120"/><Column ss:Width="50"/><Column ss:Width="80"/><Column ss:Width="80"/><Column ss:Width="60"/><Column ss:Width="70"/><Column ss:Width="120"/><Row><Cell ss:StyleID="h"><Data ss:Type="String">Referencia</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">Descricao</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">Categoria</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">Unidade</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">Custo</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">PVP</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">Stock</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">Min</Data></Cell><Cell ss:StyleID="h"><Data ss:Type="String">EAN13</Data></Cell></Row>';mats.forEach(function(m){xml+='<Row><Cell><Data ss:Type="String">'+(m.ref||'')+'</Data></Cell><Cell><Data ss:Type="String">'+(m.desc||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</Data></Cell><Cell><Data ss:Type="String">'+(m.cat||'')+'</Data></Cell><Cell><Data ss:Type="String">'+(m.un||'')+'</Data></Cell><Cell ss:StyleID="m"><Data ss:Type="Number">'+(m.custo||0)+'</Data></Cell><Cell ss:StyleID="m"><Data ss:Type="Number">'+(m.pvp||0)+'</Data></Cell><Cell><Data ss:Type="Number">'+(m.stock||0)+'</Data></Cell><Cell><Data ss:Type="Number">'+(m.min||0)+'</Data></Cell><Cell><Data ss:Type="String">'+(m.barcode||'')+'</Data></Cell></Row>';});xml+='</Table></Worksheet></Workbook>';var blob=new Blob([xml],{type:'application/vnd.ms-excel;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='materiais_'+new Date().toISOString().slice(0,10)+'.xls';document.body.appendChild(a);a.click();document.body.removeChild(a);if(typeof toast==='function')toast('Excel exportado! ('+mats.length+')');}
-
-// IMPORTAR CSV MATERIAIS
-function importMatCSV(input){
-  var file=input.files[0];if(!file)return;
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var text=e.target.result.replace(/^\uFEFF/,'');
-    var lines=text.split('\n').filter(function(l){return l.trim();});
-    if(!lines.length){if(typeof toast==='function')toast('Ficheiro vazio!','r');return;}
-    var sep=lines[0].includes(';')?';':',';
-    var headers=lines[0].split(sep).map(function(h){return h.replace(/"/g,'').trim().toLowerCase();});
-    var iRef=headers.findIndex(function(h){return h.includes('refer');});
-    var iDesc=headers.findIndex(function(h){return h.includes('desc');});
-    var iCat=headers.findIndex(function(h){return h.includes('cat');});
-    var iUn=headers.findIndex(function(h){return h.includes('un');});
-    var iCusto=headers.findIndex(function(h){return h.includes('custo');});
-    var iPVP=headers.findIndex(function(h){return h.includes('pvp')||h.includes('pre');});
-    var iStock=headers.findIndex(function(h){return h.includes('stock')&&!h.includes('m');});
-    var iMin=headers.findIndex(function(h){return h.includes('min');});
-    var iEAN=headers.findIndex(function(h){return h.includes('ean')||h.includes('bar');});
-    var mats=ld('mat');var updated=0,created=0;
-    for(var i=1;i<lines.length;i++){
-      var line=lines[i].trim();if(!line)continue;
-      var fields=[];var inQ=false,cur='';
-      for(var j=0;j<line.length;j++){var c=line[j];if(c==='"'){inQ=!inQ;}else if(c===sep&&!inQ){fields.push(cur);cur='';}else{cur+=c;}}
-      fields.push(cur);
-      var ref=iRef>=0?fields[iRef]||'':'';
-      var desc=iDesc>=0?fields[iDesc]||'':'';
-      if(!ref&&!desc)continue;
-      var custo=iCusto>=0?parseFloat((fields[iCusto]||'0').replace(',','.').replace(/[^0-9.]/g,''))||0:0;
-      var pvp=iPVP>=0?parseFloat((fields[iPVP]||'0').replace(',','.').replace(/[^0-9.]/g,''))||0:0;
-      var existing=mats.find(function(m){return(ref&&m.ref===ref)||(!ref&&m.desc===desc);});
-      if(existing){
-        if(iDesc>=0&&desc)existing.desc=desc;
-        if(iCat>=0)existing.cat=fields[iCat]||existing.cat;
-        if(iUn>=0)existing.un=fields[iUn]||existing.un;
-        if(iCusto>=0)existing.custo=custo;
-        if(iPVP>=0)existing.pvp=pvp;
-        if(iStock>=0)existing.stock=parseInt(fields[iStock])||0;
-        if(iMin>=0)existing.min=parseInt(fields[iMin])||0;
-        if(iEAN>=0&&fields[iEAN])existing.barcode=fields[iEAN];
-        updated++;
-      }else{
-        mats.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,4)+'_'+i,ref:ref||'MAT-'+(mats.length+1),desc:desc||ref,cat:iCat>=0?fields[iCat]||'':'',un:iUn>=0?fields[iUn]||'Un':'Un',custo:custo,pvp:pvp,stock:iStock>=0?parseInt(fields[iStock])||0:0,min:iMin>=0?parseInt(fields[iMin])||0:0,barcode:iEAN>=0?fields[iEAN]||'':''});
-        created++;
-      }
-    }
-    sv('mat',mats);if(typeof renderMat==='function')renderMat();input.value='';
-    if(typeof toast==='function')toast('Importado! '+updated+' actualizados, '+created+' novos');
-  };
-  reader.readAsText(file,'UTF-8');
-}
-
-// CATEGORIAS MATERIAIS
-function _fillMatCatFilter(){
-  var sel=document.getElementById('matCat');if(!sel)return;
-  var current=sel.value;
-  var cats=[...new Set(ld('mat').map(function(m){return m.cat||'';}).filter(function(c){return c;}))].sort(function(a,b){return a.localeCompare(b,'pt',{sensitivity:'base'});});
-  sel.innerHTML='<option value="">Todas as categorias</option>'+cats.map(function(c){return'<option value="'+c+'">'+c+'</option>';}).join('');
-  if(current)sel.value=current;
-  _renderMatCatTabs();
-}
-function _renderMatCatTabs(){
-  var tabs=document.getElementById('matCatTabs');if(!tabs)return;
-  var catSet={};ld('mat').forEach(function(m){if(m.cat)catSet[m.cat]=true;});
-  var cats=Object.keys(catSet).sort(function(a,b){return a.localeCompare(b,'pt',{sensitivity:'base'});});
-  var current=(document.getElementById('matCat')||{}).value||'';
-  tabs.innerHTML='';
-  var addBtn=function(label,val){
-    var b=document.createElement('button');
-    b.className='btn btn-sm '+(current===val?'btn-blue':'btn-ghost');
-    b.style.cssText='border-radius:20px;padding:4px 12px;font-size:11px;margin:2px';
-    b.textContent=label;
-    b.onclick=(function(v){return function(){setMatCat(v);};})(val);
-    tabs.appendChild(b);
-  };
-  addBtn('Todas','');
-  cats.forEach(function(c){addBtn(c,c);});
-}
-function setMatCat(cat){var sel=document.getElementById('matCat');if(sel)sel.value=cat;if(typeof renderMat==='function')renderMat();}
-
-// MOBILE SIDEBAR
-function toggleMobSidebar(){var sb=document.getElementById('sidebar');var ov=document.getElementById('mobOverlay');if(sb&&sb.classList.contains('mob-open')){sb.classList.remove('mob-open');if(ov)ov.style.display='none';}else{if(sb)sb.classList.add('mob-open');if(ov)ov.style.display='block';}}
-function closeMobSidebar(){var sb=document.getElementById('sidebar');var ov=document.getElementById('mobOverlay');if(sb)sb.classList.remove('mob-open');if(ov)ov.style.display='none';}
-function fmtCP(el){var v=el.value.replace(/[^0-9]/g,'');if(v.length>4)v=v.slice(0,4)+'-'+v.slice(4,7);el.value=v;}
-
-// SHARE
-function shareFat(id){if(typeof printFatura==='function')printFatura(id);else if(typeof printFat==='function')printFat(id);setTimeout(function(){if(typeof toast==='function')toast('Na janela clica em Partilhar!');},700);}
-function shareOrc(id){if(typeof printOrcamento==='function')printOrcamento(id);else if(typeof printOrc==='function')printOrc(id);}
-
-// REPARACAO — MATERIAIS E DIARIO
-var _repLinhas=0;
-function addLinhaRep(){
-  var cont=document.getElementById('rep_linhas');if(!cont)return;
-  var i=_repLinhas++;
-  var outer=document.createElement('div');
-  outer.id='rep_linha_'+i;
-  outer.style.cssText='display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:6px;align-items:end;margin-bottom:6px;position:relative';
-  var dw=document.createElement('div');dw.style.position='relative';
-  var di=document.createElement('input');
-  di.id='rep_l'+i+'_desc';di.placeholder='Material...';di.autocomplete='off';
-  di.style.cssText='width:100%;padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif;box-sizing:border-box';
-  di.addEventListener('input',function(){if(typeof linhaSearch==='function')linhaSearch(di,'rep',i);calcRepTotal();});
-  var dd=document.createElement('div');dd.id='rep_dd_'+i;
-  dd.style.cssText='position:absolute;top:100%;left:0;right:0;z-index:9999;background:var(--sb);border:1px solid var(--blue);border-radius:8px;max-height:180px;overflow-y:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4)';
-  dw.appendChild(di);dw.appendChild(dd);
-  var qi=document.createElement('input');qi.id='rep_l'+i+'_qty';qi.type='number';qi.value='1';qi.min='0.1';qi.step='0.1';qi.placeholder='Qtd';qi.style.cssText='padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif';qi.addEventListener('input',calcRepTotal);
-  var pi=document.createElement('input');pi.id='rep_l'+i+'_preco';pi.type='number';pi.value='0';pi.step='0.01';pi.placeholder='EUR/un';pi.style.cssText='padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif';pi.addEventListener('input',calcRepTotal);
-  var db=document.createElement('button');db.textContent='X';db.style.cssText='padding:7px 10px;background:var(--red);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:14px';
-  db.addEventListener('click',function(){outer.remove();calcRepTotal();});
-  outer.appendChild(dw);outer.appendChild(qi);outer.appendChild(pi);outer.appendChild(db);
-  cont.appendChild(outer);
-}
-function getLinhasRep(){
-  var linhas=[];var cont=document.getElementById('rep_linhas');if(!cont)return linhas;
-  cont.querySelectorAll('[id^="rep_linha_"]').forEach(function(row){
-    var i=row.id.split('_')[2];
-    var desc=(document.getElementById('rep_l'+i+'_desc')||{}).value||'';
-    var qty=parseFloat((document.getElementById('rep_l'+i+'_qty')||{}).value)||1;
-    var preco=parseFloat((document.getElementById('rep_l'+i+'_preco')||{}).value)||0;
-    if(desc)linhas.push({desc:desc,qty:qty,preco:preco,total:+(qty*preco).toFixed(2)});
-  });
-  return linhas;
-}
-function calcRepMO(){
-  var h=parseFloat((document.getElementById('rep_horas')||{}).value)||0;
-  var ph=parseFloat((document.getElementById('rep_preco_h')||{}).value)||35;
-  var moEl=document.getElementById('rep_val');if(moEl)moEl.value=+(h*ph).toFixed(2);
-  calcRepTotal();
-}
-function calcRepTotal(){
-  var h=parseFloat((document.getElementById('rep_horas')||{}).value)||0;
-  var ph=parseFloat((document.getElementById('rep_preco_h')||{}).value)||35;
-  if(h>0){var moEl=document.getElementById('rep_val');if(moEl)moEl.value=+(h*ph).toFixed(2);}
-  var mo=parseFloat((document.getElementById('rep_val')||{}).value)||0;
-  var linhas=getLinhasRep();
-  var matTotal=linhas.reduce(function(s,l){return s+l.total;},0);
-  var total=mo+matTotal;
-  var el=document.getElementById('rep_calc');if(!el)return;
-  el.innerHTML='';
-  if(h>0){var rh=document.createElement('div');rh.style.cssText='display:flex;justify-content:space-between;color:var(--muted)';rh.innerHTML='<span>'+h+'h × '+eur(ph)+'/h</span><span>'+eur(h*ph)+'</span>';el.appendChild(rh);}
-  else if(mo>0){var rm=document.createElement('div');rm.style.cssText='display:flex;justify-content:space-between;color:var(--muted)';rm.innerHTML='<span>Mao de Obra</span><span>'+eur(mo)+'</span>';el.appendChild(rm);}
-  if(matTotal>0){var rmat=document.createElement('div');rmat.style.cssText='display:flex;justify-content:space-between;color:var(--muted)';rmat.innerHTML='<span>Materiais</span><span>'+eur(matTotal)+'</span>';el.appendChild(rmat);}
-  var tot=document.createElement('div');tot.style.cssText='display:flex;justify-content:space-between;font-weight:700;color:#fff;border-top:1px solid var(--border);margin-top:6px;padding-top:6px';
-  tot.innerHTML='<span>Total Estimado</span><span style="color:var(--green)">'+eur(total)+'</span>';el.appendChild(tot);
-}
-function addDiarioRep(){
-  var cont=document.getElementById('rep_diario');if(!cont)return;
-  var today=new Date().toISOString().slice(0,10);
-  var row=document.createElement('div');
-  row.style.cssText='display:grid;grid-template-columns:130px 1fr auto;gap:6px;align-items:start;margin-bottom:6px';
-  var di=document.createElement('input');di.type='date';di.value=today;di.style.cssText='padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif';
-  var ta=document.createElement('textarea');ta.placeholder='O que foi feito neste dia...';ta.rows=2;ta.style.cssText='padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif;resize:vertical';
-  var db=document.createElement('button');db.textContent='X';db.style.cssText='padding:7px 10px;background:var(--red);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:14px';
-  db.addEventListener('click',function(){row.remove();});
-  row.appendChild(di);row.appendChild(ta);row.appendChild(db);
-  cont.appendChild(row);
-}
-function getDiarioRep(){
-  var diario=[];var cont=document.getElementById('rep_diario');if(!cont)return diario;
-  cont.querySelectorAll('div').forEach(function(row){
-    var inputs=row.querySelectorAll('input[type=date],textarea');
-    if(inputs.length>=2&&inputs[1].value.trim())diario.push({data:inputs[0].value,nota:inputs[1].value.trim()});
-  });
-  return diario;
-}
-function clearLinhasRep(){
-  var cont=document.getElementById('rep_linhas');if(cont)cont.innerHTML='';
-  var diary=document.getElementById('rep_diario');if(diary)diary.innerHTML='';
-  _repLinhas=0;calcRepTotal();
-}
-function fillLinhasRep(linhas,diario){
-  clearLinhasRep();
-  (linhas||[]).forEach(function(l){addLinhaRep();var i=_repLinhas-1;var d=document.getElementById('rep_l'+i+'_desc');if(d)d.value=l.desc||'';var q=document.getElementById('rep_l'+i+'_qty');if(q)q.value=l.qty||1;var p=document.getElementById('rep_l'+i+'_preco');if(p)p.value=l.preco||0;});
-  (diario||[]).forEach(function(entry){addDiarioRep();var rows=document.getElementById('rep_diario').querySelectorAll('div');var row=rows[rows.length-1];if(row){var inputs=row.querySelectorAll('input[type=date],textarea');if(inputs[0])inputs[0].value=entry.data||'';if(inputs[1])inputs[1].value=entry.nota||'';}});
-  calcRepTotal();
-}
-
-// LIVE SEARCH LINHAS
-function linhaSearch(el,px,i){
-  var q=el.value.toLowerCase();var ddId=px+'_dd_'+i;var dd=document.getElementById(ddId);
-  if(!dd)return;if(!q){dd.style.display='none';return;}
-  var res=ld('mat').filter(function(m){return m.desc.toLowerCase().includes(q)||m.ref.toLowerCase().includes(q);}).slice(0,15);
-  if(!res.length){dd.style.display='none';return;}
-  dd.innerHTML=res.map(function(m){return'<div class="ls-it" data-p="'+m.pvp+'" data-d="'+m.desc.replace(/"/g,'&quot;')+'" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px;display:flex;justify-content:space-between"><span><strong>'+m.desc+'</strong><br><small style="color:var(--muted)">['+m.ref+'] '+m.cat+'</small></span><span style="color:var(--green);font-weight:700;flex-shrink:0;margin-left:8px">'+eur(m.pvp)+'</span></div>';}).join('');
-  dd.style.display='block';
-  dd.querySelectorAll('.ls-it').forEach(function(item){
-    item.onmouseover=function(){this.style.background='rgba(59,123,246,.15)';};
-    item.onmouseout=function(){this.style.background='transparent';};
-    item.onmousedown=function(e){
-      e.preventDefault();el.value=item.dataset.d;
-      var pEl=document.getElementById(px+'_l'+i+'_preco');if(pEl)pEl.value=parseFloat(item.dataset.p).toFixed(2);
-      var qEl=document.getElementById(px+'_l'+i+'_qty');if(qEl&&(qEl.value==='0'||!qEl.value))qEl.value='1';
-      dd.style.display='none';if(typeof recalcLinhas==='function')recalcLinhas(px);if(typeof calcRepTotal==='function')calcRepTotal();
-    };
-  });
-}
-
-// HOOK openM FOR REP AND FAT
-(function(){
-  var _origOM=window.openM;
-  if(_origOM&&!window._allHooksDone){
-    window._allHooksDone=true;
-    window.openM=function(id,editId,data){
-      _origOM(id,editId,data);
-      // Rep hook
-      if(id==='mRep'){
-        clearLinhasRep();
-        if(editId){
-          var r=ld('rep').find(function(x){return x.id===editId;});
-          if(r)setTimeout(function(){
-            fillLinhasRep(r.linhas,r.diario);
-            var hEl=document.getElementById('rep_horas');if(hEl)hEl.value=r.horas||0;
-            var phEl=document.getElementById('rep_preco_h');if(phEl)phEl.value=r.preco_h||35;
-          },80);
-        }
-      }
-    };
+window.openM = function(id, editId, data) {
+  _prevOpenM(id, editId, data);
+  if (id === 'mFiado' && !editId) {
+    // reset title
+    const t = document.getElementById('mFiadoT');
+    if (t) t.textContent = '+ Registar Fiado';
+    _eids['mFiado'] = null;
   }
-})();
+};
 
-// MOBILE TOUCH
-document.addEventListener('DOMContentLoaded',function(){
-  var sx=0,sy=0;
-  document.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
-  document.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-sx,dy=Math.abs(e.changedTouches[0].clientY-sy);if(dy>40)return;if(dx>60&&sx<30)toggleMobSidebar();else if(dx<-60)closeMobSidebar();},{passive:true});
-  document.querySelectorAll('#mobNav .mob-ni[data-p]').forEach(function(el){el.addEventListener('click',function(){if(typeof goPage==='function')goPage(el.dataset.p);document.querySelectorAll('#mobNav .mob-ni').forEach(function(e){e.style.color='var(--muted)';});el.style.color='var(--blue)';closeMobSidebar();});});
-});
-
-// HOOK renderDash FOR MARGEM
-(function(){
-  var _o=window.renderDash;
-  if(_o&&!window._dashMargHooked){
-    window._dashMargHooked=true;
-    window.renderDash=function(){
-      _o();
-      var sel=document.getElementById('dashMargAno');
-      if(sel&&!sel.options.length){var yr=new Date().getFullYear();for(var y=yr;y>=yr-3;y--){var op=document.createElement('option');op.value=y;op.textContent=y;sel.appendChild(op);}}
-      if(typeof renderDashMargem==='function')renderDashMargem();
-    };
-  }
-})();
 
 </script>
 
