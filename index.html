@@ -153,7 +153,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 .bp{background:rgba(139,92,246,.2);color:#A78BFA}
 .bc{background:rgba(6,182,212,.2);color:#67E8F9}
 /* MODAL */
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99000;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
 .ov.open{display:flex}
 .modal{background:var(--card);border-radius:15px;width:100%;max-width:520px;border:1px solid var(--border);box-shadow:0 25px 70px rgba(0,0,0,.5);max-height:92vh;overflow-y:auto;animation:mi .18s ease}
 .modal-lg{max-width:720px}
@@ -632,7 +632,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <div class="page" id="page-agenda">
   <div class="pg-hdr">
     <div><h1>📅 Agenda</h1><p>Compromissos, entregas e lembretes</p></div>
-    <button class="btn btn-blue" onclick="var el=document.getElementById('mEvt');if(!el){alert('mEvt NAO EXISTE');}else{el.classList.add('open');el.style.display='flex';fillCliSel();alert('Modal aberto! display='+el.style.display);}">+ Novo Evento</button>
+    <button class="btn btn-blue" onclick="openM('mEvt')">+ Novo Evento</button>
   </div>
   <div class="card">
     <div class="card-hdr">
