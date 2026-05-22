@@ -485,7 +485,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
   </div>
   <div class="kpi-grid" id="fatKpi"></div>
   <div class="card"><div class="card-body">
-    <div class="sbar"><input id="fatQ" placeholder="🔍 Pesquisar..." oninput="renderFat()"><select id="fatF" onchange="renderFat()"><option value="">Todos os estados</option><option>Pendente</option><option>Paga</option><option>Em Atraso</option></select></div>
+    <div class="sbar"><input id="fatQ" placeholder="🔍 Pesquisar..." oninput="renderFat()"><select id="fatF" onchange="renderFat()"><option value="">Todos os estados</option><option>Pendente</option><option>Paga</option><option>Pago Parcialmente</option><option>Em Atraso</option></select></div>
     <div class="tbl-wrap"><table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Descrição</th><th>Total c/IVA</th><th>Estado</th><th>Ações</th></tr></thead><tbody id="fatTbl"></tbody></table></div>
   </div></div>
 </div>
@@ -960,7 +960,11 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div id="fat_iva_row" class="frow">
       <div class="fg"><label>IVA (%)</label><input type="number" id="fat_iva" value="23" min="0" max="23" step="1" oninput="calcFatModal()"></div>
     </div>
-    <div class="fg"><label>Estado</label><select id="fat_est"><option>Pendente</option><option>Paga</option><option>Em Atraso</option></select></div>
+    <div class="fg"><label>Estado</label><select id="fat_est" onchange="toggleFatPagParcial()"><option>Pendente</option><option>Paga</option><option>Pago Parcialmente</option><option>Em Atraso</option></select></div>
+  </div>
+  <div id="fat_pagparcial_row" class="frow" style="display:none">
+    <div class="fg"><label>Valor já pago (€)</label><input type="number" id="fat_val_pago" value="0" step="0.01" min="0" oninput="calcFatPagParcial()"></div>
+    <div class="fg"><label>Valor em falta (€)</label><input type="text" id="fat_val_falta" value="0,00" readonly style="background:var(--card2);color:var(--amber);font-weight:700"></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mFat')">Cancelar</button><button class="btn btn-blue" onclick="saveFat()">🧾 Emitir</button></div>
 </div></div>
@@ -1228,7 +1232,14 @@ function fillForm(id,d){
   };
   const m=maps[id]||{};
   Object.entries(m).forEach(([elId,key])=>{const el=document.getElementById(elId);if(el&&d[key]!==undefined)el.value=d[key]});
-  if(id==='mFat')calcFatModal();
+  if(id==='mFat'){
+    calcFatModal();
+    // Restore partial payment
+    const pprow=document.getElementById('fat_pagparcial_row');
+    if(pprow)pprow.style.display=(d&&d.est==='Pago Parcialmente')?'flex':'none';
+    const vpago=document.getElementById('fat_val_pago');
+    if(vpago)vpago.value=(d&&d.val_pago)||0;
+  }
   if(id==='mOrc')calcOrcModal();
   if(id==='mDesl')calcDeslModal();
 }
@@ -1296,6 +1307,23 @@ function toast(msg,type='g'){
 // ══════════════════════════════════════════════════════════
 function ebadge(e){const m={Pronta:'bg','Em Reparação':'bb',Pendente:'ba','Aguardando Peças':'bp',Entregue:'bc',Paga:'bg','Em Atraso':'br',Aprovado:'bg',Recusado:'br',Normal:'bg',Urgente:'ba','Muito Urgente':'br'};return'<span class="badge '+(m[e]||'bb')+'">'+e+'</span>'}
 function sbadge(m){if(m.stock<=0)return'<span class="badge br">Sem Stock</span>';if(m.stock<m.min)return'<span class="badge br">⚠ Baixo ('+m.stock+')</span>';if(m.stock<=m.min)return'<span class="badge ba">⚠ Mín ('+m.stock+')</span>';return'<span class="badge bg">OK ('+m.stock+')</span>'}
+function toggleFatPagParcial(){
+  const est=gv('fat_est');
+  const row=g('fat_pagparcial_row');
+  if(row)row.style.display=(est==='Pago Parcialmente')?'flex':'none';
+  if(est==='Pago Parcialmente')calcFatPagParcial();
+}
+
+function calcFatPagParcial(){
+  // Read total from the modal total field
+  const totalEl=g('fat_total');
+  const total=totalEl?parseFloat(totalEl.dataset.total||0)||0:0;
+  const pago=gf('fat_val_pago');
+  const falta=Math.max(0,total-pago);
+  const el=g('fat_val_falta');
+  if(el)el.value=falta.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
 function fatTot(f){
   var base=(f.mo||0)+(f.mat||0)+(f.desl_total||0);
   var ivaRate=f.iva_active===false?0:(f.iva!=null?f.iva:23);
@@ -1551,7 +1579,15 @@ function renderFat(){
   const tb=g('fatTbl');if(!tb)return;
   if(!fats.length){tb.innerHTML=eRow(7,'Sem faturas');return}
   let html='';
-  [...fats].reverse().forEach(f=>{html+='<tr><td><strong style="color:#fff">'+(f.num||'—')+'</strong></td><td style="color:var(--muted)">'+f.data+'</td><td>'+f.cli+'</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(f.desc||'—')+'</td><td style="color:var(--green);font-weight:700">'+eur(fatTot(f))+'</td><td>'+ebadge(f.est)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-fat" data-id="'+f.id+'">✏</button><button class="btn-xs" style="background:var(--green)" data-action="paga-fat" data-id="'+f.id+'">✓</button><button class="btn-xs" style="background:#8B5CF6" data-action="print-fat" data-id="'+f.id+'">🖨</button><button class="btn-xs" style="background:var(--red)" data-action="del-fat" data-id="'+f.id+'">🗑</button></td></tr>'});
+  [...fats].reverse().forEach(f=>{
+    const tot=fatTot(f);
+    const pago=f.val_pago||0;
+    const parcial=f.est==='Pago Parcialmente';
+    const totalCell=parcial
+      ?'<span style="color:var(--green);font-weight:700">'+eur(tot)+'</span><br><span style="font-size:11px;color:#F97316">Pago: '+eur(pago)+' | Falta: '+eur(Math.max(0,tot-pago))+'</span>'
+      :'<span style="color:var(--green);font-weight:700">'+eur(tot)+'</span>';
+    html+='<tr><td><strong style="color:#fff">'+(f.num||'—')+'</strong></td><td style="color:var(--muted)">'+f.data+'</td><td>'+f.cli+'</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(f.desc||'—')+'</td><td>'+totalCell+'</td><td>'+ebadge(f.est)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-fat" data-id="'+f.id+'">✏</button><button class="btn-xs" style="background:var(--green)" data-action="paga-fat" data-id="'+f.id+'">✓</button>'+(parcial||f.hist_pag?.length?'<button class="btn-xs" style="background:#F97316" data-action="hist-pag" data-id="'+f.id+'">💰</button>':'')+'<button class="btn-xs" style="background:#8B5CF6" data-action="print-fat" data-id="'+f.id+'">🖨</button><button class="btn-xs" style="background:var(--red)" data-action="del-fat" data-id="'+f.id+'">🗑</button></td></tr>';
+  });
   tb.innerHTML=html;
 }
 
@@ -2057,6 +2093,18 @@ document.addEventListener('click', function(e) {
   const action = btn.dataset.action;
   const id = btn.dataset.id;
   if (action === 'print-fat') printFatura(id);
+  if (action === 'hist-pag') {
+    const fat = ld('fat').find(f=>f.id===id);
+    if(!fat)return;
+    const hist = fat.hist_pag||[];
+    const tot = fatTot(fat);
+    const pago = fat.val_pago||0;
+    let msg = '📋 Histórico de Pagamentos — '+fat.num+'\n\n';
+    if(!hist.length){msg+='Sem pagamentos registados.';} 
+    else {hist.forEach(h=>{msg+=h.data+' — '+eur(h.val)+' ('+h.nota+')\n';});}
+    msg+='\n─────────────────\nTotal fatura: '+eur(tot)+'\nTotal pago: '+eur(pago)+'\nEm falta: '+eur(Math.max(0,tot-pago));
+    alert(msg);
+  }
   else if (action === 'print-orc') printOrcamento(id);
   else if (action === 'print-rep') printReparacao(id);
 });
@@ -2760,7 +2808,9 @@ function calcFatModal() {
     (pct > 0 ? `<div class="calc-row"><span style="color:var(--amber)">Desconto (${pct}%)</span><span style="color:var(--amber)">−${eur(descVal)}</span></div>` : '') +
     (ivaActive && iva > 0 ? `<div class="calc-row"><span style="color:var(--muted)">Subtotal s/IVA</span><span>${eur(sivaFinal)}</span></div>` : '') +
     (ivaActive && iva > 0 ? `<div class="calc-row"><span style="color:var(--muted)">IVA (${ivaRate}%)</span><span>${eur(viva)}</span></div>` : '') +
-    `<div class="calc-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px"><span style="font-weight:700">TOTAL ${ivaActive && iva>0 ? 'c/IVA' : 's/IVA'}</span><span style="font-weight:700;color:var(--green)">${eur(total)}</span></div>`;
+    `<div class="calc-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px"><span style="font-weight:700">TOTAL ${ivaActive && iva>0 ? 'c/IVA' : 's/IVA'}</span><span style="font-weight:700;color:var(--green)" id="fat_total" data-total="${total}">${eur(total)}</span></div>`;
+  // Update partial payment if active
+  if(gv('fat_est')==='Pago Parcialmente')calcFatPagParcial();
 }
 
 function calcOrcModal() {
@@ -2820,15 +2870,35 @@ function saveFat() {
   const siva = mo + totalMat + deslTotal;
   const sivaFinal = siva * (1 - pct / 100);
 
+  // Pagamento parcial
+  const est_novo = gv('fat_est');
+  const val_pago_input = parseFloat(document.getElementById('fat_val_pago')?.value)||0;
+  const total_fat = +(sivaFinal + sivaFinal*(iva/100)).toFixed(2);
+  const val_pago = est_novo==='Paga' ? total_fat : (est_novo==='Pago Parcialmente' ? val_pago_input : 0);
+
+  // Histórico de pagamentos
+  const fat_old = fats.find(x=>x.id===editId)||{};
+  let hist_pag = fat_old.hist_pag ? [...fat_old.hist_pag] : [];
+  if(est_novo==='Pago Parcialmente' && val_pago_input>0){
+    const ultimo = hist_pag[hist_pag.length-1];
+    if(!ultimo || ultimo.val!==val_pago_input){
+      hist_pag.push({data:td(), val:val_pago_input, nota:'Pagamento parcial'});
+    }
+  } else if(est_novo==='Paga'){
+    if(!hist_pag.find(h=>h.nota==='Pagamento total')){
+      hist_pag.push({data:td(), val:total_fat, nota:'Pagamento total'});
+    }
+  }
+
   const obj = {
     cli_id, cli: cli?.nome || '—', rep: gv('fat_rep'), desc,
     mo, mat: totalMat, iva, desc_pct: pct,
     desl_on: deslOn || false, desl_km: deslKm, desl_preco: deslPreco, desl_dest: deslDest, desl_total: deslTotal,
     linhas,
-    est: gv('fat_est'), data: gv('fat_data') || td(), venc: gv('fat_venc')
-  ,
+    est: est_novo, data: gv('fat_data') || td(), venc: gv('fat_venc'),
     iva_active: ivaActiveSave,
-    tipo: document.getElementById('fat_tipo')?.value || 'fatura'
+    tipo: document.getElementById('fat_tipo')?.value || 'fatura',
+    val_pago, hist_pag
   };
 
   if (editId) {
@@ -2897,6 +2967,8 @@ window.clearForm = function(id) {
     const rep = document.getElementById('fat_rep'); if (rep) rep.value = '';
     const descEl = document.getElementById('fat_desc'); if (descEl) descEl.value = '';
     const panel = document.getElementById('fat_rep_panel'); if (panel) panel.style.display = 'none';
+    const pprow = document.getElementById('fat_pagparcial_row'); if(pprow) pprow.style.display='none';
+    const vpago = document.getElementById('fat_val_pago'); if(vpago) vpago.value='0';
     calcFatModal();
   }
   if (id === 'mOrc') {
