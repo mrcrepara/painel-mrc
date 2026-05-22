@@ -632,7 +632,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <div class="page" id="page-agenda">
   <div class="pg-hdr">
     <div><h1>📅 Agenda</h1><p>Compromissos, entregas e lembretes</p></div>
-    <button class="btn btn-blue" onclick="openM('mEvt')">+ Novo Evento</button>
+    <button class="btn btn-blue" onclick="document.getElementById('mEvt').classList.add('open');fillCliSel();">+ Novo Evento</button>
   </div>
   <div class="card">
     <div class="card-hdr">
