@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>MRC — Agenda</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#0F1117;--card:#1A1F2E;--card2:#1E2436;
+  --border:#252D3D;--text:#E8ECF4;--muted:#7B8DB0;
+  --blue:#2563EB;--green:#10B981;--red:#EF4444;
+  --amber:#F59E0B;--purple:#8B5CF6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:50}
+header h1{font-size:17px;font-weight:800;color:#fff}
+.hlinks{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hlinks a{color:var(--muted);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid var(--border);border-radius:7px}
+.hlinks a:hover{color:#fff;border-color:var(--blue)}
+main{padding:18px;max-width:900px;margin:0 auto}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.top-bar h2{font-size:20px;font-weight:800}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-green{background:var(--green);color:#fff}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-ghost{background:rgba(255,255,255,.07);color:var(--text);border:1px solid var(--border)}
+.btn-red{background:var(--red);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn:hover{opacity:.85}
+.btn-xs{padding:4px 8px;font-size:11px;border:none;border-radius:6px;cursor:pointer;font-weight:700;color:#fff;font-family:'Inter',sans-serif}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;overflow:hidden}
+.card-hdr{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-hdr h3{font-size:14px;font-weight:700;color:#fff}
+.card-body{padding:16px}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:4px}
+.tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;border-radius:7px;cursor:pointer;color:var(--muted);border:none;background:none;font-family:'Inter',sans-serif}
+.tab.active{background:var(--blue);color:#fff}
+
+/* EVENTOS */
+.evt-list{display:flex;flex-direction:column;gap:8px}
+.evt-item{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px}
+.evt-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.evt-body{flex:1;min-width:0}
+.evt-titulo{font-size:14px;font-weight:700;color:#fff;margin-bottom:2px}
+.evt-meta{font-size:12px;color:var(--muted)}
+.evt-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;color:#fff;margin-right:6px}
+.evt-acts{display:flex;gap:5px;flex-shrink:0}
+.empty{text-align:center;color:var(--muted);padding:24px;font-size:13px}
+
+/* CALENDÁRIO */
+.cal-nav{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.cal-nav button{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:7px;cursor:pointer;font-size:14px}
+.cal-nav span{font-size:15px;font-weight:700;color:#fff}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dow{text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:4px}
+.cal-day{background:var(--card2);border:1.5px solid var(--border);border-radius:8px;padding:6px;min-height:64px;cursor:pointer;transition:border-color .15s}
+.cal-day:hover{border-color:var(--blue)}
+.cal-day.today{border-color:var(--blue)}
+.cal-day.other{opacity:.3}
+.cal-day .dn{font-size:11px;font-weight:700;margin-bottom:3px}
+.cal-day .de{font-size:10px;padding:2px 4px;border-radius:3px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:520px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+.mhdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mhdr h3{font-size:15px;font-weight:700;color:#fff}
+.mclose{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1}
+.mclose:hover{color:#fff}
+.mbody{padding:18px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:13px}
+.mfoot{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.fg{display:flex;flex-direction:column;gap:5px}
+label{font-size:12px;font-weight:600;color:var(--muted)}
+input,select,textarea{padding:9px 12px;background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
+textarea{resize:vertical;min-height:56px}
+.frow{display:flex;gap:12px;flex-wrap:wrap}
+.frow .fg{flex:1;min-width:120px}
+
+/* NOTIF BAR */
+.notif-bar{position:fixed;top:0;left:0;right:0;z-index:99999;background:var(--blue);color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:600;transform:translateY(-100%);transition:transform .3s}
+.notif-bar.show{transform:translateY(0)}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--green);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:600;color:#fff;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* SYNC */
+#syncOv{position:fixed;inset:0;background:var(--bg);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+</style>
+</head>
+<body>
+
+<div id="syncOv">
+  <div style="font-size:36px">📅</div>
+  <div style="font-size:16px;font-weight:800;color:#fff">Agenda MRC</div>
+  <div style="font-size:13px;color:var(--muted)">A carregar...</div>
+</div>
+
+<div class="notif-bar" id="notifBar">
+  <span id="notifMsg">🔔 Lembrete</span>
+  <button onclick="fecharNotif()" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-weight:700">OK</button>
+</div>
+
+<header>
+  <h1>📅 Agenda — MRC</h1>
+  <div class="hlinks">
+    <span id="notifStatus" style="font-size:12px;color:var(--muted)">🔔 Lembretes: —</span>
+    <a href="index.html">← Sistema</a>
+    <a href="os.html">📋 O.S.</a>
+  </div>
+</header>
+
+<main>
+  <div class="top-bar">
+    <h2>Eventos & Lembretes</h2>
+    <button class="btn btn-green" onclick="abrirModal()">+ Novo Evento</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabProx" onclick="mudarTab('proximos')">📋 Próximos</button>
+    <button class="tab" id="tabCal" onclick="mudarTab('calendario')">📅 Calendário</button>
+    <button class="tab" id="tabTodos" onclick="mudarTab('todos')">📦 Todos</button>
+  </div>
+
+  <!-- PRÓXIMOS -->
+  <div id="secProximos">
+    <div class="card">
+      <div class="card-hdr"><h3>🔜 Hoje & Esta Semana</h3></div>
+      <div class="card-body"><div class="evt-list" id="listaHoje"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h3>📅 Próximos Eventos</h3></div>
+      <div class="card-body"><div class="evt-list" id="listaProx"></div></div>
+    </div>
+  </div>
+
+  <!-- CALENDÁRIO -->
+  <div id="secCalendario" style="display:none">
+    <div class="card">
+      <div class="card-body">
+        <div class="cal-nav">
+          <button onclick="calNav(-1)">‹</button>
+          <span id="calLabel">—</span>
+          <button onclick="calNav(1)">›</button>
+          <button onclick="calHoje()" style="font-size:12px">Hoje</button>
+        </div>
+        <div class="cal-grid">
+          <div class="cal-dow">Dom</div><div class="cal-dow">Seg</div>
+          <div class="cal-dow">Ter</div><div class="cal-dow">Qua</div>
+          <div class="cal-dow">Qui</div><div class="cal-dow">Sex</div>
+          <div class="cal-dow">Sáb</div>
+        </div>
+        <div class="cal-grid" id="calGrid" style="margin-top:4px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h3 id="calDiaLabel">Eventos do dia</h3></div>
+      <div class="card-body"><div class="evt-list" id="listaDia"></div></div>
+    </div>
+  </div>
+
+  <!-- TODOS -->
+  <div id="secTodos" style="display:none">
+    <div class="card">
+      <div class="card-body">
+        <input id="searchQ" placeholder="🔍 Pesquisar..." oninput="renderTodos()" style="margin-bottom:12px">
+        <div class="evt-list" id="listaTodos"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <div class="mhdr">
+      <h3 id="modalTit">+ Novo Evento</h3>
+      <button class="mclose" onclick="fecharModal()">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fg">
+        <label>Título *</label>
+        <input id="f_titulo" placeholder="ex: Entrega Motor, Visita cliente...">
+      </div>
+      <div class="fg">
+        <label>Tipo</label>
+        <select id="f_tipo">
+          <option value="entrega">🔧 Entrega de Reparação</option>
+          <option value="visita">🚗 Visita / Deslocação</option>
+          <option value="pagamento">💰 Vencimento de Fatura</option>
+          <option value="reuniao">🤝 Reunião</option>
+          <option value="outro">📌 Outro Lembrete</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Cliente</label>
+        <select id="f_cli"></select>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Data *</label>
+          <input type="date" id="f_data">
+        </div>
+        <div class="fg">
+          <label>Hora</label>
+          <input type="time" id="f_hora" value="09:00">
+        </div>
+      </div>
+      <div class="fg">
+        <label>🔔 Lembrete Sonoro</label>
+        <select id="f_lembrete">
+          <option value="">Sem lembrete</option>
+          <option value="0">Na hora exacta</option>
+          <option value="5">5 minutos antes</option>
+          <option value="15">15 minutos antes</option>
+          <option value="30">30 minutos antes</option>
+          <option value="60">1 hora antes</option>
+          <option value="1440">1 dia antes</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Notas</label>
+        <textarea id="f_notas" placeholder="Detalhes adicionais..."></textarea>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-green" onclick="guardar()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Firebase ─────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:"AIzaSyALX9QWi4o89zO0wBd3A3znkP_YD-bPwwA",
+  authDomain:"mrc-47d1f.firebaseapp.com",
+  projectId:"mrc-47d1f",
+  storageBucket:"mrc-47d1f.firebasestorage.app",
+  messagingSenderId:"4766445522",
+  appId:"1:4766445522:web:ffd8567ff468e24810620b"
+});
+const db = firebase.firestore();
+
+// ── State ────────────────────────────────────────────────
+let _evts = [], _clis = [], _editId = null;
+let _calDate = new Date();
+let _calDia = null;
+let _tabAtual = 'proximos';
+let _notifTimer = null;
+let _audioCtx = null;
+
+// ── Helpers ──────────────────────────────────────────────
+const td = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const TIPO_COR = {entrega:'#2563EB',visita:'#14B8A6',pagamento:'#EF4444',reuniao:'#8B5CF6',outro:'#F59E0B'};
+const TIPO_LABEL = {entrega:'🔧 Entrega',visita:'🚗 Visita',pagamento:'💰 Fatura',reuniao:'🤝 Reunião',outro:'📌 Outro'};
+
+function toast(msg, tipo='g') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderColor = tipo==='r'?'var(--red)':tipo==='a'?'var(--amber)':'var(--green)';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+// ── Som do lembrete ──────────────────────────────────────
+function tocarSom() {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = _audioCtx.createOscillator();
+    const gain = _audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(_audioCtx.destination);
+    osc.frequency.setValueAtTime(880, _audioCtx.currentTime);
+    osc.frequency.setValueAtTime(660, _audioCtx.currentTime + 0.15);
+    osc.frequency.setValueAtTime(880, _audioCtx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.4, _audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + 0.6);
+    osc.start(_audioCtx.currentTime);
+    osc.stop(_audioCtx.currentTime + 0.6);
+  } catch(e) {}
+}
+
+// ── Notificações ─────────────────────────────────────────
+function pedirPermissao() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().then(p => {
+      document.getElementById('notifStatus').textContent = '🔔 Lembretes: ' + (p==='granted'?'Ativos':'Bloqueados');
+    });
+  } else if ('Notification' in window) {
+    document.getElementById('notifStatus').textContent = '🔔 Lembretes: ' + (Notification.permission==='granted'?'Ativos':'Bloqueados');
+  }
+}
+
+function mostrarNotif(titulo, corpo) {
+  // Som sempre
+  tocarSom();
+  // Barra visual
+  const bar = document.getElementById('notifBar');
+  document.getElementById('notifMsg').textContent = '🔔 ' + titulo + (corpo?' — '+corpo:'');
+  bar.classList.add('show');
+  setTimeout(()=>bar.classList.remove('show'), 8000);
+  // Notificação do browser se disponível
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification('MRC — ' + titulo, {body: corpo}); } catch(e) {}
+  }
+}
+
+function fecharNotif() {
+  document.getElementById('notifBar').classList.remove('show');
+}
+
+function verificarLembretes() {
+  const agora = new Date();
+  let alterado = false;
+  _evts.forEach((e, i) => {
+    if (!e.data || !e.hora || e.lembrete === '' || e.lembrete === undefined || e.lembrete_enviado) return;
+    const evtTime = new Date(e.data + 'T' + e.hora);
+    const minAntes = parseInt(e.lembrete) || 0;
+    const diffMin = (evtTime - agora) / 60000;
+    if (diffMin <= minAntes && diffMin > -(minAntes + 5)) {
+      const msg = minAntes === 0 ? 'A acontecer agora!' : minAntes < 60 ? 'Daqui a ' + minAntes + ' min' : 'Daqui a ' + (minAntes/60) + 'h';
+      mostrarNotif(e.titulo, msg + (e.cli && e.cli !== '—' ? ' · ' + e.cli : ''));
+      _evts[i] = {...e, lembrete_enviado: true};
+      alterado = true;
+    }
+  });
+  if (alterado) db.collection('mrc').doc('evt').set({value: _evts});
+}
+
+function iniciarLembretes() {
+  pedirPermissao();
+  if (_notifTimer) clearInterval(_notifTimer);
+  _notifTimer = setInterval(verificarLembretes, 30000); // cada 30 segundos
+  verificarLembretes();
+}
+
+// ── Firebase ─────────────────────────────────────────────
+async function carregar() {
+  try {
+    const [evtDoc, cliDoc] = await Promise.all([
+      db.collection('mrc').doc('evt').get(),
+      db.collection('mrc').doc('cli').get()
+    ]);
+    _evts = evtDoc.exists ? (evtDoc.data().value || []) : [];
+    _clis = cliDoc.exists ? (cliDoc.data().value || []) : [];
+  } catch(e) {
+    _evts = []; _clis = [];
+  }
+}
+
+async function guardarFB() {
+  await db.collection('mrc').doc('evt').set({value: _evts});
+}
+
+// ── Render ───────────────────────────────────────────────
+function evtItem(e, mostrarApagar=true) {
+  const cor = TIPO_COR[e.tipo] || '#2563EB';
+  const label = TIPO_LABEL[e.tipo] || e.tipo;
+  const temLembrete = e.lembrete && e.lembrete !== '';
+  return `<div class="evt-item">
+    <div class="evt-dot" style="background:${cor}"></div>
+    <div class="evt-body">
+      <div class="evt-titulo">${e.titulo}</div>
+      <div class="evt-meta">
+        <span class="evt-badge" style="background:${cor}">${label}</span>
+        ${e.data} ${e.hora?'· '+e.hora:''} ${e.cli&&e.cli!=='—'?'· '+e.cli:''} ${temLembrete?'· 🔔':''}
+        ${e.notas?'<br><span style="color:var(--muted)">' + e.notas + '</span>':''}
+      </div>
+    </div>
+    <div class="evt-acts">
+      <button class="btn-xs" style="background:var(--blue)" onclick="editar('${e.id}')">✏</button>
+      ${mostrarApagar?`<button class="btn-xs" style="background:var(--red)" onclick="apagar('${e.id}')">🗑</button>`:''}
+    </div>
+  </div>`;
+}
+
+function renderProximos() {
+  const hoje = td();
+  const proxSemana = new Date(); proxSemana.setDate(proxSemana.getDate() + 7);
+  const proxSemanaStr = proxSemana.toISOString().slice(0,10);
+
+  const hojeEvts = _evts.filter(e => e.data === hoje).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+  const proxEvts = _evts.filter(e => e.data > hoje && e.data <= proxSemanaStr).sort((a,b)=>a.data.localeCompare(b.data));
+  const futEvts = _evts.filter(e => e.data > proxSemanaStr).sort((a,b)=>a.data.localeCompare(b.data)).slice(0,10);
+
+  const lh = document.getElementById('listaHoje');
+  const lp = document.getElementById('listaProx');
+  lh.innerHTML = hojeEvts.length ? hojeEvts.map(e=>evtItem(e)).join('') : '<div class="empty">Sem eventos hoje</div>';
+  lp.innerHTML = (proxEvts.length+futEvts.length) ? [...proxEvts,...futEvts].map(e=>evtItem(e)).join('') : '<div class="empty">Sem eventos próximos</div>';
+}
+
+function renderCalendario() {
+  const yr = _calDate.getFullYear(), mo = _calDate.getMonth();
+  document.getElementById('calLabel').textContent = MESES[mo] + ' ' + yr;
+  const firstDay = new Date(yr, mo, 1).getDay();
+  const diasMes = new Date(yr, mo+1, 0).getDate();
+  const hoje = td();
+  let h = '';
+  for (let i = 0; i < firstDay; i++) {
+    const d = new Date(yr, mo, -firstDay+i+1);
+    h += `<div class="cal-day other"><div class="dn" style="color:var(--muted)">${d.getDate()}</div></div>`;
+  }
+  for (let d = 1; d <= diasMes; d++) {
+    const ds = yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const evts = _evts.filter(e=>e.data===ds);
+    const isHoje = ds === hoje;
+    const selecionado = _calDia === ds;
+    h += `<div class="cal-day ${isHoje?'today':''}" style="${selecionado?'border-color:var(--green);background:rgba(16,185,129,.08)':''}" onclick="calDiaClick('${ds}')">
+      <div class="dn" style="color:${isHoje?'var(--blue)':'var(--text)'}">${d}</div>
+      ${evts.slice(0,2).map(e=>`<div class="de" style="background:${TIPO_COR[e.tipo]||'#2563EB'}22;color:${TIPO_COR[e.tipo]||'#2563EB'}">${e.titulo}</div>`).join('')}
+      ${evts.length>2?`<div style="font-size:9px;color:var(--muted)">+${evts.length-2}</div>`:''}
+    </div>`;
+  }
+  document.getElementById('calGrid').innerHTML = h;
+  if (_calDia) renderDia(_calDia);
+}
+
+function calDiaClick(ds) {
+  _calDia = ds;
+  renderCalendario();
+  renderDia(ds);
+}
+
+function renderDia(ds) {
+  const d = new Date(ds+'T12:00:00');
+  document.getElementById('calDiaLabel').textContent = d.getDate() + ' de ' + MESES[d.getMonth()];
+  const evts = _evts.filter(e=>e.data===ds).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+  document.getElementById('listaDia').innerHTML = evts.length ? evts.map(e=>evtItem(e)).join('') : '<div class="empty">Sem eventos neste dia</div>';
+}
+
+function renderTodos() {
+  const q = (document.getElementById('searchQ')?.value||'').toLowerCase();
+  let lista = [..._evts].sort((a,b)=>b.data.localeCompare(a.data));
+  if (q) lista = lista.filter(e=>(e.titulo||'').toLowerCase().includes(q)||(e.cli||'').toLowerCase().includes(q));
+  document.getElementById('listaTodos').innerHTML = lista.length ? lista.map(e=>evtItem(e)).join('') : '<div class="empty">Sem eventos</div>';
+}
+
+function calNav(dir) { _calDate.setMonth(_calDate.getMonth()+dir); renderCalendario(); }
+function calHoje() { _calDate = new Date(); renderCalendario(); }
+
+function render() {
+  renderProximos();
+  renderCalendario();
+  renderTodos();
+}
+
+// ── Tabs ─────────────────────────────────────────────────
+function mudarTab(tab) {
+  _tabAtual = tab;
+  document.getElementById('secProximos').style.display = tab==='proximos' ? 'block' : 'none';
+  document.getElementById('secCalendario').style.display = tab==='calendario' ? 'block' : 'none';
+  document.getElementById('secTodos').style.display = tab==='todos' ? 'block' : 'none';
+  document.getElementById('tabProx').classList.toggle('active', tab==='proximos');
+  document.getElementById('tabCal').classList.toggle('active', tab==='calendario');
+  document.getElementById('tabTodos').classList.toggle('active', tab==='todos');
+}
+
+// ── Modal ────────────────────────────────────────────────
+function preencherClis() {
+  document.getElementById('f_cli').innerHTML =
+    '<option value="">— Sem cliente —</option>' +
+    _clis.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+}
+
+function abrirModal(data) {
+  _editId = null;
+  document.getElementById('modalTit').textContent = '+ Novo Evento';
+  preencherClis();
+  document.getElementById('f_titulo').value = '';
+  document.getElementById('f_tipo').value = 'outro';
+  document.getElementById('f_cli').value = '';
+  document.getElementById('f_data').value = data || td();
+  document.getElementById('f_hora').value = '09:00';
+  document.getElementById('f_lembrete').value = '';
+  document.getElementById('f_notas').value = '';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('f_titulo').focus(), 100);
+}
+
+function fecharModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function editar(id) {
+  const e = _evts.find(x=>x.id===id);
+  if (!e) return;
+  _editId = id;
+  document.getElementById('modalTit').textContent = '✏ Editar Evento';
+  preencherClis();
+  document.getElementById('f_titulo').value = e.titulo || '';
+  document.getElementById('f_tipo').value = e.tipo || 'outro';
+  document.getElementById('f_cli').value = e.cli_id || '';
+  document.getElementById('f_data').value = e.data || td();
+  document.getElementById('f_hora').value = e.hora || '09:00';
+  document.getElementById('f_lembrete').value = e.lembrete || '';
+  document.getElementById('f_notas').value = e.notas || '';
+  document.getElementById('modal').classList.add('open');
+}
+
+async function guardar() {
+  const titulo = document.getElementById('f_titulo').value.trim();
+  const data = document.getElementById('f_data').value;
+  if (!titulo || !data) { toast('Título e data obrigatórios!','r'); return; }
+  const cli_id = document.getElementById('f_cli').value;
+  const cli = _clis.find(c=>c.id===cli_id);
+  const obj = {
+    titulo, tipo: document.getElementById('f_tipo').value,
+    cli_id, cli: cli?.nome || '—',
+    data, hora: document.getElementById('f_hora').value,
+    lembrete: document.getElementById('f_lembrete').value,
+    notas: document.getElementById('f_notas').value,
+    lembrete_enviado: false
+  };
+  if (_editId) {
+    const i = _evts.findIndex(x=>x.id===_editId);
+    if (i >= 0) _evts[i] = {..._evts[i], ...obj, lembrete_enviado: false};
+  } else {
+    obj.id = uid(); _evts.push(obj);
+  }
+  fecharModal();
+  render();
+  try {
+    await guardarFB();
+    toast(_editId ? 'Evento actualizado!' : 'Evento criado!');
+    // Iniciar lembrete imediatamente para o novo evento
+    if (obj.lembrete !== '') verificarLembretes();
+  } catch(e) { toast('Erro ao guardar!','r'); }
+}
+
+async function apagar(id) {
+  if (!confirm('Apagar este evento?')) return;
+  _evts = _evts.filter(x=>x.id!==id);
+  render();
+  await guardarFB();
+  toast('Evento apagado.','a');
+}
+
+// ── Init ─────────────────────────────────────────────────
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) fecharModal();
+});
+document.addEventListener('keydown', e => { if(e.key==='Escape') fecharModal(); });
+
+// Inicializar AudioContext no primeiro clique do user (obrigatório nos browsers modernos)
+document.addEventListener('click', function initAudio() {
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  document.removeEventListener('click', initAudio);
+}, {once: true});
+
+carregar().then(() => {
+  document.getElementById('syncOv').style.display = 'none';
+  render();
+  iniciarLembretes();
+
+  // Realtime
+  db.collection('mrc').doc('evt').onSnapshot(doc => {
+    if (doc.exists) { _evts = doc.data().value || []; render(); }
+  });
+  db.collection('mrc').doc('cli').onSnapshot(doc => {
+    if (doc.exists) _clis = doc.data().value || [];
+  });
+});
+</script>
+</body>
+</html>
