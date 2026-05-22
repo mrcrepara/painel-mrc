@@ -798,8 +798,6 @@ tbody td{padding:9px 12px;vertical-align:middle}
   </div></div>
 </div>
 
-
-
   </div><!-- /content -->
 </div><!-- /main -->
 </div><!-- /app -->
@@ -4462,34 +4460,6 @@ const _prevOpenM = openM;
 // MRC v5 ADDON - Todas as funcionalidades novas
 // ===================================================================
 
-// SUPABASE SYNC
-const _SUPA_URL='https://eozeehgftbgvixnfacfw.supabase.co';
-const _SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvemVlaGdmdGJndml4bmZhY2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzA2NjEsImV4cCI6MjA5NDM0NjY2MX0.GThHUAqdxdNxcmPjKpkNTiojjIVC75JtyZ9CX_WSjzY';
-
-async function _supaSync(){
-  var bar=document.createElement('div');
-  bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#3B7BF6;color:#fff;text-align:center;padding:10px;font-size:13px;font-weight:600';
-  bar.textContent='☁️ A sincronizar com a nuvem...';
-  document.body.appendChild(bar);
-  try{
-    var r=await fetch(_SUPA_URL+'/rest/v1/mrc_dados?select=chave,valor',{headers:{'apikey':_SUPA_KEY,'Authorization':'Bearer '+_SUPA_KEY}});
-    if(r.ok){
-      var rows=await r.json();var loaded=0;
-      rows.forEach(function(row){try{localStorage.setItem(row.chave,row.valor);loaded++;}catch(e){}});
-      bar.textContent='✅ Sincronizado! ('+loaded+' registos)';
-      bar.style.background='#10C97A';
-      setTimeout(function(){bar.remove();location.reload();},1500);
-    }else{
-      bar.textContent='⚠️ Sem ligação — dados locais';
-      bar.style.background='#F5A623';
-      setTimeout(function(){bar.remove();},2000);
-    }
-  }catch(e){
-    bar.textContent='⚠️ Sem ligação — dados locais';
-    bar.style.background='#F5A623';
-    setTimeout(function(){bar.remove();},2000);
-  }
-}
 
 function _supaWrite(key,val){
   fetch(_SUPA_URL+'/rest/v1/mrc_dados',{
@@ -4798,8 +4768,6 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 })();
 
-// Auto sync Supabase on load
-window.addEventListener('load',function(){setTimeout(_supaSync,1200);});
 
 
 
@@ -4816,8 +4784,6 @@ function calcDeslAuto(){
 
 
 
-// Auto sync Supabase on load
-window.addEventListener('load',function(){setTimeout(_supaSync,1200);});
 
 
 
@@ -4958,8 +4924,6 @@ function calcDeslAuto(){
 
 
 
-// Auto sync Supabase on load
-window.addEventListener('load',function(){setTimeout(_supaSync,1200);});
 
 
 
