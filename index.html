@@ -9,6 +9,65 @@
 <title>MRC — Sistema de Gestão</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  firebase.initializeApp({
+    apiKey:"AIzaSyALX9QWi4o89zO0wBd3A3znkP_YD-bPwwA",
+    authDomain:"mrc-47d1f.firebaseapp.com",
+    projectId:"mrc-47d1f",
+    storageBucket:"mrc-47d1f.firebasestorage.app",
+    messagingSenderId:"4766445522",
+    appId:"1:4766445522:web:ffd8567ff468e24810620b"
+  });
+  window._db=firebase.firestore();
+  window._cache={};
+  window._fbReady=false;
+
+  window._fbSave=function(k,d){
+    window._cache[k]=d;
+    try{localStorage.setItem('m3_'+k,JSON.stringify(d));}catch(e){}
+    window._db.collection('mrc').doc(k).set({value:d}).catch(function(e){console.warn('FB:',e);});
+  };
+
+  window._syncFromFirebase=function(){
+    var keys=['mat','rep','cli','eq','orc','fat','desp','rec','forn','hist','desl','svc','evt','pdvh','fiado','cats','def','users'];
+    var promises=keys.map(function(k){
+      return window._db.collection('mrc').doc(k).get().then(function(doc){
+        if(doc.exists){
+          window._cache[k]=doc.data().value;
+          try{localStorage.setItem('m3_'+k,JSON.stringify(window._cache[k]));}catch(e){}
+        } else {
+          try{
+            var local=localStorage.getItem('m3_'+k);
+            if(local){
+              window._cache[k]=JSON.parse(local);
+              window._db.collection('mrc').doc(k).set({value:window._cache[k]});
+            } else {window._cache[k]=[];}
+          }catch(e){window._cache[k]=[];}
+        }
+      }).catch(function(){
+        try{var l=localStorage.getItem('m3_'+k);window._cache[k]=l?JSON.parse(l):[];}catch(e){window._cache[k]=[];}
+      });
+    });
+    return Promise.all(promises);
+  };
+
+  window._startRealtime=function(){
+    var keys=['mat','rep','cli','eq','orc','fat','desp','rec','forn','hist','desl','svc','evt','pdvh','fiado','cats'];
+    keys.forEach(function(k){
+      window._db.collection('mrc').doc(k).onSnapshot(function(doc){
+        if(doc.exists&&window._fbReady){
+          window._cache[k]=doc.data().value;
+          try{localStorage.setItem('m3_'+k,JSON.stringify(window._cache[k]));}catch(e){}
+          if(typeof renderAll==='function')renderAll();
+        }
+      });
+    });
+  };
+})();
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -952,9 +1011,9 @@ const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_
          desp:'m3_desp',rec:'m3_rec',forn:'m3_forn',hist:'m3_hist',desl:'m3_desl',
          users:'m3_users',def:'m3_def',cats:'m3_cats',
          svc:'m3_svc',evt:'m3_evt',pdvh:'m3_pdvhist',fiado:'m3_fiado'};
-const ld=k=>{try{return JSON.parse(localStorage.getItem(K[k]))||[]}catch{return[]}};
-const ldO=k=>{try{return JSON.parse(localStorage.getItem(K[k]))||{}}catch{return{}}};
-const sv=(k,d)=>localStorage.setItem(K[k],JSON.stringify(d));
+const ld=k=>{if(window._cache&&window._cache[k]!==undefined){var v=window._cache[k];return Array.isArray(v)?v:[];}try{return JSON.parse(localStorage.getItem(K[k]))||[]}catch{return[]}};
+const ldO=k=>{if(window._cache&&window._cache[k]!==undefined&&!Array.isArray(window._cache[k]))return window._cache[k];try{return JSON.parse(localStorage.getItem(K[k]))||{}}catch{return{}}};
+const sv=(k,d)=>{if(typeof window._fbSave==="function")window._fbSave(k,d);else localStorage.setItem(K[k],JSON.stringify(d));};
 const eur=v=>parseFloat(v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const td=()=>new Date().toISOString().slice(0,10);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -2095,6 +2154,19 @@ function printReparacao(id) {
 // INIT
 // ══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',function(){
+  // Firebase sync before app starts
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:#0F1117;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Inter,sans-serif;color:#fff';
+  overlay.innerHTML='<div style="font-size:36px">🔥</div><div style="font-size:16px;font-weight:700">MRC Sistema</div><div style="font-size:13px;color:#7B8DB0">A sincronizar dados...</div>';
+  document.body.appendChild(overlay);
+  window._syncFromFirebase().then(function(){
+    window._fbReady=true;
+    window._startRealtime();
+    document.body.removeChild(overlay);
+  }).catch(function(){
+    window._fbReady=true;
+    try{document.body.removeChild(overlay);}catch(e){}
+  });
   setDate();
   // Abrir directamente sem login
   var defaultUser = {id:'admin',nome:'Rui Veloso',perfil:'Administrador',pass:''};
@@ -2650,7 +2722,7 @@ window.clearForm = function(id) {
     const dp2 = document.getElementById('fat_desc_pct'); if (dp2) dp2.value = '0';
     const mo = document.getElementById('fat_mo'); if (mo) mo.value = '0';
     const rep = document.getElementById('fat_rep'); if (rep) rep.value = '';
-    const desc = document.getElementById('fat_desc'); if (desc) desc.value = '';
+    const descEl = document.getElementById('fat_desc'); if (descEl) descEl.value = '';
     const panel = document.getElementById('fat_rep_panel'); if (panel) panel.style.display = 'none';
     calcFatModal();
   }
