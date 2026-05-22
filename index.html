@@ -798,7 +798,11 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <div class="ov" id="mFat"><div class="modal modal-lg">
   <div class="mhdr"><h3 id="mFatT">🧾 Nova Fatura</h3><button class="mclose" onclick="closeM('mFat')">✕</button></div>
   <div class="mbody">
-    <div class="frow"><div class="fg"><label>Cliente *</label><select id="fat_cli"></select></div><div class="fg"><label>Reparação (opç.)</label><input id="fat_rep" placeholder="ex: R-2025-0001"></div></div>
+    <div class="frow"><div class="fg"><label>Cliente *</label><select id="fat_cli" onchange="fatCliChange()"></select></div><div id="fat_rep_panel" style="display:none;background:rgba(59,123,246,.08);border:1px solid rgba(59,123,246,.25);border-radius:9px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:#60A5FA;margin-bottom:7px">🔧 Reparações em aberto</div>
+      <div id="fat_rep_list"></div>
+    </div>
+    <div class="fg"><label>Reparação (opç.)</label><input id="fat_rep" placeholder="ex: R-2025-0001"></div></div>
     <div class="fg"><label>Descrição do Serviço *</label><textarea id="fat_desc" placeholder="Descrição do serviço prestado"></textarea></div>
 
     <!-- LISTA DE MATERIAIS -->
@@ -3904,6 +3908,32 @@ window.openM = function(id, editId, data) {
 };
 
 
+
+function fatCliChange(){
+  var cli_id=(document.getElementById('fat_cli')||{}).value||'';
+  var panel=document.getElementById('fat_rep_panel');
+  var list=document.getElementById('fat_rep_list');
+  if(!panel||!list)return;
+  if(!cli_id){panel.style.display='none';return;}
+  var reps=ld('rep').filter(function(r){return r.cli_id===cli_id&&r.est!=='Entregue';});
+  if(!reps.length){panel.style.display='none';return;}
+  panel.style.display='block';list.innerHTML='';
+  reps.forEach(function(r){
+    var lbl=(r.eq||'Rep')+(r.av?' — '+r.av.slice(0,40):'');
+    var el=document.createElement('div');
+    el.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card2);border-radius:7px;margin-bottom:5px;cursor:pointer;font-size:12px;border:2px solid var(--border)';
+    el.innerHTML='<span style="flex:1"><strong style="color:#fff">'+r.id.slice(-6).toUpperCase()+'</strong> — '+lbl+'<br><small style="color:var(--muted)">'+r.est+'</small></span>';
+    el.addEventListener('click',function(){
+      list.querySelectorAll('div').forEach(function(e){e.style.borderColor='var(--border)';});
+      el.style.borderColor='var(--blue)';
+      var rf=document.getElementById('fat_rep');if(rf)rf.value=r.id.slice(-6).toUpperCase();
+      var mf=document.getElementById('fat_mo');if(mf&&r.val)mf.value=r.val;
+      var df=document.getElementById('fat_desc');if(df&&(r.av||r.eq))df.value=(r.eq||'')+(r.av?' — '+r.av:'');
+      if(typeof calcFatModal==='function')calcFatModal();
+    });
+    list.appendChild(el);
+  });
+}
 </script>
 
 
