@@ -1054,6 +1054,7 @@ function openM(id,editId,data){
   _eids[id]=editId||null;
   // fill client selects
   if(['mRep','mOrc','mFat','mRec','mEq','mDesl'].includes(id))fillCliSel();
+  if(id==='mFat') setTimeout(function(){if(typeof fatCliChange==='function')fatCliChange();},80);
   // fill fat select in rec
   if(id==='mRec')fillFatSel();
   // set title
@@ -3915,7 +3916,10 @@ function fatCliChange(){
   var list=document.getElementById('fat_rep_list');
   if(!panel||!list)return;
   if(!cli_id){panel.style.display='none';return;}
-  var reps=ld('rep').filter(function(r){return r.cli_id===cli_id&&r.est!=='Entregue';});
+  var cli_nome=(document.getElementById('fat_cli').options[document.getElementById('fat_cli').selectedIndex]||{}).text||'';
+  var reps=ld('rep').filter(function(r){
+    return (r.cli_id===cli_id||(r.cli&&r.cli===cli_nome))&&r.est!=='Entregue';
+  });
   if(!reps.length){panel.style.display='none';return;}
   panel.style.display='block';list.innerHTML='';
   reps.forEach(function(r){
