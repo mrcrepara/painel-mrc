@@ -335,11 +335,20 @@ function filtrarMats(){
   const q = (document.getElementById('matSearch')?.value||'').toLowerCase().trim();
   const lista = document.getElementById('matLista');
   if(!q){lista.style.display='none';return;}
+  if(_mats.length===0){
+    lista.style.display='block';
+    lista.innerHTML='<div style="padding:12px;color:var(--muted);font-size:12px;text-align:center">⚠ Materiais ainda a carregar...</div>';
+    return;
+  }
   const res = _mats.filter(m =>
     (m.desc||'').toLowerCase().includes(q) ||
     (m.ref||'').toLowerCase().includes(q)
   ).slice(0,10);
-  if(!res.length){lista.style.display='none';return;}
+  if(!res.length){
+    lista.style.display='block';
+    lista.innerHTML='<div style="padding:12px;color:var(--muted);font-size:12px;text-align:center">Sem resultados para "'+q+'"</div>';
+    return;
+  }
   lista.style.display='block';
   lista.innerHTML = res.map(m =>
     `<div onclick="adicionarMat('${m.id}')" style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background=''">
@@ -490,6 +499,12 @@ carregarDados().then(() => {
   document.getElementById('app').style.display = 'flex';
   render();
 
+  // Update placeholder with mat count
+  const ms = document.getElementById('matSearch');
+  if(ms) ms.placeholder = _mats.length > 0 
+    ? '🔍 Pesquisar nos ' + _mats.length + ' materiais do stock...'
+    : '⚠ Sem materiais no stock';
+
   // Realtime sync
   db.collection('mrc').doc('os').onSnapshot(doc => {
     if(doc.exists){
@@ -501,7 +516,13 @@ carregarDados().then(() => {
     if(doc.exists) _clis = doc.data().value || [];
   });
   db.collection('mrc').doc('mat').onSnapshot(doc => {
-    if(doc.exists) _mats = doc.data().value || [];
+    if(doc.exists){
+      _mats = doc.data().value || [];
+      const ms = document.getElementById('matSearch');
+      if(ms) ms.placeholder = _mats.length > 0
+        ? '🔍 Pesquisar nos ' + _mats.length + ' materiais do stock...'
+        : '⚠ Sem materiais no stock';
+    }
   });
 });
 </script>
