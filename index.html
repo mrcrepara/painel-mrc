@@ -32,7 +32,7 @@
   };
 
   window._syncFromFirebase=function(){
-    var keys=['mat','rep','cli','eq','orc','fat','desp','rec','forn','hist','desl','svc','evt','pdvh','fiado','cats','def','users'];
+    var keys=['mat','rep','cli','eq','orc','fat','desp','rec','forn','hist','desl','svc','evt','pdvh','fiado','cats','def','users','os'];
     var promises=keys.map(function(k){
       return window._db.collection('mrc').doc(k).get().then(function(doc){
         if(doc.exists){
@@ -55,7 +55,7 @@
   };
 
   window._startRealtime=function(){
-    var keys=['mat','rep','cli','eq','orc','fat','desp','rec','forn','hist','desl','svc','evt','pdvh','fiado','cats'];
+    var keys=['mat','rep','cli','eq','orc','fat','desp','rec','forn','hist','desl','svc','evt','pdvh','fiado','cats','os'];
     keys.forEach(function(k){
       window._db.collection('mrc').doc(k).onSnapshot(function(doc){
         if(doc.exists&&window._fbReady){
@@ -289,6 +289,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
   <div class="ni" data-p="definicoes" onclick="goPage('definicoes')">⚙ Definições</div>
   <div class="ni" data-p="agenda" onclick="goPage('agenda')"><span style="margin-right:4px">📅</span>Agenda</div>
   <div class="ni" data-p="pdv" onclick="goPage('pdv')"><span style="margin-right:4px">🛒</span>PDV / Venda Rápida</div>
+  <div class="ni" data-p="os" onclick="goPage('os')"><span style="margin-right:4px">📋</span>Ordens de Serviço</div>
   <div class="ni" data-p="servicos" onclick="goPage('servicos')"><span style="margin-right:4px">🛠</span>Catálogo de Serviços</div>
   <div class="ni" data-p="backup" onclick="goPage('backup')">💾 Backup</div>
   <div class="sb-bot">
@@ -733,6 +734,31 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div>
 
 <!-- CATÁLOGO DE SERVIÇOS PAGE -->
+<!-- ORDENS DE SERVIÇO PAGE -->
+<div class="page" id="page-os">
+  <div class="pg-hdr">
+    <div><h1>📋 Ordens de Serviço</h1><p>Registo rápido do trabalho diário — converte para fatura no final</p></div>
+    <button class="btn btn-green" onclick="openM('mOS')">+ Nova O.S.</button>
+  </div>
+  <div class="kpi-grid" id="osKpi"></div>
+  <div class="card"><div class="card-body">
+    <div class="sbar">
+      <input id="osQ" placeholder="🔍 Pesquisar..." oninput="renderOS()" style="flex:1">
+      <select id="osF" onchange="renderOS()">
+        <option value="">Todos os estados</option>
+        <option value="Rascunho">Rascunho</option>
+        <option value="Em Curso">Em Curso</option>
+        <option value="Concluído">Concluído</option>
+        <option value="Faturado">Faturado</option>
+      </select>
+    </div>
+    <div class="tbl-wrap">
+      <table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Descrição</th><th>Horas</th><th>Total</th><th>Estado</th><th>Ações</th></tr></thead>
+      <tbody id="osTbl"></tbody></table>
+    </div>
+  </div></div>
+</div>
+
 <div class="page" id="page-servicos">
   <div class="pg-hdr">
     <div><h1>🛠 Catálogo de Serviços</h1><p>Serviços standard com preço fixo — disponíveis no PDV e orçamentos</p></div>
@@ -1031,7 +1057,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 // ══════════════════════════════════════════════════════════
 const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
          desp:'m3_desp',rec:'m3_rec',forn:'m3_forn',hist:'m3_hist',desl:'m3_desl',
-         users:'m3_users',def:'m3_def',cats:'m3_cats',
+         users:'m3_users',def:'m3_def',cats:'m3_cats',os:'m3_os',
          svc:'m3_svc',evt:'m3_evt',pdvh:'m3_pdvhist',fiado:'m3_fiado'};
 const ld=k=>{if(window._cache&&window._cache[k]!==undefined){var v=window._cache[k];return Array.isArray(v)?v:[];}try{return JSON.parse(localStorage.getItem(K[k]))||[]}catch{return[]}};
 const ldO=k=>{if(window._cache&&window._cache[k]!==undefined&&!Array.isArray(window._cache[k]))return window._cache[k];try{return JSON.parse(localStorage.getItem(K[k]))||{}}catch{return{}}};
@@ -1141,9 +1167,9 @@ function doLogout(){
 // ══════════════════════════════════════════════════════════
 // NAV
 // ══════════════════════════════════════════════════════════
-const TITLES={dashboard:'Dashboard',agenda:'📅 Agenda',pdv:'🛒 PDV — Venda Rápida',servicos:'🛠 Catálogo de Serviços',fiado:'💳 Fiado / A Receber',reparacoes:'🔧 Reparações',orcamentos:'📋 Orçamentos',clientes:'👤 Clientes',equipamentos:'🖥 Equipamentos',materiais:'📦 Materiais',entrada:'↑ Entrada de Stock',saida:'↓ Saída de Stock',inventario:'📑 Inventário',fornecedores:'🏭 Fornecedores',faturas:'🧾 Faturas',recebimentos:'💰 Recebimentos',despesas:'💸 Despesas',deslocacoes:'🚗 Deslocações',relatorios:'📈 Relatórios',calculadora:'🧮 Calculadora',definicoes:'⚙ Definições',backup:'💾 Backup'};
+const TITLES={dashboard:'Dashboard',agenda:'📅 Agenda',pdv:'🛒 PDV — Venda Rápida',os:'📋 Ordens de Serviço',servicos:'🛠 Catálogo de Serviços',fiado:'💳 Fiado / A Receber',reparacoes:'🔧 Reparações',orcamentos:'📋 Orçamentos',clientes:'👤 Clientes',equipamentos:'🖥 Equipamentos',materiais:'📦 Materiais',entrada:'↑ Entrada de Stock',saida:'↓ Saída de Stock',inventario:'📑 Inventário',fornecedores:'🏭 Fornecedores',faturas:'🧾 Faturas',recebimentos:'💰 Recebimentos',despesas:'💸 Despesas',deslocacoes:'🚗 Deslocações',relatorios:'📈 Relatórios',calculadora:'🧮 Calculadora',definicoes:'⚙ Definições',backup:'💾 Backup'};
 let CurPage='dashboard';
-const RENDERS={dashboard:renderDash,agenda:renderAgenda,pdv:renderPDV,servicos:renderSvc,fiado:renderFiado,reparacoes:renderRep,orcamentos:renderOrc,clientes:renderCli,equipamentos:renderEq,materiais:renderMat,entrada:renderEntrada,saida:renderSaida,inventario:renderInv,fornecedores:renderForn,faturas:renderFat,recebimentos:renderRec,despesas:renderDesp,deslocacoes:renderDesl,relatorios:renderRel};
+const RENDERS={dashboard:renderDash,agenda:renderAgenda,pdv:renderPDV,os:renderOS,servicos:renderSvc,fiado:renderFiado,reparacoes:renderRep,orcamentos:renderOrc,clientes:renderCli,equipamentos:renderEq,materiais:renderMat,entrada:renderEntrada,saida:renderSaida,inventario:renderInv,fornecedores:renderForn,faturas:renderFat,recebimentos:renderRec,despesas:renderDesp,deslocacoes:renderDesl,relatorios:renderRel};
 function goPage(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
@@ -1153,6 +1179,51 @@ function goPage(p){
   CurPage=p;cancelDel();closeU();
   RENDERS[p]?.();
 }
+// ══════════════════════════════════════════════════════════
+// SISTEMA DE NOTIFICAÇÕES / LEMBRETES
+// ══════════════════════════════════════════════════════════
+var _notifTimer = null;
+
+function pedirPermissaoNotif(){
+  if('Notification' in window && Notification.permission==='default'){
+    Notification.requestPermission();
+  }
+}
+
+function enviarNotif(titulo, corpo){
+  if('Notification' in window && Notification.permission==='granted'){
+    try{
+      new Notification('MRC — '+titulo, {body:corpo, icon:'https://mrcrepara.github.io/painel-mrc/icon.png'});
+    }catch(e){}
+  }
+}
+
+function verificarLembretes(){
+  const evts = ld('evt');
+  const agora = new Date();
+  evts.forEach(function(e){
+    if(!e.data||!e.hora||!e.lembrete||e.lembrete==='')return;
+    if(e.lembrete_enviado)return;
+    const evtDate = new Date(e.data+'T'+e.hora);
+    const minAntes = parseInt(e.lembrete)||0;
+    const diffMin = (evtDate - agora) / 60000;
+    if(diffMin <= minAntes && diffMin > -5){
+      enviarNotif(e.titulo, (minAntes===0?'A acontecer agora!':(minAntes<60?'Daqui a '+minAntes+' minutos':'Daqui a '+(minAntes/60)+'h')));
+      // Marcar como enviado
+      const fats = ld('evt');
+      const i = fats.findIndex(x=>x.id===e.id);
+      if(i>=0){fats[i].lembrete_enviado=true; sv('evt',fats);}
+    }
+  });
+}
+
+function iniciarLembretes(){
+  pedirPermissaoNotif();
+  if(_notifTimer)clearInterval(_notifTimer);
+  _notifTimer = setInterval(verificarLembretes, 60000); // verifica cada minuto
+  verificarLembretes(); // verifica imediatamente
+}
+
 function renderAll(){RENDERS[CurPage]?.();notifBadge()}
 function setDate(){
   const d=new Date();
@@ -1227,11 +1298,18 @@ function fillForm(id,d){
     mEq:{eq_serie:'serie',eq_cat:'cat',eq_marca:'marca',eq_modelo:'modelo',eq_cli:'cli_id',eq_obs:'obs'},
     mForn:{forn_nome:'nome',forn_nif:'nif',forn_tel:'tel',forn_email:'email',forn_morada:'morada',forn_cats:'cats'},
     mFat:{fat_cli:'cli_id',fat_rep:'rep',fat_desc:'desc',fat_mo:'mo',fat_mat:'mat',fat_iva:'iva',fat_est:'est',fat_data:'data',fat_venc:'venc'},
+    mOS:{os_cli:'cli_id',os_desc:'desc',os_data:'data',os_horas:'horas',os_valor_hora:'valor_hora',os_custo_mat:'custo_mat',os_est:'est',os_notas:'notas',os_materiais:'materiais'},
     mDesp:{desp_cat:'cat',desp_desc:'desc',desp_forn:'forn',desp_val:'val',desp_iva:'iva',desp_data:'data'},
     mDesl:{desl_cli:'cli_id',desl_dest:'dest',desl_rep:'rep',desl_km:'km',desl_preco:'preco',desl_total:'total',desl_data:'data',desl_obs:'obs'},
   };
   const m=maps[id]||{};
   Object.entries(m).forEach(([elId,key])=>{const el=document.getElementById(elId);if(el&&d[key]!==undefined)el.value=d[key]});
+  if(id==='mOS'){
+    fillCliSel('os_cli');
+    const osData=document.getElementById('os_data');
+    if(osData&&!osData.value)osData.value=td();
+    setTimeout(calcOS,50);
+  }
   if(id==='mFat'){
     calcFatModal();
     // Restore partial payment
@@ -1768,6 +1846,125 @@ document.addEventListener('keydown',e=>{
 // DASHBOARD
 // ══════════════════════════════════════════════════════════
 let _dashChart=null;
+
+// ══════════════════════════════════════════════════════════
+// ORDENS DE SERVIÇO
+// ══════════════════════════════════════════════════════════
+
+function nextOSNum(){
+  const os=ld('os');const yr=new Date().getFullYear();
+  const ns=os.map(x=>parseInt((x.num||'').split('/').pop())||0);
+  return'OS'+yr+'/'+String((ns.length?Math.max(...ns):0)+1).padStart(3,'0');
+}
+
+function calcOS(){
+  const horas=parseFloat(document.getElementById('os_horas')?.value)||0;
+  const valorHora=parseFloat(document.getElementById('os_valor_hora')?.value)||0;
+  const mat=parseFloat(document.getElementById('os_custo_mat')?.value)||0;
+  const totalMO=horas*valorHora;
+  const total=totalMO+mat;
+  const elMO=document.getElementById('os_total_mo');
+  const elTot=document.getElementById('os_total');
+  if(elMO)elMO.value=totalMO.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(elTot)elTot.value=total.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function saveOS(){
+  const desc=(document.getElementById('os_desc')?.value||'').trim();
+  if(!desc){toast('Descrição é obrigatória!','r');return;}
+  const cli_id=document.getElementById('os_cli')?.value||'';
+  const clis=ld('cli');
+  const cli=clis.find(c=>c.id===cli_id);
+  const horas=parseFloat(document.getElementById('os_horas')?.value)||0;
+  const valor_hora=parseFloat(document.getElementById('os_valor_hora')?.value)||0;
+  const custo_mat=parseFloat(document.getElementById('os_custo_mat')?.value)||0;
+  const total=(horas*valor_hora)+custo_mat;
+  const os_list=ld('os');
+  const editId=_eids['mOS'];
+  const obj={
+    cli_id,cli:cli?.nome||'—',desc,
+    data:document.getElementById('os_data')?.value||td(),
+    horas,valor_hora,custo_mat,total,
+    materiais:document.getElementById('os_materiais')?.value||'',
+    est:document.getElementById('os_est')?.value||'Rascunho',
+    notas:document.getElementById('os_notas')?.value||''
+  };
+  if(editId){
+    const i=os_list.findIndex(x=>x.id===editId);
+    if(i>=0)os_list[i]={...os_list[i],...obj};
+  } else {
+    obj.id=uid();obj.num=nextOSNum();os_list.push(obj);
+  }
+  sv('os',os_list);
+  closeM('mOS');
+  renderOS();
+  toast(editId?'Ordem de Serviço actualizada!':'Ordem de Serviço criada!');
+}
+
+function renderOS(){
+  const all=ld('os');
+  let os=[...all];
+  const q=(document.getElementById('osQ')?.value||'').toLowerCase();
+  const f=document.getElementById('osF')?.value||'';
+  if(q)os=os.filter(x=>(x.num||'').toLowerCase().includes(q)||(x.cli||'').toLowerCase().includes(q)||(x.desc||'').toLowerCase().includes(q));
+  if(f)os=os.filter(x=>x.est===f);
+
+  const kpi=document.getElementById('osKpi');
+  const total=all.reduce((s,x)=>s+(x.total||0),0);
+  const emCurso=all.filter(x=>x.est==='Em Curso').length;
+  const concluido=all.filter(x=>x.est==='Concluído').length;
+  const faturado=all.filter(x=>x.est==='Faturado').length;
+  if(kpi)kpi.innerHTML=
+    '<div class="kpi"><div class="kpi-label">Total OS</div><div class="kpi-val">'+all.length+'</div></div>'+
+    '<div class="kpi"><div class="kpi-label">Em Curso</div><div class="kpi-val" style="color:var(--amber)">'+emCurso+'</div></div>'+
+    '<div class="kpi"><div class="kpi-label">Concluídas</div><div class="kpi-val" style="color:var(--green)">'+concluido+'</div></div>'+
+    '<div class="kpi"><div class="kpi-label">Valor Total</div><div class="kpi-val" style="color:var(--blue)">'+eur(total)+'</div></div>';
+
+  const tb=document.getElementById('osTbl');if(!tb)return;
+  if(!os.length){tb.innerHTML=eRow(8,'Sem ordens de serviço');return;}
+  const estCor={'Rascunho':'var(--muted)','Em Curso':'var(--amber)','Concluído':'var(--green)','Faturado':'#8B5CF6'};
+  [...os].reverse().forEach(o=>{
+    tb.innerHTML+='<tr>'+
+      '<td><strong style="color:#fff">'+(o.num||'—')+'</strong></td>'+
+      '<td style="color:var(--muted)">'+o.data+'</td>'+
+      '<td>'+o.cli+'</td>'+
+      '<td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+o.desc+'</td>'+
+      '<td style="color:var(--muted)">'+o.horas+'h</td>'+
+      '<td style="color:var(--green);font-weight:700">'+eur(o.total||0)+'</td>'+
+      '<td><span style="background:'+(estCor[o.est]||'var(--border)')+';color:#fff;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600">'+o.est+'</span></td>'+
+      '<td class="td-acts">'+
+        '<button class="btn-xs" style="background:var(--blue)" data-action="edit-os" data-id="'+o.id+'">✏</button>'+
+        (o.est==='Concluído'?'<button class="btn-xs" style="background:#8B5CF6" data-action="fat-os" data-id="'+o.id+'" title="Converter para fatura">🧾</button>':'')+
+        '<button class="btn-xs" style="background:var(--red)" data-action="del-os" data-id="'+o.id+'">🗑</button>'+
+      '</td></tr>';
+  });
+}
+
+function osFatConvert(id){
+  const os=ld('os').find(x=>x.id===id);
+  if(!os)return;
+  if(!confirm('Converter OS "'+os.num+'" para fatura?'))return;
+  // Open fat modal pre-filled
+  goPage('faturas');
+  setTimeout(function(){
+    openM('mFat');
+    setTimeout(function(){
+      const cli=document.getElementById('fat_cli');
+      if(cli)cli.value=os.cli_id;
+      const desc=document.getElementById('fat_desc');
+      if(desc)desc.value=os.desc+(os.materiais?' — '+os.materiais:'');
+      const mo=document.getElementById('fat_mo');
+      if(mo)mo.value=(os.horas*os.valor_hora).toFixed(2);
+      // Mark OS as faturado
+      const osList=ld('os');
+      const i=osList.findIndex(x=>x.id===id);
+      if(i>=0){osList[i].est='Faturado';sv('os',osList);}
+      calcFatModal();
+      toast('OS carregada na fatura! Revê e emite.','g');
+    },300);
+  },200);
+}
+
 function renderDash(){
   const reps=ld('rep'),mats=ld('mat'),fats=ld('fat'),desps=ld('desp'),desls=ld('desl');
   const fatPaga=fats.filter(f=>f.est==='Paga').reduce((s,f)=>s+fatTot(f),0);
@@ -2384,6 +2581,7 @@ document.addEventListener('DOMContentLoaded',function(){
     window._fbReady=true;
     window._startRealtime();
     document.body.removeChild(overlay);
+    iniciarLembretes();
   }).catch(function(){
     window._fbReady=true;
     try{document.body.removeChild(overlay);}catch(e){}
@@ -3240,6 +3438,7 @@ function saveEvt() {
     cli_id, cli: cli?.nome || '—',
     data,
     hora: document.getElementById('evt_hora')?.value || '',
+    lembrete: document.getElementById('evt_lembrete')?.value || '',
     notas: document.getElementById('evt_notas')?.value || ''
   };
 
@@ -3267,7 +3466,7 @@ document.addEventListener('click', function(e) {
       _eids['mEvt'] = id;
       openM('mEvt');
       setTimeout(() => {
-        const fields = {evt_titulo:'titulo',evt_tipo:'tipo',evt_cli:'cli_id',evt_data:'data',evt_hora:'hora',evt_notas:'notas'};
+        const fields = {evt_titulo:'titulo',evt_tipo:'tipo',evt_cli:'cli_id',evt_data:'data',evt_hora:'hora',evt_notas:'notas',evt_lembrete:'lembrete'};
         Object.entries(fields).forEach(([elId,key]) => { const el=document.getElementById(elId); if(el) el.value=ev[key]||''; });
       }, 60);
     }
@@ -3277,6 +3476,13 @@ document.addEventListener('click', function(e) {
       renderAgenda();
       toast('Evento apagado.', 'a');
     });
+  } else if (act === 'edit-os') {
+    const o=ld('os').find(x=>x.id===id);
+    if(o)openM('mOS',id,o);
+  } else if (act === 'fat-os') {
+    osFatConvert(id);
+  } else if (act === 'del-os') {
+    askDel('ordem de serviço',()=>{sv('os',ld('os').filter(x=>x.id!==id));renderOS();toast('Eliminado!');});
   }
 });
 
@@ -4813,8 +5019,58 @@ function closeModalById(id){var el=document.getElementById(id);if(el)el.remove()
       <div class="fg"><label>Hora</label><input type="time" id="evt_hora" value="09:00"></div>
     </div>
     <div class="fg"><label>Notas</label><textarea id="evt_notas" placeholder="Detalhes adicionais..."></textarea></div>
+    <div class="frow" style="align-items:center;gap:12px">
+      <div class="fg"><label>🔔 Lembrete</label>
+        <select id="evt_lembrete">
+          <option value="">Sem lembrete</option>
+          <option value="0">Na hora</option>
+          <option value="15">15 minutos antes</option>
+          <option value="30">30 minutos antes</option>
+          <option value="60">1 hora antes</option>
+          <option value="1440">1 dia antes</option>
+        </select>
+      </div>
+    </div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mEvt')">Cancelar</button><button class="btn btn-blue" onclick="saveEvt()">💾 Guardar</button></div>
+</div></div>
+
+<!-- MODAL ORDEM DE SERVIÇO -->
+<div class="ov" id="mOS"><div class="modal modal-lg">
+  <div class="mhdr"><h3 id="mOST">📋 Nova Ordem de Serviço</h3><button class="mclose" onclick="closeM('mOS')">✕</button></div>
+  <div class="mbody">
+    <div class="frow">
+      <div class="fg"><label>Cliente *</label><select id="os_cli"></select></div>
+      <div class="fg"><label>Data</label><input type="date" id="os_data"></div>
+    </div>
+    <div class="fg"><label>Descrição do Trabalho *</label><input id="os_desc" placeholder="ex: Revisão motor, instalação elétrica..."></div>
+    <div class="frow">
+      <div class="fg"><label>Horas Trabalhadas</label><input type="number" id="os_horas" value="0" step="0.5" min="0" oninput="calcOS()"></div>
+      <div class="fg"><label>Valor/Hora (€)</label><input type="number" id="os_valor_hora" value="0" step="0.50" min="0" oninput="calcOS()"></div>
+      <div class="fg"><label>Total Mão de Obra (€)</label><input type="text" id="os_total_mo" readonly style="background:var(--card2);color:var(--green);font-weight:700"></div>
+    </div>
+    <div class="fg"><label>Materiais Usados (opcional)</label>
+      <textarea id="os_materiais" placeholder="ex: Rolamento 6203 x2, Cabo 2.5mm 5m..." rows="2"></textarea>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Custo Materiais (€)</label><input type="number" id="os_custo_mat" value="0" step="0.01" min="0" oninput="calcOS()"></div>
+      <div class="fg"><label>Total OS (€)</label><input type="text" id="os_total" readonly style="background:var(--card2);color:var(--blue);font-weight:700;font-size:16px"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Estado</label>
+        <select id="os_est">
+          <option>Rascunho</option>
+          <option>Em Curso</option>
+          <option>Concluído</option>
+        </select>
+      </div>
+      <div class="fg"><label>Notas</label><input id="os_notas" placeholder="Observações..."></div>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeM('mOS')">Cancelar</button>
+    <button class="btn btn-green" onclick="saveOS()">💾 Guardar</button>
+  </div>
 </div></div>
 
 <!-- MODAL SERVIÇO -->
