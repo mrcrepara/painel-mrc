@@ -1201,7 +1201,7 @@ function openM(id,editId,data){
   // fill fat select in rec
   if(id==='mRec')fillFatSel();
   // set title
-  const titles={mMat:'+ Novo Material',mRep:'+ Nova Reparação',mOrc:'+ Novo Orçamento',mCli:'+ Novo Cliente',mEq:'+ Novo Equipamento',mForn:'+ Novo Fornecedor',mFat:'🧾 Nova Fatura',mRec:'+ Registar Recebimento',mDesp:'+ Nova Despesa',mDesl:'+ Nova Deslocação',mOS:'📋 Nova O.S.'};
+  const titles={mMat:'+ Novo Material',mRep:'+ Nova Reparação',mOrc:'+ Novo Orçamento',mCli:'+ Novo Cliente',mEq:'+ Novo Equipamento',mForn:'+ Novo Fornecedor',mFat:'🧾 Nova Fatura',mRec:'+ Registar Recebimento',mDesp:'+ Nova Despesa',mDesl:'+ Nova Deslocação',mOS:'📋 Nova O.S.',mEvt:'+ Novo Evento',mSvc:'+ Novo Serviço',mFiado:'+ Registar Fiado'};
   const tel=document.getElementById(id.replace('m','m')+'T');
   if(tel)tel.textContent=editId?('✏ Editar '+titles[id]?.replace('+ ','').replace('🧾 ','')):(titles[id]||'Novo');
   if(data)fillForm(id,data);
