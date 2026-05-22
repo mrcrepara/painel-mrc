@@ -2035,14 +2035,16 @@ document.addEventListener('DOMContentLoaded',function(){
   var s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
   s('tbAv','R');s('tbName','Rui Veloso');s('tbRole','Administrador');
   s('umName','Rui Veloso');s('umRole','Administrador');
-  try{fillCatSelects();}catch(e){console.error('fillCat:',e);}
-  try{renderAll();}catch(e){console.error('renderAll:',e);}
+  setTimeout(function(){
+    try{fillCatSelects();}catch(e){console.error('fillCat:',e);}
+    try{renderAll();}catch(e){console.error('renderAll:',e);}
+  }, 100);
 });
 
 // ══════════════════════════════════════════════════════════
 // CATEGORIAS DE MATERIAIS (com sub-categorias)
 // ══════════════════════════════════════════════════════════
-const DEFAULT_CATS = [
+var DEFAULT_CATS = [
   {id:'c1', nome:'Rolamentos', subs:['6200','6201','6202','6203','6204','6205']},
   {id:'c2', nome:'Contactores', subs:['9A','12A','18A','25A','32A','40A']},
   {id:'c3', nome:'Capacitores', subs:['10μF','20μF','25μF','50μF','100μF']},
@@ -3688,7 +3690,7 @@ window.renderDash = function() {
 // ══════════════════════════════════════════════════════════
 // CATEGORIAS DE EQUIPAMENTOS
 // ══════════════════════════════════════════════════════════
-const EQ_DEFAULT_CATS = ['Motor','Compressor','Gerador','Bomba','Portão','Quadro Eléctrico','Bomba de Calor','Outro'];
+var EQ_DEFAULT_CATS = ['Motor','Compressor','Gerador','Bomba','Portão','Quadro Eléctrico','Bomba de Calor','Outro'];
 
 function loadEqCats() {
   const stored = localStorage.getItem('m3_eq_cats');
