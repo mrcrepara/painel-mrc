@@ -1241,7 +1241,7 @@ let _eids={};
 function openM(id,editId,data){
   _eids[id]=editId||null;
   // fill client selects
-  if(['mRep','mOrc','mFat','mRec','mEq','mDesl'].includes(id))fillCliSel();
+  if(['mRep','mOrc','mFat','mRec','mEq','mDesl','mOS','mEvt'].includes(id))fillCliSel();
   // fill fat select in rec
   if(id==='mRec')fillFatSel();
   // set title
@@ -1260,7 +1260,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelec
 function fillCliSel(){
   const clis=ld('cli');
   const opts='<option value="">— Selecionar cliente —</option>'+clis.map(c=>'<option value="'+c.id+'">'+c.nome+'</option>').join('');
-  ['rep_cli','orc_cli','fat_cli','eq_cli','rec_cli','desl_cli'].forEach(id=>{const s=document.getElementById(id);if(s)s.innerHTML=opts});
+  ['rep_cli','orc_cli','fat_cli','eq_cli','rec_cli','desl_cli','os_cli','evt_cli'].forEach(id=>{const s=document.getElementById(id);if(s)s.innerHTML=opts});
   // Trigger fatCliChange if mFat is open
   if(document.getElementById('mFat')&&document.getElementById('mFat').classList.contains('open'))setTimeout(fatCliChange,50);
 }
@@ -1305,7 +1305,6 @@ function fillForm(id,d){
   const m=maps[id]||{};
   Object.entries(m).forEach(([elId,key])=>{const el=document.getElementById(elId);if(el&&d[key]!==undefined)el.value=d[key]});
   if(id==='mOS'){
-    fillCliSel('os_cli');
     const osData=document.getElementById('os_data');
     if(osData&&!osData.value)osData.value=td();
     setTimeout(calcOS,50);
@@ -1923,8 +1922,9 @@ function renderOS(){
   const tb=document.getElementById('osTbl');if(!tb)return;
   if(!os.length){tb.innerHTML=eRow(8,'Sem ordens de serviço');return;}
   const estCor={'Rascunho':'var(--muted)','Em Curso':'var(--amber)','Concluído':'var(--green)','Faturado':'#8B5CF6'};
+  let html='';
   [...os].reverse().forEach(o=>{
-    tb.innerHTML+='<tr>'+
+    html+='<tr>'+
       '<td><strong style="color:#fff">'+(o.num||'—')+'</strong></td>'+
       '<td style="color:var(--muted)">'+o.data+'</td>'+
       '<td>'+o.cli+'</td>'+
@@ -1938,6 +1938,7 @@ function renderOS(){
         '<button class="btn-xs" style="background:var(--red)" data-action="del-os" data-id="'+o.id+'">🗑</button>'+
       '</td></tr>';
   });
+  tb.innerHTML=html;
 }
 
 function osFatConvert(id){
