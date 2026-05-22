@@ -342,6 +342,23 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div class="card"><div class="card-hdr"><h3>📊 Faturação por Estado</h3></div><div class="card-body" style="height:220px"><canvas id="cFat"></canvas></div></div>
     <div class="card"><div class="card-hdr"><h3>💰 Resumo Financeiro</h3></div><div class="card-body" id="dashFin"></div></div>
   </div>
+  <!-- GRÁFICO ANUAL -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-hdr"><h3>📅 Receita vs Despesa — Anual</h3>
+      <select id="dashAno" onchange="renderDashAnual()" style="padding:5px 10px;background:var(--card2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif"></select>
+    </div>
+    <div class="card-body" style="height:260px"><canvas id="cAnual"></canvas></div>
+  </div>
+  <!-- GRÁFICO QUEIJO RECEITA/DESPESA + MARGEM MATERIAL -->
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="card-hdr"><h3>🥧 Receita vs Despesa</h3></div><div class="card-body" style="height:220px"><canvas id="cRD"></canvas></div></div>
+    <div class="card"><div class="card-hdr"><h3>📦 Lucro Venda de Material</h3></div><div class="card-body" id="dashMargem"></div></div>
+  </div>
+  <!-- TOP CLIENTES -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-hdr"><h3>🏆 Top Clientes</h3></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Cliente</th><th>Reparações</th><th>Faturas</th><th>Faturado</th><th>Pago</th><th>Pendente</th></tr></thead><tbody id="dashCliTbl"></tbody></table></div>
+  </div>
   <div class="g2">
     <div class="card"><div class="card-hdr"><h3>🔧 Últimas Reparações</h3></div>
       <div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Cliente</th><th>Equipamento</th><th>Estado</th><th>Valor</th></tr></thead><tbody id="dashRepTbl"></tbody></table></div>
@@ -1753,6 +1770,143 @@ function renderDash(){
     if(_dashChart){try{_dashChart.destroy()}catch{}}
     _dashChart=new Chart(ctx,{type:'doughnut',data:{labels:['Pagas','Pendentes','Em Atraso'],datasets:[{data:[paga,pend,atras],backgroundColor:['#10B981','#F59E0B','#EF4444'],borderWidth:2,borderColor:'#1A1F2E',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'right',labels:{color:'#7B8DB0',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:ctx=>ctx.label+': '+eur(ctx.raw)},backgroundColor:'#1E2436',borderColor:'#252D3D',borderWidth:1}}}});
   },100);
+}
+
+// ══════════════════════════════════════════════════════════
+// DASHBOARD — NOVAS SECÇÕES
+// ══════════════════════════════════════════════════════════
+
+var _chartAnual=null, _chartRD=null;
+
+function renderDashAnual(){
+  var anoSel=document.getElementById('dashAno');
+  var fats=ld('fat'),desps=ld('desp'),desls=ld('desl');
+  // Preencher anos disponíveis
+  var anos=new Set();
+  fats.forEach(function(f){if(f.data)anos.add(f.data.slice(0,4));});
+  desps.forEach(function(d){if(d.data)anos.add(d.data.slice(0,4));});
+  var anosArr=[...anos].sort().reverse();
+  if(!anosArr.length)anosArr=[new Date().getFullYear().toString()];
+  if(anoSel&&!anoSel.innerHTML.trim()){
+    anoSel.innerHTML=anosArr.map(function(a){return'<option value="'+a+'">'+a+'</option>';}).join('');
+  }
+  var ano=anoSel?anoSel.value:anosArr[0];
+  var meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  var receitas=new Array(12).fill(0);
+  var despesas=new Array(12).fill(0);
+  fats.forEach(function(f){
+    if(!f.data||f.data.slice(0,4)!==ano)return;
+    var m=parseInt(f.data.slice(5,7))-1;
+    receitas[m]+=(typeof fatTot==='function'?fatTot(f):((f.mo||0)+(f.mat||0)));
+  });
+  desps.forEach(function(d){
+    if(!d.data||d.data.slice(0,4)!==ano)return;
+    var m=parseInt(d.data.slice(5,7))-1;
+    despesas[m]+=((d.val||0)+(d.iva||0));
+  });
+  desls.forEach(function(d){
+    if(!d.data||d.data.slice(0,4)!==ano)return;
+    var m=parseInt(d.data.slice(5,7))-1;
+    despesas[m]+=(d.total||0);
+  });
+  var ctx=document.getElementById('cAnual');if(!ctx)return;
+  var c=ctx.getContext('2d');
+  if(_chartAnual){try{_chartAnual.destroy();}catch(e){}}
+  _chartAnual=new Chart(c,{
+    type:'bar',
+    data:{
+      labels:meses,
+      datasets:[
+        {label:'Receita',data:receitas,backgroundColor:'rgba(16,185,129,.7)',borderRadius:5,borderSkipped:false},
+        {label:'Despesa',data:despesas,backgroundColor:'rgba(239,68,68,.6)',borderRadius:5,borderSkipped:false}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#7B8DB0',font:{size:11}}},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+parseFloat(c.raw).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});}},backgroundColor:'#1E2436',borderColor:'#252D3D',borderWidth:1}},
+      scales:{x:{ticks:{color:'#7B8DB0'},grid:{color:'rgba(37,45,61,.5)'}},y:{ticks:{color:'#7B8DB0',callback:function(v){return v.toLocaleString('pt-PT',{style:'currency',currency:'EUR'});}},grid:{color:'rgba(37,45,61,.5)'}}}
+    }
+  });
+}
+
+function renderDashRD(){
+  var fats=ld('fat'),desps=ld('desp'),desls=ld('desl');
+  var receita=fats.reduce(function(s,f){return s+(typeof fatTot==='function'?fatTot(f):((f.mo||0)+(f.mat||0)));},0);
+  var desp=desps.reduce(function(s,d){return s+((d.val||0)+(d.iva||0));},0)+desls.reduce(function(s,d){return s+(d.total||0);},0);
+  var lucro=receita-desp;
+  var ctx=document.getElementById('cRD');if(!ctx)return;
+  var c=ctx.getContext('2d');
+  if(_chartRD){try{_chartRD.destroy();}catch(e){}}
+  _chartRD=new Chart(c,{
+    type:'doughnut',
+    data:{
+      labels:['Receita','Despesa','Lucro'],
+      datasets:[{data:[receita,desp,lucro>0?lucro:0],backgroundColor:['rgba(37,99,235,.8)','rgba(239,68,68,.7)','rgba(16,185,129,.8)'],borderWidth:2,borderColor:'#1A1F2E',hoverOffset:6}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'55%',
+      plugins:{legend:{display:true,position:'right',labels:{color:'#7B8DB0',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:function(c){return c.label+': '+parseFloat(c.raw).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});}},backgroundColor:'#1E2436',borderColor:'#252D3D',borderWidth:1}}
+    }
+  });
+}
+
+function renderDashMargemMaterial(){
+  var fats=ld('fat'),mats=ld('mat');
+  // Calcular PVP faturado vs custo de materiais
+  var totalPVP=0,totalCusto=0,linhasCount=0;
+  fats.forEach(function(f){
+    (f.linhas||[]).forEach(function(l){
+      var mat=mats.find(function(m){return m.desc===l.desc||m.ref===l.desc;});
+      var pvp=(l.preco||0)*(l.qty||1);
+      var custo=mat?(mat.custo||0)*(l.qty||1):0;
+      totalPVP+=pvp;
+      totalCusto+=custo;
+      linhasCount++;
+    });
+    // Também contar materiais globais da fatura
+    if(!(f.linhas&&f.linhas.length)){
+      totalPVP+=(f.mat||0);
+    }
+  });
+  var margem=totalPVP>0?((totalPVP-totalCusto)/totalPVP*100):0;
+  var lucroMat=totalPVP-totalCusto;
+  var el=document.getElementById('dashMargem');if(!el)return;
+  el.innerHTML=
+    '<div class="fr"><span style="color:var(--muted)">PVP Faturado</span><span style="color:var(--blue);font-weight:700">'+parseFloat(totalPVP).toLocaleString('pt-PT',{style:'currency',currency:'EUR'})+'</span></div>'+
+    (totalCusto>0?'<div class="fr"><span style="color:var(--muted)">Custo Material</span><span style="color:var(--red);font-weight:700">'+parseFloat(totalCusto).toLocaleString('pt-PT',{style:'currency',currency:'EUR'})+'</span></div>':'<div class="fr"><span style="color:var(--muted);font-size:12px">Custo só calculado quando há custo de compra no material</span></div>')+
+    (totalCusto>0?'<div class="fr"><span style="color:var(--muted)">Lucro Material</span><span style="color:var(--green);font-weight:700">'+parseFloat(lucroMat).toLocaleString('pt-PT',{style:'currency',currency:'EUR'})+'</span></div>':'')+
+    (totalCusto>0?'<div class="fr" style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px"><span style="font-weight:700;color:#fff">Margem</span><span style="font-weight:800;font-size:18px;color:'+(margem>=30?'var(--green)':margem>=15?'var(--amber)':'var(--red)')+'">'+margem.toFixed(1)+'%</span></div>':'')+
+    '<div style="font-size:11px;color:var(--muted);margin-top:8px">'+linhasCount+' linha(s) de material em faturas</div>';
+}
+
+function renderDashTopClientes(){
+  var fats=ld('fat'),reps=ld('rep'),clis=ld('cli');
+  var mapa={};
+  fats.forEach(function(f){
+    if(!f.cli_id)return;
+    if(!mapa[f.cli_id])mapa[f.cli_id]={nome:f.cli,nfat:0,nrep:0,total:0,pago:0,pend:0};
+    mapa[f.cli_id].nfat++;
+    var t=typeof fatTot==='function'?fatTot(f):((f.mo||0)+(f.mat||0));
+    mapa[f.cli_id].total+=t;
+    if(f.est==='Paga')mapa[f.cli_id].pago+=t;
+    else mapa[f.cli_id].pend+=t;
+  });
+  reps.forEach(function(r){
+    if(!r.cli_id)return;
+    if(!mapa[r.cli_id])mapa[r.cli_id]={nome:r.cli,nfat:0,nrep:0,total:0,pago:0,pend:0};
+    mapa[r.cli_id].nrep++;
+  });
+  var arr=Object.values(mapa).sort(function(a,b){return b.total-a.total;}).slice(0,10);
+  var tb=document.getElementById('dashCliTbl');if(!tb)return;
+  if(!arr.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">Sem dados</td></tr>';return;}
+  tb.innerHTML=arr.map(function(c,i){
+    return '<tr><td><span style="color:var(--muted);margin-right:6px">#'+(i+1)+'</span><strong style="color:#fff">'+c.nome+'</strong></td>'+
+      '<td style="text-align:center;color:var(--muted)">'+c.nrep+'</td>'+
+      '<td style="text-align:center;color:var(--muted)">'+c.nfat+'</td>'+
+      '<td style="color:var(--blue);font-weight:700">'+parseFloat(c.total).toLocaleString('pt-PT',{style:'currency',currency:'EUR'})+'</td>'+
+      '<td style="color:var(--green);font-weight:600">'+parseFloat(c.pago).toLocaleString('pt-PT',{style:'currency',currency:'EUR'})+'</td>'+
+      '<td style="color:var(--amber)">'+parseFloat(c.pend).toLocaleString('pt-PT',{style:'currency',currency:'EUR'})+'</td></tr>';
+  }).join('');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -4361,6 +4515,12 @@ document.addEventListener('DOMContentLoaded',function(){
       var sel=document.getElementById('dashMargAno');
       if(sel&&!sel.options.length){var yr=new Date().getFullYear();for(var y=yr;y>=yr-3;y--){var op=document.createElement('option');op.value=y;op.textContent=y;sel.appendChild(op);}}
       renderDashMargem();
+      setTimeout(function(){
+        renderDashAnual();
+        renderDashRD();
+        renderDashMargemMaterial();
+        renderDashTopClientes();
+      },150);
     };
   }
 })();
