@@ -1338,6 +1338,7 @@ function mudarTab(tab) {
   });
   // If switching to orcamento, recalculate
   if(tab==='orcamento') setTimeout(calcular, 50);
+  if(tab==='planta') setTimeout(initPlanta, 50);
 }
 
 // ── Modal ────────────────────────────────────────────────
