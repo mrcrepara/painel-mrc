@@ -334,13 +334,15 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <div class="pg-hdr"><div><h1>Dashboard</h1><p>Visão geral do negócio</p></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select id="dashPeriodo" onchange="renderDash()" style="padding:7px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:Inter,sans-serif;cursor:pointer"></select>
       <button class="btn btn-green" onclick="goPage('reparacoes');setTimeout(()=>openM('mRep'),200)">+ Reparação</button>
       <button class="btn btn-blue" onclick="goPage('faturas');setTimeout(()=>openM('mFat'),200)">🧾 Nova Fatura</button>
       <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
       <button class="btn btn-green btn-sm" onclick="fazerBackup()" title="Guardar backup JSON no computador">💾 Backup</button>
     </div>
   </div>
+  <div id="dashAlertBanner" style="display:none;margin-bottom:16px"></div>
   <div class="kpi-grid" id="dashKpi"></div>
   <div class="g3" style="margin-bottom:16px">
     <div class="card"><div class="card-hdr"><h3>⚠ Alertas</h3></div><div class="card-body" id="dashAlertas"></div></div>
@@ -1048,11 +1050,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
         <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">Clique ou arraste o ficheiro CSV</div>
         <input type="file" id="csv-file" accept=".csv,.txt" style="display:none" onchange="parseCsvFile(event)">
       </div>
-      <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted)"><span style="color:#60A5FA;cursor:pointer;text-decoration:underline" onclick="downloadTemplateCsv()">Descarregar template de exemplo</span></div>
-    </div>
-    <div id="import-step2" style="display:none">
-      <div id="import-summary" style="margin-bottom:12px"></div>
-<script>
+      <div style="text-align:cen
 // ══════════════════════════════════════════════════════════
 // DATA LAYER
 // ══════════════════════════════════════════════════════════
@@ -1934,10 +1932,29 @@ function iniciarLembretes(){
   verificarLembretes();
 }
 
+function _getDashPeriod(){
+  var sel=document.getElementById('dashPeriodo');
+  if(sel&&!sel.options.length){
+    var now=new Date(),yr=now.getFullYear(),mo=now.getMonth();
+    var mN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    for(var m=mo;m>=0;m--){var op=document.createElement('option');op.value=yr+'-'+(m+1);op.textContent=mN[m]+' '+yr;if(m===mo)op.selected=true;sel.appendChild(op);}
+    for(var m=11;m>=0;m--){var op=document.createElement('option');op.value=(yr-1)+'-'+(m+1);op.textContent=mN[m]+' '+(yr-1);sel.appendChild(op);}
+    var opA=document.createElement('option');opA.value='total';opA.textContent='Total Acumulado';sel.appendChild(opA);
+  }
+  return sel?sel.value:'total';
+}
+function _filterPeriod(arr,field){
+  var p=_getDashPeriod();if(p==='total')return arr;
+  var parts=p.split('-'),yr=parseInt(parts[0]),mo=parseInt(parts[1])-1;
+  return arr.filter(function(x){var d=new Date(x[field]||x.data||'');return d.getFullYear()===yr&&d.getMonth()===mo;});
+}
 function renderDash(){
+  _getDashPeriod();
+  renderDashBanner();
   const reps=ld('rep'),mats=ld('mat'),fats=ld('fat'),desps=ld('desp'),desls=ld('desl');
-  const fatPaga=fats.filter(f=>f.est==='Paga').reduce((s,f)=>s+fatTot(f),0);
-  const totDesp=desps.reduce((s,d)=>s+(d.val+d.iva),0)+desls.reduce((s,d)=>s+(d.total||0),0);
+  const fatsFilt=_filterPeriod(fats,'data');
+  const fatPaga=fatsFilt.filter(f=>f.est==='Paga').reduce((s,f)=>s+fatTot(f),0);
+  const totDesp=_filterPeriod(desps,'data').reduce((s,d)=>s+(d.val+d.iva),0)+_filterPeriod(desls,'data').reduce((s,d)=>s+(d.total||0),0);
   const lucro=fatPaga-totDesp;
   const aberto=reps.filter(r=>r.est!=='Entregue').length;
   const low=mats.filter(m=>m.stock<=m.min).length;
@@ -3075,10 +3092,18 @@ function saveFat() {
     obj.id = uid(); obj.num = nextFatNum(); fats.push(obj);
   }
   sv('fat', fats);
+  if(obj.est==='Paga'){
+    var recs=ld('rec'),fatId=editId||obj.id;
+    if(!recs.find(function(r){return r.fat_id===fatId;})){
+      recs.push({id:uid(),cli_id:obj.cli_id,cli:obj.cli,fat_id:fatId,fat_num:obj.num||fatId.slice(-6),val:fatTot(obj),data:obj.data||td(),obs:'Auto-registado'});
+      sv('rec',recs);
+    }
+  }
   closeM('mFat');
   clearLinhasFat();
   renderFat();
-  toast(editId ? 'Fatura actualizada!' : 'Fatura emitida!');
+  if(typeof renderDash==='function')setTimeout(renderDash,100);
+  toast(editId?'Fatura actualizada!':'Fatura emitida!');
 }
 
 // ── Updated saveOrc to store lines + deslocação ────────────
@@ -4774,13 +4799,6 @@ document.addEventListener('DOMContentLoaded',function(){
 
 
 
-function calcDeslAuto(){
-  var km=gf('fat_desl_km'), preco=gf('fat_desl_preco')||0.40;
-  var total=km*preco;
-  var tf=document.getElementById('fat_desl_total_manual');
-  if(tf&&total>0)tf.value=total.toFixed(2);
-  calcFatModal();
-}
 
 
 
@@ -4909,6 +4927,109 @@ function buildBackupData(){
   data.data = new Date().toISOString();
   data.versao = '5.0';
   return data;
+}
+
+
+
+
+function calcDeslAuto(){
+  var km=gf('fat_desl_km'), preco=gf('fat_desl_preco')||0.40;
+  var total=km*preco;
+  var tf=document.getElementById('fat_desl_total_manual');
+  if(tf&&total>0)tf.value=total.toFixed(2);
+  calcFatModal();
+}
+
+
+
+
+
+
+
+
+
+function closeModalById(id){var el=document.getElementById(id);if(el)el.remove();}
+
+
+
+
+
+function renderDashBanner(){
+  var banner=document.getElementById('dashAlertBanner');
+  if(!banner)return;
+  var hoje=new Date();hoje.setHours(0,0,0,0);
+  var fats=ld('fat');
+
+  var atrasadas=fats.filter(function(f){
+    if(f.est==='Paga')return false;
+    if(!f.venc)return false;
+    var v=new Date(f.venc);v.setHours(0,0,0,0);
+    return v<hoje;
+  });
+
+  var pendentes=fats.filter(function(f){
+    if(f.est==='Paga')return false;
+    if(!f.venc)return true;
+    var v=new Date(f.venc);v.setHours(0,0,0,0);
+    return v>=hoje && f.est==='Pendente';
+  });
+
+  if(!atrasadas.length && !pendentes.length){
+    banner.style.display='none';
+    return;
+  }
+  banner.style.display='block';
+  banner.innerHTML='';
+
+  function makeRow(f, cor, extra){
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:7px;margin-bottom:5px;cursor:pointer;background:rgba(0,0,0,.1)';
+    row.onclick=function(){goPage('faturas');};
+    var left=document.createElement('div');
+    left.innerHTML='<div style="font-size:12px;font-weight:700;color:#fff">'+(f.num||f.id.slice(-6))+'</div>'+
+      '<div style="font-size:11px;color:var(--muted)">'+(f.cli||'-')+' &middot; Venc: '+(f.venc||'-')+'</div>';
+    var right=document.createElement('div');
+    right.style.textAlign='right';
+    right.innerHTML='<div style="font-weight:700;color:'+cor+'">'+eur(fatTot(f))+'</div>'+
+      (extra?'<div style="font-size:10px;color:'+cor+'">'+extra+'</div>':'');
+    row.appendChild(left);row.appendChild(right);
+    return row;
+  }
+
+  if(atrasadas.length){
+    var totA=atrasadas.reduce(function(s,f){return s+fatTot(f);},0);
+    var box=document.createElement('div');
+    box.style.cssText='background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:12px;padding:14px 16px;margin-bottom:10px';
+    var hdr=document.createElement('div');
+    hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
+    hdr.innerHTML='<div style="font-size:13px;font-weight:700;color:#f87171">🚨 Em Atraso ('+atrasadas.length+')</div>'+
+      '<div style="font-size:13px;font-weight:700;color:#f87171">'+eur(totA)+'</div>';
+    box.appendChild(hdr);
+    atrasadas.forEach(function(f){
+      var dias=Math.floor((hoje-new Date(f.venc))/(1000*60*60*24));
+      box.appendChild(makeRow(f,'#f87171',dias+'d atraso'));
+    });
+    banner.appendChild(box);
+  }
+
+  if(pendentes.length){
+    var totP=pendentes.reduce(function(s,f){return s+fatTot(f);},0);
+    var box2=document.createElement('div');
+    box2.style.cssText='background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:14px 16px';
+    var hdr2=document.createElement('div');
+    hdr2.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
+    hdr2.innerHTML='<div style="font-size:13px;font-weight:700;color:#fbbf24">⏳ Pendentes ('+pendentes.length+')</div>'+
+      '<div style="font-size:13px;font-weight:700;color:#fbbf24">'+eur(totP)+'</div>';
+    box2.appendChild(hdr2);
+    pendentes.forEach(function(f){
+      var diasV=f.venc?Math.ceil((new Date(f.venc)-hoje)/(1000*60*60*24)):null;
+      var vi=diasV!==null?(diasV<=7?diasV+'d (urgente)':diasV+'d restantes'):'Sem vencimento';
+      box2.appendChild(makeRow(f,'#fbbf24',vi));
+    });
+    banner.appendChild(box2);
+  }
+}
+
 }
 
 
