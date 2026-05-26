@@ -991,10 +991,8 @@ tbody td{padding:9px 12px;vertical-align:middle}
         <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">Clique ou arraste o ficheiro CSV</div>
         <input type="file" id="csv-file" accept=".csv,.txt" style="display:none" onchange="parseCsvFile(event)">
       </div>
-      <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted)"><span style="color:#60A5FA;cur
-// ══════════════════════════════════════════════════════════
-// DATA LAYER
-// ══════════════════════════════════════════════════════════
+      <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted)"><span style="color:#60A5FA;cursor:pointer">
+<script>
 const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
          desp:'m3_desp',rec:'m3_rec',forn:'m3_forn',hist:'m3_hist',desl:'m3_desl',
          users:'m3_users',def:'m3_def',cats:'m3_cats',os:'m3_os',
@@ -4971,7 +4969,9 @@ function renderDashBanner(){
   }
 }
 
-||0.40;
+function calcDeslAuto(){
+  var km=parseFloat((document.getElementById('fat_desl_km')||{}).value)||0;
+  var preco=parseFloat((document.getElementById('fat_desl_preco')||{}).value)||0.40;
   var total=km*preco;
   var tf=document.getElementById('fat_desl_total_manual');
   if(tf&&total>0)tf.value=total.toFixed(2);
@@ -4987,6 +4987,7 @@ function renderDashBanner(){
 
 
 function closeModalById(id){var el=document.getElementById(id);if(el)el.remove();}
+
 
 
 
