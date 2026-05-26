@@ -9,65 +9,7 @@
 <title>MRC — Sistema de Gestão</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script>
-(function(){
-  firebase.initializeApp({
-    apiKey:"AIzaSyALX9QWi4o89zO0wBd3A3znkP_YD-bPwwA",
-    authDomain:"mrc-47d1f.firebaseapp.com",
-    projectId:"mrc-47d1f",
-    storageBucket:"mrc-47d1f.firebasestorage.app",
-    messagingSenderId:"4766445522",
-    appId:"1:4766445522:web:ffd8567ff468e24810620b"
-  });
-  window._db=firebase.firestore();
-  window._cache={};
-  window._fbReady=false;
 
-  window._fbSave=function(k,d){
-    window._cache[k]=d;
-    try{localStorage.setItem('m3_'+k,JSON.stringify(d));}catch(e){}
-    window._db.collection('mrc').doc(k).set({value:d}).catch(function(e){console.warn('FB:',e);});
-  };
-
-  window._syncFromFirebase=function(){
-    var keys=['mat','rep','cli','eq','orc','fat','desp','rec','forn','hist','desl','svc','evt','pdvh','fiado','cats','def','users','os'];
-    var promises=keys.map(function(k){
-      return window._db.collection('mrc').doc(k).get().then(function(doc){
-        if(doc.exists){
-          window._cache[k]=doc.data().value;
-          try{localStorage.setItem('m3_'+k,JSON.stringify(window._cache[k]));}catch(e){}
-        } else {
-          try{
-            var local=localStorage.getItem('m3_'+k);
-            if(local){
-              window._cache[k]=JSON.parse(local);
-              window._db.collection('mrc').doc(k).set({value:window._cache[k]});
-            } else {window._cache[k]=[];}
-          }catch(e){window._cache[k]=[];}
-        }
-      }).catch(function(){
-        try{var l=localStorage.getItem('m3_'+k);window._cache[k]=l?JSON.parse(l):[];}catch(e){window._cache[k]=[];}
-      });
-    });
-    return Promise.all(promises);
-  };
-
-  window._startRealtime=function(){
-    var keys=['mat','rep','cli','eq','orc','fat','desp','rec','forn','hist','desl','svc','evt','pdvh','fiado','cats','os'];
-    keys.forEach(function(k){
-      window._db.collection('mrc').doc(k).onSnapshot(function(doc){
-        if(doc.exists&&window._fbReady){
-          window._cache[k]=doc.data().value;
-          try{localStorage.setItem('m3_'+k,JSON.stringify(window._cache[k]));}catch(e){}
-          if(typeof renderAll==='function')renderAll();
-        }
-      });
-    });
-  };
-})();
-</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
