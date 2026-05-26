@@ -991,7 +991,8 @@ tbody td{padding:9px 12px;vertical-align:middle}
         <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">Clique ou arraste o ficheiro CSV</div>
         <input type="file" id="csv-file" accept=".csv,.txt" style="display:none" onchange="parseCsvFile(event)">
       </div>
-      <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted)"><span style="color:#60A5FA;cursor:pointer">
+      <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted)"><span style="color:#60A5FA;cursor:pointer;text-decoration:underline" onclick="downloadTemplateCsv()">Descarregar template de exemplo</span></div>
+    </div>
 <script>
 const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
          desp:'m3_desp',rec:'m3_rec',forn:'m3_forn',hist:'m3_hist',desl:'m3_desl',
@@ -2497,30 +2498,25 @@ function printReparacao(id) {
 // INIT
 // ══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',function(){
-  // Firebase sync before app starts
-  var overlay=document.createElement('div');
-  overlay.style.cssText='position:fixed;inset:0;background:#0F1117;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Inter,sans-serif;color:#fff';
-  overlay.innerHTML='<div style="font-size:36px">🔥</div><div style="font-size:16px;font-weight:700">MRC Sistema</div><div style="font-size:13px;color:#7B8DB0">A sincronizar dados...</div>';
-  document.body.appendChild(overlay);
-  window._syncFromFirebase().then(function(){
-    window._fbReady=true;
-    window._startRealtime();
-    document.body.removeChild(overlay);
-    if(typeof iniciarLembretes==='function')iniciarLembretes();
-  }).catch(function(){
-    window._fbReady=true;
-    try{document.body.removeChild(overlay);}catch(e){}
-  });
   setDate();
-  // Abrir directamente sem login
-  var defaultUser = {id:'admin',nome:'Rui Veloso',perfil:'Administrador',pass:''};
-  enterApp(defaultUser);
-});
+  var loginEl=document.getElementById('loginScreen');
+  var appEl=document.getElementById('app');
+  if(loginEl)loginEl.style.display='none';
+  if(appEl)appEl.classList.add('on');
+  CU={id:'admin',nome:'Rui Veloso',perfil:'Administrador'};
+  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  _s('tbAv','R');_s('tbName','Rui Veloso');_s('tbRole','Administrador');
+  _s('umName','Rui Veloso');_s('umRole','Administrador');
+  setTimeout(function(){
+    try{fillCatSelects();}catch(e){}
+    try{renderAll();}catch(e){}
+  },50);
+});;
 
 // ══════════════════════════════════════════════════════════
 // CATEGORIAS DE MATERIAIS (com sub-categorias)
 // ══════════════════════════════════════════════════════════
-const DEFAULT_CATS = [
+var DEFAULT_CATS = [
   {id:'c1', nome:'Rolamentos', subs:['6200','6201','6202','6203','6204','6205']},
   {id:'c2', nome:'Contactores', subs:['9A','12A','18A','25A','32A','40A']},
   {id:'c3', nome:'Capacitores', subs:['10μF','20μF','25μF','50μF','100μF']},
@@ -3965,6 +3961,7 @@ document.addEventListener('click', function(e) {
 
 // Inject sig + logo section into Definições page
 document.addEventListener('DOMContentLoaded', function() {
+  try {
   const defPage = document.getElementById('page-definicoes');
   if (!defPage) return;
 
@@ -4003,6 +4000,7 @@ document.addEventListener('DOMContentLoaded', function() {
   defPage.insertAdjacentHTML('beforeend', extraCards);
   initSig();
   loadLogoPreview();
+  } catch(e){ console.error('defPage:', e); }
 });
 
 function uploadLogo(e) {
@@ -4232,7 +4230,7 @@ window.renderDash = function() {
 // ══════════════════════════════════════════════════════════
 // CATEGORIAS DE EQUIPAMENTOS
 // ══════════════════════════════════════════════════════════
-const EQ_DEFAULT_CATS = ['Motor','Compressor','Gerador','Bomba','Portão','Quadro Eléctrico','Bomba de Calor','Outro'];
+var EQ_DEFAULT_CATS = ['Motor','Compressor','Gerador','Bomba','Portão','Quadro Eléctrico','Bomba de Calor','Outro'];
 
 function loadEqCats() {
   const stored = localStorage.getItem('m3_eq_cats');
