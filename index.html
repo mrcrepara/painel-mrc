@@ -4903,68 +4903,45 @@ function renderDashBanner(){
     var v=new Date(f.venc);v.setHours(0,0,0,0);
     return v<hoje;
   });
-
   var pendentes=fats.filter(function(f){
     if(f.est==='Paga')return false;
     if(!f.venc)return true;
     var v=new Date(f.venc);v.setHours(0,0,0,0);
     return v>=hoje && f.est==='Pendente';
   });
+  var pagas=fats.filter(function(f){return f.est==='Paga';});
 
-  if(!atrasadas.length && !pendentes.length){
-    banner.style.display='none';
-    return;
-  }
+  var totA=atrasadas.reduce(function(s,f){return s+fatTot(f);},0);
+  var totP=pendentes.reduce(function(s,f){return s+fatTot(f);},0);
+  var totPg=pagas.reduce(function(s,f){return s+fatTot(f);},0);
+
   banner.style.display='block';
   banner.innerHTML='';
 
-  function makeRow(f, cor, extra){
-    var row=document.createElement('div');
-    row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:7px;margin-bottom:5px;cursor:pointer;background:rgba(0,0,0,.1)';
-    row.onclick=function(){goPage('faturas');};
-    var left=document.createElement('div');
-    left.innerHTML='<div style="font-size:12px;font-weight:700;color:#fff">'+(f.num||f.id.slice(-6))+'</div>'+
-      '<div style="font-size:11px;color:var(--muted)">'+(f.cli||'-')+' &middot; Venc: '+(f.venc||'-')+'</div>';
-    var right=document.createElement('div');
-    right.style.textAlign='right';
-    right.innerHTML='<div style="font-weight:700;color:'+cor+'">'+eur(fatTot(f))+'</div>'+
-      (extra?'<div style="font-size:10px;color:'+cor+'">'+extra+'</div>':'');
-    row.appendChild(left);row.appendChild(right);
-    return row;
-  }
+  var cards=[
+    {icon:'✅',label:'Faturas Pagas',val:eur(totPg),sub:pagas.length+' fatura(s)',cor:'var(--green)',bg:'rgba(16,201,122,.08)',border:'rgba(16,201,122,.25)'},
+    {icon:'⏳',label:'Pendentes',val:eur(totP),sub:pendentes.length+' fatura(s)',cor:'#fbbf24',bg:'rgba(251,191,36,.08)',border:'rgba(251,191,36,.25)'},
+    {icon:'🚨',label:'Em Atraso',val:eur(totA),sub:atrasadas.length+' fatura(s)',cor:'#f87171',bg:'rgba(239,68,68,.08)',border:'rgba(239,68,68,.25)'},
+  ];
 
-  if(atrasadas.length){
-    var totA=atrasadas.reduce(function(s,f){return s+fatTot(f);},0);
-    var box=document.createElement('div');
-    box.style.cssText='background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:12px;padding:14px 16px;margin-bottom:10px';
-    var hdr=document.createElement('div');
-    hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
-    hdr.innerHTML='<div style="font-size:13px;font-weight:700;color:#f87171">🚨 Em Atraso ('+atrasadas.length+')</div>'+
-      '<div style="font-size:13px;font-weight:700;color:#f87171">'+eur(totA)+'</div>';
-    box.appendChild(hdr);
-    atrasadas.forEach(function(f){
-      var dias=Math.floor((hoje-new Date(f.venc))/(1000*60*60*24));
-      box.appendChild(makeRow(f,'#f87171',dias+'d atraso'));
-    });
-    banner.appendChild(box);
-  }
+  var grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px';
 
-  if(pendentes.length){
-    var totP=pendentes.reduce(function(s,f){return s+fatTot(f);},0);
-    var box2=document.createElement('div');
-    box2.style.cssText='background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:14px 16px';
-    var hdr2=document.createElement('div');
-    hdr2.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
-    hdr2.innerHTML='<div style="font-size:13px;font-weight:700;color:#fbbf24">⏳ Pendentes ('+pendentes.length+')</div>'+
-      '<div style="font-size:13px;font-weight:700;color:#fbbf24">'+eur(totP)+'</div>';
-    box2.appendChild(hdr2);
-    pendentes.forEach(function(f){
-      var diasV=f.venc?Math.ceil((new Date(f.venc)-hoje)/(1000*60*60*24)):null;
-      var vi=diasV!==null?(diasV<=7?diasV+'d (urgente)':diasV+'d restantes'):'Sem vencimento';
-      box2.appendChild(makeRow(f,'#fbbf24',vi));
-    });
-    banner.appendChild(box2);
-  }
+  cards.forEach(function(c){
+    var card=document.createElement('div');
+    card.style.cssText='background:'+c.bg+';border:1px solid '+c.border+';border-radius:12px;padding:16px;cursor:pointer';
+    card.onclick=function(){goPage('faturas');};
+    card.innerHTML=
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+
+        '<span style="font-size:20px">'+c.icon+'</span>'+
+        '<span style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">'+c.label+'</span>'+
+      '</div>'+
+      '<div style="font-size:22px;font-weight:800;color:'+c.cor+';margin-bottom:4px">'+c.val+'</div>'+
+      '<div style="font-size:11px;color:var(--muted)">'+c.sub+'</div>';
+    grid.appendChild(card);
+  });
+
+  banner.appendChild(grid);
 }
 
 function calcDeslAuto(){
