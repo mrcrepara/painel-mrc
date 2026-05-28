@@ -592,7 +592,11 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
     </div>
     <div class="mfoot">
       <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
-      <button class=
+    </div>
+  </div>
+</div>
+
+<script>
 // ── Firebase ─────────────────────────────────────────────
 firebase.initializeApp({
   apiKey:"AIzaSyALX9QWi4o89zO0wBd3A3znkP_YD-bPwwA",
@@ -2158,11 +2162,6 @@ function editarPrecos(){
       setTimeout(function(){ card.style.border=''; card.style.boxShadow=''; }, 2500);
       var firstInput = document.getElementById('p_tomada');
       if(firstInput) setTimeout(function(){ firstInput.focus(); firstInput.select(); }, 300);
-    }, 100);
-  }
-  if(typeof toast === 'function') toast('Edita os preços — o total actualiza automaticamente!');
-}
-lect(); }, 300);
     }, 100);
   }
   if(typeof toast === 'function') toast('Edita os preços — o total actualiza automaticamente!');
