@@ -1846,6 +1846,85 @@ function limparPlanta(){
   var r = document.getElementById('plantaResultado');
   if(r) r.style.display='none';
 }
+
+// ══════════════════════════════════════
+// GUARDAR / CARREGAR ORCAMENTO
+// ══════════════════════════════════════
+function guardarOrcamento(){
+  var nome = prompt('Nome do orcamento:', 'Orcamento ' + new Date().toLocaleDateString('pt-PT'));
+  if(!nome) return;
+
+  var dados = {
+    nome: nome,
+    data: new Date().toISOString(),
+    cliente: (document.getElementById('clienteNome')||{}).value || '',
+    divs: _divs || [],
+    precos: _precos || {},
+    mo: _moEntradas || []
+  };
+
+  var lista = JSON.parse(localStorage.getItem('eletro_orcamentos') || '[]');
+  var existente = lista.findIndex(function(o){ return o.nome === nome; });
+  if(existente >= 0){
+    if(!confirm('Ja existe um orcamento com este nome. Substituir?')) return;
+    lista[existente] = dados;
+  } else {
+    lista.push(dados);
+  }
+  localStorage.setItem('eletro_orcamentos', JSON.stringify(lista));
+  if(typeof toast === 'function') toast('Orcamento "'+nome+'" guardado!');
+  else alert('Orcamento "'+nome+'" guardado!');
+}
+
+function carregarOrcamento(){
+  var lista = JSON.parse(localStorage.getItem('eletro_orcamentos') || '[]');
+  if(!lista.length){ alert('Nao ha orcamentos guardados.'); return; }
+
+  var opcoes = lista.map(function(o, i){
+    return (i+1)+'. '+o.nome+' ('+new Date(o.data).toLocaleDateString('pt-PT')+')';
+  }).join('\n');
+
+  var escolha = prompt('Escolhe o orcamento:\n\n'+opcoes+'\n\nEscreve o numero:', '1');
+  if(!escolha) return;
+  var idx = parseInt(escolha) - 1;
+  if(isNaN(idx) || idx < 0 || idx >= lista.length){ alert('Numero invalido.'); return; }
+
+  var orc = lista[idx];
+  if(!confirm('Carregar "'+orc.nome+'"? O orcamento actual sera substituido.')) return;
+
+  _divs = orc.divs || [];
+  _precos = orc.precos || {};
+  _moEntradas = orc.mo || [];
+
+  if(orc.cliente){
+    var cliEl = document.getElementById('clienteNome');
+    if(cliEl) cliEl.value = orc.cliente;
+  }
+
+  renderDivs();
+  if(typeof calcular === 'function') calcular();
+  if(typeof toast === 'function') toast('Orcamento "'+orc.nome+'" carregado!');
+}
+
+function exportarOrcamentoJSON(){
+  var dados = {
+    nome: 'Orcamento ' + new Date().toLocaleDateString('pt-PT'),
+    data: new Date().toISOString(),
+    cliente: (document.getElementById('clienteNome')||{}).value || '',
+    divs: _divs || [],
+    precos: _precos || {},
+    mo: _moEntradas || []
+  };
+
+  var blob = new Blob([JSON.stringify(dados, null, 2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'orcamento_'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  if(typeof toast === 'function') toast('Exportado!');
+}
+
 </script>
 </body>
 </html>
