@@ -227,6 +227,7 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
         <div class="fg"><label>Cabo/metro (€)</label><input type="number" id="p_cabo" value="1.20" step="0.10" oninput="calcular()"></div>
       <div class="fg"><label>Tubo VD Ø20 /metro (€)</label><input type="number" id="p_tubovd" value="0.45" step="0.05" oninput="calcular()"></div>
       <div class="fg"><label>Tubo Corrugado Ø20 /metro (€)</label><input type="number" id="p_tubocor" value="0.35" step="0.05" oninput="calcular()"></div>
+      <div class="fg"><label>Armário ATI (€)</label><input type="number" id="p_ati" value="170" step="5" oninput="calcular()"></div>
       </div>
       <div class="frow" style="margin-top:8px">
         <div class="fg"><label>IVA (%)</label><input type="number" id="p_iva" value="23" step="1" oninput="calcular()"></div>
@@ -591,14 +592,7 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
     </div>
     <div class="mfoot">
       <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-yellow" onclick="guardarDiv()">⚡ Guardar</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
+      <button class=
 // ── Firebase ─────────────────────────────────────────────
 firebase.initializeApp({
   apiKey:"AIzaSyALX9QWi4o89zO0wBd3A3znkP_YD-bPwwA",
@@ -947,7 +941,8 @@ function calcular() {
   const p = {
     tomada: gf('p_tomada'), inter: gf('p_interruptor'), luz: gf('p_luz'),
     disj: gf('p_disjuntor'), quadro: gf('p_quadro'), cabo: gf('p_cabo'),
-    iva: gf('p_iva'), margem: gf('p_margem'), desc: gf('p_desc')
+    iva: gf('p_iva'), margem: gf('p_margem'), desc: gf('p_desc'),
+    ati: gf('p_ati') || 170
   };
 
   // Totais
@@ -1133,7 +1128,7 @@ function calcular() {
     ...eqMatItems,
     // ATI
     ...(temATI?[
-      {cat:'ATI — Telecomunicações', desc:'Armário ATI (caixa de telecomunicações)', qty:1, pu:35*mat_m},
+      {cat:'ATI — Telecomunicações', desc:'Armário ATI (caixa de telecomunicações)', qty:1, pu:p.ati*mat_m},
       ...(totTMista>0?[{cat:'ATI — Telecomunicações', desc:'Tomada mista R+TV+SAT+RJ45 Cat6 (Efapel 21544 / equiv.)', qty:totTMista, pu:18.50*mat_m}]:[]),
       ...(totTRVSAT>0?[{cat:'ATI — Telecomunicações', desc:'Tomada mista R+TV+SAT (sem dados)', qty:totTRVSAT, pu:14.50*mat_m}]:[]),
       ...(totTV>0?[{cat:'ATI — Telecomunicações', desc:'Tomada TV individual (passagem)', qty:totTV, pu:5.50*mat_m}]:[]),
@@ -2163,6 +2158,11 @@ function editarPrecos(){
       setTimeout(function(){ card.style.border=''; card.style.boxShadow=''; }, 2500);
       var firstInput = document.getElementById('p_tomada');
       if(firstInput) setTimeout(function(){ firstInput.focus(); firstInput.select(); }, 300);
+    }, 100);
+  }
+  if(typeof toast === 'function') toast('Edita os preços — o total actualiza automaticamente!');
+}
+lect(); }, 300);
     }, 100);
   }
   if(typeof toast === 'function') toast('Edita os preços — o total actualiza automaticamente!');
