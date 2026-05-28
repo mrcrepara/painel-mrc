@@ -1865,69 +1865,87 @@ function _getDb(){
 
 
 
+
 async function guardarOrcamento(){
   var nome = prompt('Nome do orcamento:', 'Orcamento ' + new Date().toLocaleDateString('pt-PT'));
   if(!nome) return;
 
+  // Collect price inputs
+  var precos = {};
+  ['p_tomada','p_interruptor','p_luz','p_disjuntor','p_quadro','p_cabo','p_tubo_vd','p_tubo_corr','p_iva','p_margem','p_desconto'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) precos[id] = el.value;
+  });
+
+  // Get client info
+  var clienteEl = document.getElementById('clienteNome');
+  var moradaEl = document.getElementById('clienteMorada');
+  var dataEl = document.getElementById('dataOrc');
+  var refEl = document.getElementById('refOrc');
+  var fasesEl = document.getElementById('nFases');
+  var tipoInstEl = document.getElementById('tipoInst');
+
   var dados = {
     nome: nome,
     data: new Date().toISOString(),
-    cliente: (document.getElementById('clienteNome')||{}).value || '',
+    cliente: clienteEl ? clienteEl.value : '',
+    morada: moradaEl ? moradaEl.value : '',
+    dataOrc: dataEl ? dataEl.value : '',
+    ref: refEl ? refEl.value : '',
+    fases: fasesEl ? fasesEl.value : '',
+    tipoInst: tipoInstEl ? tipoInstEl.value : '',
     divs: JSON.parse(JSON.stringify(_divs || [])),
-    precos: JSON.parse(JSON.stringify(_precos || {})),
-    mo: JSON.parse(JSON.stringify(_moEntradas || []))
+    precos: precos
   };
+
+  if(!dados.divs.length){
+    alert('Nao ha divisoes para guardar! Adiciona pelo menos uma divisao.');
+    return;
+  }
 
   var savedOk = false;
 
-  // Try Firestore first (most reliable on github.io)
+  // Try Firestore
   try {
     await _db.collection('eletro_orcamentos').doc(nome).set(dados);
     savedOk = true;
-    console.log('Saved to Firestore:', nome, _divs.length, 'divs');
-  } catch(e){
-    console.warn('Firestore save failed:', e.message);
-  }
+  } catch(e){ console.warn('Firestore error:', e.message); }
 
-  // Always save to localStorage as backup
+  // localStorage backup
   try {
     var lista = JSON.parse(localStorage.getItem('eletro_orcamentos') || '[]');
     var idx = lista.findIndex(function(o){ return o.nome === nome; });
     if(idx >= 0) lista[idx] = dados; else lista.push(dados);
     localStorage.setItem('eletro_orcamentos', JSON.stringify(lista));
-    if(!savedOk) savedOk = true;
-    console.log('Saved to localStorage:', nome);
-  } catch(e){ console.warn('localStorage save failed:', e.message); }
+    savedOk = true;
+  } catch(e){ console.warn('localStorage error:', e.message); }
 
   if(savedOk){
-    if(typeof toast === 'function') toast('Guardado: ' + nome + ' (' + (dados.divs.length) + ' divisoes)');
+    if(typeof toast === 'function') toast('Guardado: ' + nome + ' (' + dados.divs.length + ' divisoes) ✅');
   } else {
-    alert('Erro ao guardar. Verifica a ligacao.');
+    alert('Erro ao guardar!');
   }
 }
 
 async function carregarOrcamento(){
   var todos = [];
 
-  // Load from Firestore
+  // Firestore
   try {
     var snap = await _db.collection('eletro_orcamentos').orderBy('data','desc').get();
     snap.forEach(function(doc){
-      var d = doc.data();
-      todos.push({nome: doc.id, data: d.data, divs: d.divs||[], precos: d.precos||{}, mo: d.mo||[], cliente: d.cliente||'', fonte:'Nuvem'});
+      todos.push(doc.data());
     });
-    console.log('Firestore loaded:', todos.length, 'orcamentos');
-  } catch(e){ console.warn('Firestore load failed:', e.message); }
+  } catch(e){ console.warn('Firestore load error:', e.message); }
 
-  // Also load from localStorage
+  // localStorage
   try {
     var lista = JSON.parse(localStorage.getItem('eletro_orcamentos') || '[]');
     lista.forEach(function(l){
       if(!todos.find(function(t){ return t.nome === l.nome; })){
-        todos.push({nome:l.nome, data:l.data, divs:l.divs||[], precos:l.precos||{}, mo:l.mo||[], cliente:l.cliente||'', fonte:'Local'});
+        todos.push(l);
       }
     });
-    console.log('localStorage loaded:', lista.length, 'orcamentos');
   } catch(e){}
 
   if(!todos.length){
@@ -1935,7 +1953,6 @@ async function carregarOrcamento(){
     return;
   }
 
-  // Show modal
   var existing = document.getElementById('_orcModal');
   if(existing) existing.remove();
 
@@ -1959,29 +1976,41 @@ async function carregarOrcamento(){
 
     var left = document.createElement('div');
     var n1 = document.createElement('div');
-    n1.style.cssText = 'font-size:14px;font-weight:700;color:#fff;margin-bottom:2px';
+    n1.style.cssText = 'font-size:14px;font-weight:700;color:#fff;margin-bottom:3px';
     n1.textContent = orc.nome;
     var n2 = document.createElement('div');
     n2.style.cssText = 'font-size:11px;color:#6B7A99';
     var dataStr = orc.data ? new Date(orc.data).toLocaleString('pt-PT') : '';
-    n2.textContent = dataStr + ' - ' + (orc.divs.length) + ' div - ' + orc.fonte;
+    n2.textContent = dataStr + ' - ' + (orc.divs||[]).length + ' divisoes - ' + (orc.cliente||'');
     left.appendChild(n1); left.appendChild(n2);
 
     var btns = document.createElement('div');
-    btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0;margin-left:12px';
+    btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0;margin-left:10px';
 
     var loadBtn = document.createElement('button');
     loadBtn.textContent = 'Carregar';
     loadBtn.style.cssText = 'padding:7px 14px;background:#3B8BEB;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600;font-family:inherit';
     loadBtn.onclick = (function(o){ return function(){
-      _divs = JSON.parse(JSON.stringify(o.divs));
-      _precos = JSON.parse(JSON.stringify(o.precos));
-      _moEntradas = JSON.parse(JSON.stringify(o.mo));
+      _divs = JSON.parse(JSON.stringify(o.divs || []));
+
+      // Restore price inputs
+      if(o.precos){
+        Object.keys(o.precos).forEach(function(id){
+          var el = document.getElementById(id);
+          if(el) el.value = o.precos[id];
+        });
+      }
+
+      // Restore client info
       if(o.cliente){ var c=document.getElementById('clienteNome'); if(c) c.value=o.cliente; }
+      if(o.morada){ var m=document.getElementById('clienteMorada'); if(m) m.value=o.morada; }
+      if(o.dataOrc){ var d=document.getElementById('dataOrc'); if(d) d.value=o.dataOrc; }
+      if(o.ref){ var r=document.getElementById('refOrc'); if(r) r.value=o.ref; }
+
       renderDivs();
       setTimeout(function(){ if(typeof calcular==='function') calcular(); }, 100);
       modal.remove();
-      if(typeof toast==='function') toast('Carregado: ' + o.nome + ' (' + o.divs.length + ' divisoes)');
+      if(typeof toast==='function') toast('Carregado: ' + o.nome + ' (' + (o.divs||[]).length + ' divisoes) ✅');
     };})(orc);
 
     var delBtn = document.createElement('button');
@@ -1993,7 +2022,7 @@ async function carregarOrcamento(){
       try { await _db.collection('eletro_orcamentos').doc(o.nome).delete(); } catch(ex){}
       try {
         var l = JSON.parse(localStorage.getItem('eletro_orcamentos')||'[]');
-        localStorage.setItem('eletro_orcamentos', JSON.stringify(l.filter(function(x){return x.nome!==o.nome;})));
+        localStorage.setItem('eletro_orcamentos', JSON.stringify(l.filter(function(x){ return x.nome!==o.nome; })));
       } catch(ex){}
       r.remove();
     };})(orc, row);
