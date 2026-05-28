@@ -165,8 +165,11 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
       <div class="logo-sub">Orçamentos Elétricos · RTIEBT</div>
     </div>
   </div>
-  <div class="hlinks">
-    <a href="index.html">← Sistema MRC</a>
+  <div class="hlinks" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <button onclick="guardarOrcamento()" style="padding:7px 14px;background:#10C97A;color:#000;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">💾 Guardar</button>
+    <button onclick="carregarOrcamento()" style="padding:7px 14px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">📂 Carregar</button>
+    <button onclick="exportarOrcamentoJSON()" style="padding:7px 14px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">⬇ Exportar</button>
+    <a href="index.html" style="padding:7px 14px;color:rgba(255,255,255,.6);font-size:13px;text-decoration:none">← Sistema MRC</a>
   </div>
 </header>
 
@@ -289,6 +292,9 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
         <h3>📋 Orçamento Final</h3>
         <div style="display:flex;gap:8px" class="no-print">
           <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-green btn-sm" onclick="guardarOrcamento()" style="background:#10C97A;color:#000;font-weight:700">💾 Guardar</button>
+          <button class="btn btn-ghost btn-sm" onclick="carregarOrcamento()">📂 Carregar</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportarOrcamentoJSON()">⬇ Exportar</button>
           <button class="btn btn-blue btn-sm" onclick="imprimirOrc('completo')">🖨 Orçamento Completo</button>
           <button class="btn btn-ghost btn-sm" onclick="imprimirOrc('semprecos')">📋 Lista Material s/Preços</button>
           <button class="btn btn-ghost btn-sm" onclick="imprimirOrc('somentemat')">📦 Só Material c/Preços</button>
@@ -1847,10 +1853,16 @@ function limparPlanta(){
   if(r) r.style.display='none';
 }
 
+
 // ══════════════════════════════════════
-// GUARDAR / CARREGAR ORCAMENTO
+// FIRESTORE - ORCAMENTOS ELETROCALC
 // ══════════════════════════════════════
-function guardarOrcamento(){
+
+function _getDb(){
+  try { return typeof _db !== 'undefined' ? _db : null; } catch(e){ return null; }
+}
+
+async function guardarOrcamento(){
   var nome = prompt('Nome do orcamento:', 'Orcamento ' + new Date().toLocaleDateString('pt-PT'));
   if(!nome) return;
 
@@ -1863,47 +1875,132 @@ function guardarOrcamento(){
     mo: _moEntradas || []
   };
 
-  var lista = JSON.parse(localStorage.getItem('eletro_orcamentos') || '[]');
-  var existente = lista.findIndex(function(o){ return o.nome === nome; });
-  if(existente >= 0){
-    if(!confirm('Ja existe um orcamento com este nome. Substituir?')) return;
-    lista[existente] = dados;
-  } else {
-    lista.push(dados);
+  if(typeof toast === 'function') toast('A guardar...');
+
+  var db = _getDb();
+  var ok = false;
+
+  if(db){
+    try {
+      await db.collection('eletro_orcamentos').doc(nome).set(dados);
+      ok = true;
+    } catch(e){ console.error('Firestore save error:', e); }
   }
-  localStorage.setItem('eletro_orcamentos', JSON.stringify(lista));
-  if(typeof toast === 'function') toast('Orcamento "'+nome+'" guardado!');
-  else alert('Orcamento "'+nome+'" guardado!');
+
+  // Always save locally as backup
+  try {
+    var lista = JSON.parse(localStorage.getItem('eletro_orcamentos') || '[]');
+    var idx = lista.findIndex(function(o){ return o.nome === nome; });
+    if(idx >= 0) lista[idx] = dados; else lista.push(dados);
+    localStorage.setItem('eletro_orcamentos', JSON.stringify(lista));
+  } catch(e){}
+
+  if(typeof toast === 'function'){
+    if(ok) toast('Orcamento "'+nome+'" guardado na nuvem! ✅');
+    else toast('Guardado localmente (sem ligacao)');
+  }
 }
 
-function carregarOrcamento(){
-  var lista = JSON.parse(localStorage.getItem('eletro_orcamentos') || '[]');
-  if(!lista.length){ alert('Nao ha orcamentos guardados.'); return; }
+async function carregarOrcamento(){
+  if(typeof toast === 'function') toast('A carregar lista...');
 
-  var opcoes = lista.map(function(o, i){
-    return (i+1)+'. '+o.nome+' ('+new Date(o.data).toLocaleDateString('pt-PT')+')';
-  }).join('\n');
+  var todos = [];
+  var db = _getDb();
 
-  var escolha = prompt('Escolhe o orcamento:\n\n'+opcoes+'\n\nEscreve o numero:', '1');
-  if(!escolha) return;
-  var idx = parseInt(escolha) - 1;
-  if(isNaN(idx) || idx < 0 || idx >= lista.length){ alert('Numero invalido.'); return; }
-
-  var orc = lista[idx];
-  if(!confirm('Carregar "'+orc.nome+'"? O orcamento actual sera substituido.')) return;
-
-  _divs = orc.divs || [];
-  _precos = orc.precos || {};
-  _moEntradas = orc.mo || [];
-
-  if(orc.cliente){
-    var cliEl = document.getElementById('clienteNome');
-    if(cliEl) cliEl.value = orc.cliente;
+  // Load from Firestore
+  if(db){
+    try {
+      var snap = await db.collection('eletro_orcamentos').orderBy('data','desc').get();
+      snap.forEach(function(doc){
+        todos.push({nome: doc.id, data: doc.data().data, fonte: 'Nuvem', dados: doc.data()});
+      });
+    } catch(e){ console.error('Firestore load error:', e); }
   }
 
-  renderDivs();
-  if(typeof calcular === 'function') calcular();
-  if(typeof toast === 'function') toast('Orcamento "'+orc.nome+'" carregado!');
+  // Load from localStorage
+  try {
+    var local = JSON.parse(localStorage.getItem('eletro_orcamentos') || '[]');
+    local.forEach(function(l){
+      if(!todos.find(function(t){ return t.nome === l.nome; })){
+        todos.push({nome: l.nome, data: l.data, fonte: 'Local', dados: l});
+      }
+    });
+  } catch(e){}
+
+  if(!todos.length){ alert('Nao ha orcamentos guardados.'); return; }
+
+  // Show modal
+  var existing = document.getElementById('_orcModal');
+  if(existing) existing.remove();
+
+  var modal = document.createElement('div');
+  modal.id = '_orcModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
+
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#1a1f2e;border:1px solid #2a3146;border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto';
+  box.innerHTML = '<div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:16px">📂 Orcamentos Guardados</div>';
+
+  todos.forEach(function(orc){
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,.05);border-radius:9px;margin-bottom:8px;border:1px solid transparent';
+
+    var left = document.createElement('div');
+    var dataStr = orc.data ? new Date(orc.data).toLocaleDateString('pt-PT') : '';
+    left.innerHTML = '<div style="font-size:13px;font-weight:600;color:#fff">'+orc.nome+'</div>'+
+      '<div style="font-size:11px;color:#6B7A99">'+dataStr+' · '+orc.fonte+'</div>';
+
+    var btns = document.createElement('div');
+    btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0';
+
+    var loadBtn = document.createElement('button');
+    loadBtn.textContent = 'Carregar';
+    loadBtn.style.cssText = 'padding:5px 10px;background:#3B8BEB;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit';
+    loadBtn.onclick = (function(o){ return function(){
+      var d = o.dados;
+      _divs = d.divs || [];
+      _precos = d.precos || {};
+      _moEntradas = d.mo || [];
+      if(d.cliente){
+        var cliEl = document.getElementById('clienteNome');
+        if(cliEl) cliEl.value = d.cliente;
+      }
+      renderDivs();
+      if(typeof calcular === 'function') calcular();
+      modal.remove();
+      if(typeof toast === 'function') toast('Orcamento "'+o.nome+'" carregado!');
+    };})(orc);
+
+    var delBtn = document.createElement('button');
+    delBtn.textContent = '🗑';
+    delBtn.style.cssText = 'padding:5px 8px;background:rgba(239,68,68,.2);color:#f87171;border:none;border-radius:6px;font-size:12px;cursor:pointer';
+    delBtn.onclick = (function(o, r){ return async function(){
+      if(!confirm('Apagar "'+o.nome+'"?')) return;
+      if(o.fonte === 'Nuvem' && db){
+        try { await db.collection('eletro_orcamentos').doc(o.nome).delete(); } catch(e){}
+      }
+      try {
+        var lista = JSON.parse(localStorage.getItem('eletro_orcamentos') || '[]');
+        localStorage.setItem('eletro_orcamentos', JSON.stringify(lista.filter(function(l){ return l.nome !== o.nome; })));
+      } catch(e){}
+      r.remove();
+    };})(orc, row);
+
+    btns.appendChild(loadBtn);
+    btns.appendChild(delBtn);
+    row.appendChild(left);
+    row.appendChild(btns);
+    box.appendChild(row);
+  });
+
+  var closeBtn = document.createElement('button');
+  closeBtn.textContent = 'Fechar';
+  closeBtn.style.cssText = 'width:100%;margin-top:12px;padding:10px;background:rgba(255,255,255,.1);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit';
+  closeBtn.onclick = function(){ modal.remove(); };
+  box.appendChild(closeBtn);
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
 }
 
 function exportarOrcamentoJSON(){
