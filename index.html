@@ -989,7 +989,14 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div id="import-step1">
       <div style="border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer" onclick="document.getElementById('csv-file').click()" ondragover="event.preventDefault()" ondrop="handleCsvDrop(event)">
         <div style="font-size:32px;margin-bottom:10px">📂</div>
-        <div style="font-size:14px;font-const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
+        <div style="font-size:14px;color:var(--muted)">Clique ou arraste o ficheiro CSV</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
          desp:'m3_desp',rec:'m3_rec',forn:'m3_forn',hist:'m3_hist',desl:'m3_desl',
          users:'m3_users',def:'m3_def',cats:'m3_cats',os:'m3_os',
          svc:'m3_svc',evt:'m3_evt',pdvh:'m3_pdvhist',fiado:'m3_fiado'};
@@ -4879,13 +4886,6 @@ function buildBackupData(){
 
 
 
-function calcDeslAuto(){
-  var km=gf('fat_desl_km'), preco=gf('fat_desl_preco')||0.40;
-  var total=km*preco;
-  var tf=document.getElementById('fat_desl_total_manual');
-  if(tf&&total>0)tf.value=total.toFixed(2);
-  calcFatModal();
-}
 
 
 
@@ -4895,7 +4895,6 @@ function calcDeslAuto(){
 
 
 
-function closeModalById(id){var el=document.getElementById(id);if(el)el.remove();}
 
 
 
@@ -4954,14 +4953,6 @@ function renderDashBanner(){
   banner.appendChild(grid);
 }
 
-function calcDeslAuto(){
-  var km=parseFloat((document.getElementById('fat_desl_km')||{}).value)||0;
-  var preco=parseFloat((document.getElementById('fat_desl_preco')||{}).value)||0.40;
-  var total=km*preco;
-  var tf=document.getElementById('fat_desl_total_manual');
-  if(tf&&total>0)tf.value=total.toFixed(2);
-  calcFatModal();
-}
 
 
 
@@ -4971,7 +4962,6 @@ function calcDeslAuto(){
 
 
 
-function closeModalById(id){var el=document.getElementById(id);if(el)el.remove();}
 
 
 
@@ -4997,8 +4987,6 @@ function migrarCustoFaturas(){
   sv('fat',fats);
   if(typeof renderDash==='function') renderDash();
   if(typeof toast==='function') toast('Migração: '+count+' faturas actualizadas! ✅');
-}
-  banner.appendChild(grid);
 }
 
 function calcDeslAuto(){
