@@ -1899,13 +1899,16 @@ function renderDash(){
   const custoMatRep=repsFilt.reduce((s,r)=>s+(r.custo_mat||0),0);
   // Custo real dos materiais das faturas (stock)
   const custoMatFat=fatsFilt.reduce((s,f)=>s+(f.custo_mat_real||0),0);
-  const custoMat=custoMatRep+custoMatFat;
-  const lucro=fatPaga-totDesp-custoMat;
+  const osFilt=_filterPeriod(ld('os'),'data');
+  const custoHoras=osFilt.reduce((s,o)=>s+((o.horas||0)*(o.valor_hora||0)),0);
+  const custoMatOS=osFilt.reduce((s,o)=>s+(o.custo_mat||0),0);
+  const custoMat=custoMatRep+custoMatFat+custoMatOS;
+  const lucro=fatPaga-totDesp-custoMat-custoHoras;
   const margemPct=fatPaga>0?((lucro/fatPaga)*100).toFixed(1):0;
   const aberto=reps.filter(r=>r.est!=='Entregue').length;
   const low=mats.filter(m=>m.stock<=m.min).length;
   const kpi=g('dashKpi');
-  if(kpi)kpi.innerHTML='<div class="kpi"><div style="font-size:20px;margin-bottom:6px">💵</div><div class="kpi-label">Faturado (Pago)</div><div class="kpi-val" style="font-size:18px">'+eur(fatPaga)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">💸</div><div class="kpi-label">Total Despesas</div><div class="kpi-val" style="font-size:18px">'+eur(totDesp)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">🛒</div><div class="kpi-label">Custo Material</div><div class="kpi-val" style="font-size:18px;color:var(--amber)">'+eur(custoMat)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">💰</div><div class="kpi-label">Lucro Real</div><div class="kpi-val" style="font-size:18px;color:var(--green)">'+eur(lucro)+'</div><div style="font-size:11px;color:var(--muted);margin-top:3px">'+margemPct+'% margem</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">🔧</div><div class="kpi-label">Reparações Activas</div><div class="kpi-val" style="color:var(--amber)">'+aberto+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">📦</div><div class="kpi-label">Stock Baixo</div><div class="kpi-val" style="color:'+(low>0?'var(--amber)':'var(--green)')+'">'+low+'</div></div>';
+  if(kpi)kpi.innerHTML='<div class="kpi"><div style="font-size:20px;margin-bottom:6px">💵</div><div class="kpi-label">Faturado (Pago)</div><div class="kpi-val" style="font-size:18px">'+eur(fatPaga)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">💸</div><div class="kpi-label">Total Despesas</div><div class="kpi-val" style="font-size:18px">'+eur(totDesp)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">🛒</div><div class="kpi-label">Custo Material</div><div class="kpi-val" style="font-size:18px;color:var(--amber)">'+eur(custoMat)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">⏱</div><div class="kpi-label">Custo Horas</div><div class="kpi-val" style="font-size:18px;color:var(--amber)">'+eur(custoHoras)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">💰</div><div class="kpi-label">Lucro Limpo</div><div class="kpi-val" style="font-size:18px;color:'+(lucro>=0?'var(--green)':'#f87171')+'">'+eur(lucro)+'</div><div style="font-size:11px;color:var(--muted);margin-top:3px">'+margemPct+'% margem</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">🔧</div><div class="kpi-label">Reparações Activas</div><div class="kpi-val" style="color:var(--amber)">'+aberto+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">📦</div><div class="kpi-label">Stock Baixo</div><div class="kpi-val" style="color:'+(low>0?'var(--amber)':'var(--green)')+'">'+low+'</div></div>';
   // Alertas
   const lowMats=mats.filter(m=>m.stock<=m.min);
   const urgReps=reps.filter(r=>r.urg==='Muito Urgente'&&r.est!=='Entregue');
