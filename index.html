@@ -780,7 +780,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div class="fg"><label>Equipamento *</label><input id="rep_eq" placeholder="Marca + Modelo"></div>
     <div class="fg"><label>Nº de Série</label><input id="rep_serie"></div>
     <div class="fg"><label>Avaria Descrita</label><textarea id="rep_av" placeholder="Descrição da avaria"></textarea></div>
-    <div class="frow"><div class="fg"><label>Valor (€)</label><input type="number" id="rep_val" value="0" step="0.01"></div><div class="fg"><label>Urgência</label><select id="rep_urg"><option>Normal</option><option>Urgente</option><option>Muito Urgente</option></select></div></div>
+    <div class="frow"><div class="fg"><label>Valor Cobrado (€)</label><input type="number" id="rep_val" value="0" step="0.01"></div><div class="fg"><label>Custo Material (€)</label><input type="number" id="rep_custo_mat" value="0" step="0.01"></div><div class="fg"><label>Urgência</label><select id="rep_urg"><option>Normal</option><option>Urgente</option><option>Muito Urgente</option></select></div></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mRep')">Cancelar</button><button class="btn btn-green" onclick="saveRep()">💾 Guardar</button></div>
 </div></div>
@@ -1186,7 +1186,7 @@ function clearForm(id){
 function fillForm(id,d){
   const maps={
     mMat:{mat_ref:'ref',mat_desc:'desc',mat_cat:'cat',mat_un:'un',mat_custo:'custo',mat_pvp:'pvp',mat_stock:'stock',mat_min:'min',mat_loc:'loc'},
-    mRep:{rep_cli:'cli_id',rep_est:'est',rep_eq:'eq',rep_serie:'serie',rep_av:'av',rep_val:'val',rep_urg:'urg'},
+    mRep:{rep_cli:'cli_id',rep_est:'est',rep_eq:'eq',rep_serie:'serie',rep_av:'av',rep_val:'val',rep_custo_mat:'custo_mat',rep_urg:'urg'},
     mOrc:{orc_cli:'cli_id',orc_desc:'desc',orc_mo:'mo',orc_mat:'mat',orc_iva:'iva',orc_est:'est',orc_dias:'dias'},
     mCli:{cli_tipo:'tipo',cli_nome:'nome',cli_nif:'nif',cli_tel:'tel',cli_email:'email',cli_morada:'morada',cli_obs:'obs'},
     mEq:{eq_serie:'serie',eq_cat:'cat',eq_marca:'marca',eq_modelo:'modelo',eq_cli:'cli_id',eq_obs:'obs'},
@@ -1354,7 +1354,7 @@ function saveRep(){
   const eq=gv('rep_eq').trim();if(!eq){toast('Equipamento é obrigatório!','r');return}
   const reps=ld('rep'),editId=_eids['mRep'];
   const clis=ld('cli'),cli_id=gv('rep_cli'),cli=clis.find(c=>c.id===cli_id);
-  const obj={cli_id,cli:cli?.nome||'—',eq,serie:gv('rep_serie'),av:gv('rep_av'),est:gv('rep_est'),urg:gv('rep_urg'),val:gf('rep_val'),data:td()};
+  const obj={cli_id,cli:cli?.nome||'—',eq,serie:gv('rep_serie'),av:gv('rep_av'),est:gv('rep_est'),urg:gv('rep_urg'),val:gf('rep_val'),custo_mat:gf('rep_custo_mat'),data:td()};
   if(editId){const i=reps.findIndex(r=>r.id===editId);if(i>=0)reps[i]={...reps[i],...obj}}
   else{obj.id=nextRepId();reps.push(obj)}
   sv('rep',reps);closeM('mRep');renderRep();toast(editId?'Reparação actualizada!':'Reparação criada!');
@@ -1895,11 +1895,14 @@ function renderDash(){
   const fatsFilt=_filterPeriod(fats,'data');
   const fatPaga=fatsFilt.filter(f=>f.est==='Paga').reduce((s,f)=>s+fatTot(f),0);
   const totDesp=_filterPeriod(desps,'data').reduce((s,d)=>s+(d.val+d.iva),0)+_filterPeriod(desls,'data').reduce((s,d)=>s+(d.total||0),0);
-  const lucro=fatPaga-totDesp;
+  const repsFilt=_filterPeriod(reps,'data');
+  const custoMat=repsFilt.reduce((s,r)=>s+(r.custo_mat||0),0);
+  const lucro=fatPaga-totDesp-custoMat;
+  const margemPct=fatPaga>0?((lucro/fatPaga)*100).toFixed(1):0;
   const aberto=reps.filter(r=>r.est!=='Entregue').length;
   const low=mats.filter(m=>m.stock<=m.min).length;
   const kpi=g('dashKpi');
-  if(kpi)kpi.innerHTML='<div class="kpi"><div style="font-size:20px;margin-bottom:6px">💵</div><div class="kpi-label">Faturado (Pago)</div><div class="kpi-val" style="font-size:18px">'+eur(fatPaga)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">💸</div><div class="kpi-label">Total Despesas</div><div class="kpi-val" style="font-size:18px">'+eur(totDesp)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">💰</div><div class="kpi-label">Lucro</div><div class="kpi-val" style="font-size:18px;color:var(--green)">'+eur(lucro)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">🔧</div><div class="kpi-label">Reparações Activas</div><div class="kpi-val" style="color:var(--amber)">'+aberto+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">📦</div><div class="kpi-label">Stock Baixo</div><div class="kpi-val" style="color:'+(low>0?'var(--amber)':'var(--green)')+'">'+low+'</div></div>';
+  if(kpi)kpi.innerHTML='<div class="kpi"><div style="font-size:20px;margin-bottom:6px">💵</div><div class="kpi-label">Faturado (Pago)</div><div class="kpi-val" style="font-size:18px">'+eur(fatPaga)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">💸</div><div class="kpi-label">Total Despesas</div><div class="kpi-val" style="font-size:18px">'+eur(totDesp)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">🛒</div><div class="kpi-label">Custo Material</div><div class="kpi-val" style="font-size:18px;color:var(--amber)">'+eur(custoMat)+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">💰</div><div class="kpi-label">Lucro Real</div><div class="kpi-val" style="font-size:18px;color:var(--green)">'+eur(lucro)+'</div><div style="font-size:11px;color:var(--muted);margin-top:3px">'+margemPct+'% margem</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">🔧</div><div class="kpi-label">Reparações Activas</div><div class="kpi-val" style="color:var(--amber)">'+aberto+'</div></div><div class="kpi"><div style="font-size:20px;margin-bottom:6px">📦</div><div class="kpi-label">Stock Baixo</div><div class="kpi-val" style="color:'+(low>0?'var(--amber)':'var(--green)')+'">'+low+'</div></div>';
   // Alertas
   const lowMats=mats.filter(m=>m.stock<=m.min);
   const urgReps=reps.filter(r=>r.urg==='Muito Urgente'&&r.est!=='Entregue');
