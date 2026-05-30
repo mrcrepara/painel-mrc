@@ -535,6 +535,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <!-- DEFINIÇÕES -->
 <div class="page" id="page-definicoes">
   <div class="pg-hdr"><div><h1>⚙ Definições</h1></div></div>
+  <div class="card" style="margin-bottom:16px;border-color:rgba(59,123,246,.3)"><div class="card-hdr"><h3>🔄 Migração de Dados</h3></div><div class="card-body"><p style="font-size:13px;color:var(--muted);margin-bottom:12px">Calcula automaticamente o custo real de material nas faturas antigas com base nos preços de custo do stock actual.</p><button class="btn btn-blue" onclick="migrarCustoFaturas()">🔄 Calcular Custo das Faturas Antigas</button></div></div>
   <div class="g2" style="align-items:start">
     <div class="card"><div class="card-hdr"><h3>🏢 Dados da Empresa</h3></div><div class="card-body">
       <div class="fg"><label>Nome da Empresa</label><input id="def_nome"></div>
@@ -988,13 +989,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div id="import-step1">
       <div style="border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer" onclick="document.getElementById('csv-file').click()" ondragover="event.preventDefault()" ondrop="handleCsvDrop(event)">
         <div style="font-size:32px;margin-bottom:10px">📂</div>
-        <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">Clique ou arraste o ficheiro CSV</div>
-        <input type="file" id="csv-file" accept=".csv,.txt" style="display:none" onchange="parseCsvFile(event)">
-      </div>
-      <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted)"><span style="color:#60A5FA;cursor:pointer;text-decoration:underline" onclick="downloadTemplateCsv()">Descarregar template de exemplo</span></div>
-    </div>
-<script>
-const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
+        <div style="font-size:14px;font-const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
          desp:'m3_desp',rec:'m3_rec',forn:'m3_forn',hist:'m3_hist',desl:'m3_desl',
          users:'m3_users',def:'m3_def',cats:'m3_cats',os:'m3_os',
          svc:'m3_svc',evt:'m3_evt',pdvh:'m3_pdvhist',fiado:'m3_fiado'};
@@ -4956,6 +4951,53 @@ function renderDashBanner(){
     grid.appendChild(card);
   });
 
+  banner.appendChild(grid);
+}
+
+function calcDeslAuto(){
+  var km=parseFloat((document.getElementById('fat_desl_km')||{}).value)||0;
+  var preco=parseFloat((document.getElementById('fat_desl_preco')||{}).value)||0.40;
+  var total=km*preco;
+  var tf=document.getElementById('fat_desl_total_manual');
+  if(tf&&total>0)tf.value=total.toFixed(2);
+  calcFatModal();
+}
+
+
+
+
+
+
+
+
+
+function closeModalById(id){var el=document.getElementById(id);if(el)el.remove();}
+
+
+
+
+
+
+function migrarCustoFaturas(){
+  var fats=ld('fat'),mats=ld('mat'),count=0;
+  fats=fats.map(function(f){
+    if(f.custo_mat_real!==undefined&&f.custo_mat_real!==null) return f;
+    var custoReal=0;
+    if(f.linhas&&f.linhas.length){
+      f.linhas.forEach(function(l){
+        var mat=mats.find(function(m){
+          return m.desc===l.desc||m.ref===l.desc||(m.desc&&l.desc&&m.desc.toLowerCase()===l.desc.toLowerCase());
+        });
+        if(mat&&mat.custo) custoReal+=(mat.custo||0)*(l.qty||1);
+      });
+    }
+    count++;
+    return Object.assign({},f,{custo_mat_real:custoReal});
+  });
+  sv('fat',fats);
+  if(typeof renderDash==='function') renderDash();
+  if(typeof toast==='function') toast('Migração: '+count+' faturas actualizadas! ✅');
+}
   banner.appendChild(grid);
 }
 
