@@ -1021,7 +1021,14 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div id="import-step1">
       <div style="border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer" onclick="document.getElementById('csv-file').click()" ondragover="event.preventDefault()" ondrop="handleCsvDrop(event)">
         <div style="font-size:32px;margin-bottom:10px">📂</div>
-        <div style="font-sizconst K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
+        <div style="font-size:14px;color:var(--muted)">Clique ou arraste o ficheiro CSV</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
          desp:'m3_desp',rec:'m3_rec',forn:'m3_forn',hist:'m3_hist',desl:'m3_desl',
          users:'m3_users',def:'m3_def',cats:'m3_cats',os:'m3_os',
          svc:'m3_svc',evt:'m3_evt',pdvh:'m3_pdvhist',fiado:'m3_fiado'};
