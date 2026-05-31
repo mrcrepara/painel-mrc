@@ -1595,7 +1595,7 @@ function renderFat(){
     const totalCell=parcial
       ?'<span style="color:var(--green);font-weight:700">'+eur(tot)+'</span><br><span style="font-size:11px;color:#F97316">Pago: '+eur(pago)+' | Falta: '+eur(Math.max(0,tot-pago))+'</span>'
       :'<span style="color:var(--green);font-weight:700">'+eur(tot)+'</span>';
-    html+='<tr><td><strong style="color:#fff">'+(f.num||'—')+'</strong></td><td style="color:var(--muted)">'+f.data+'</td><td>'+f.cli+'</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(f.desc||'—')+'</td><td>'+totalCell+'</td><td>'+ebadge(f.est)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-fat" data-id="'+f.id+'">✏</button><button class="btn-xs" style="background:var(--green)" data-action="paga-fat" data-id="'+f.id+'">✓</button>'+(parcial||f.hist_pag?.length?'<button class="btn-xs" style="background:#F97316" data-action="hist-pag" data-id="'+f.id+'">💰</button>':'')+'<button class="btn-xs" style="background:#8B5CF6" data-action="print-fat" data-id="'+f.id+'">🖨</button><button class="btn-xs" style="background:var(--red)" data-action="del-fat" data-id="'+f.id+'">🗑</button></td></tr>';
+    html+='<tr><td><strong style="color:#fff">'+(f.num||'—')+'</strong></td><td style="color:var(--muted)">'+f.data+'</td><td>'+f.cli+'</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(f.desc||'—')+'</td><td>'+totalCell+'</td><td>'+ebadge(f.est)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-fat" data-id="'+f.id+'">✏</button><button class="btn-xs" style="background:var(--green)" data-action="paga-fat" data-id="'+f.id+'">✓</button>'+(parcial||f.hist_pag?.length?'<button class="btn-xs" style="background:#F97316" data-action="hist-pag" data-id="'+f.id+'">💰</button>':'')+'<button class="btn-xs" style="background:#8B5CF6" data-action="print-fat" data-id="'+f.id+'">🖨</button><button class="btn-xs" style="background:#0EA5E9" data-action="print-recibo" data-id="'+f.id+'">🧾</button><button class="btn-xs" style="background:var(--red)" data-action="del-fat" data-id="'+f.id+'">🗑</button></td></tr>';
   });
   tb.innerHTML=html;
 }
@@ -2268,6 +2268,7 @@ document.addEventListener('click', function(e) {
   const action = btn.dataset.action;
   const id = btn.dataset.id;
   if (action === 'print-fat') printFatura(id);
+  if (action === 'print-recibo') printReciboFat(id);
   if (action === 'hist-pag') {
     const fat = ld('fat').find(f=>f.id===id);
     if(!fat)return;
@@ -5167,29 +5168,81 @@ function calcDeslAuto(){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 function closeModalById(id){var el=document.getElementById(id);if(el)el.remove();}
 
 
 
 
 
- calcFatModal();
+
+function printReciboFat(id){
+  var f=ld('fat').find(function(x){return x.id===id;});
+  if(!f){toast('Fatura não encontrada!','r');return;}
+  var emp=ldO('def');
+  var empNome=emp.empresa||'M R C Reparação de Equipamentos Elétricos';
+  var empNif=emp.nif||'202438481';
+  var empMorada=emp.morada||'Fradelos, 4760-485 Vila Nova De Famalicão';
+  var empTel=emp.tel||'914441852';
+  var empEmail=emp.email||'rui_527@hotmail.com';
+  var empContacto=emp.contacto||'Rui Veloso';
+  var total=fatTot(f);
+  var num=f.num||f.id.slice(-6).toUpperCase();
+  var dataRecibo=new Date().toLocaleDateString('pt-PT');
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Recibo '+num+'</title>';
+  html+='<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111;background:#fff;padding:40px 50px;}';
+  html+='.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:2px solid #222;margin-bottom:28px;}';
+  html+='.emp-name{font-size:17px;font-weight:700;margin-bottom:6px;}';
+  html+='.emp-info{font-size:12px;line-height:1.8;color:#333;}';
+  html+='.contact{text-align:right;font-size:12px;line-height:1.8;color:#444;}';
+  html+='.title-bar{background:#374151;color:#fff;text-align:center;padding:11px;font-size:15px;font-weight:700;letter-spacing:3px;margin-bottom:32px;border-radius:3px;}';
+  html+='.body-text{font-size:15px;line-height:2.2;margin-bottom:40px;padding:0 10px;}';
+  html+='.sign-area{display:flex;justify-content:space-between;margin-top:70px;padding:0 20px;}';
+  html+='.sign-box{text-align:center;width:42%;}';
+  html+='.sign-line{border-top:1px solid #333;padding-top:8px;font-size:12px;margin-top:70px;}';
+  html+='.date{text-align:center;margin-top:40px;font-size:14px;font-weight:700;}';
+  html+='@media print{body{padding:20px;}}</style></head><body>';
+  
+  html+='<div class="header">';
+  html+='<div><div class="emp-name">'+empNome+'</div>';
+  html+='<div class="emp-info">'+empNif+'<br>'+empMorada+'</div></div>';
+  html+='<div class="contact">Tel.: '+empTel+'<br>'+empEmail+'<br>Contacto: '+empContacto+'</div>';
+  html+='</div>';
+  
+  html+='<div class="title-bar">RECIBO Nº '+num+'</div>';
+  
+  html+='<div class="body-text">';
+  html+='Recebi de <strong>'+(f.cli||'Cliente')+'</strong> o valor de <strong>'+eur(total)+'</strong>';
+  html+=' referente à prestação de serviços conforme pedido '+num+'.';
+  if(f.desc) html+='<br><span style="font-size:13px;color:#555">'+f.desc+'</span>';
+  html+='</div>';
+  
+  html+='<div class="sign-area">';
+  html+='<div class="sign-box"><div class="sign-line">Assinatura do Cliente</div></div>';
+  html+='<div class="sign-box"><div class="sign-line"><strong>'+empNome+'</strong><br>'+empContacto+'</div></div>';
+  html+='</div>';
+  
+  html+='<div class="date">'+dataRecibo+'</div>';
+  html+='</body></html>';
+  
+  var win=window.open('','_blank','width=800,height=650');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(function(){win.print();},500);
 }
-
-
-
-
-
-
-
-
-
-function closeModalById(id){var el=document.getElementById(id);if(el)el.remove();}
-
-
-
-
-
 </script>
 
 
