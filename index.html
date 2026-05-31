@@ -4989,7 +4989,8 @@ function renderDashBanner(){
 var _fluxoChart=null;
 function _initFluxoPeriodo(){
   var sel=document.getElementById('fluxoPeriodo');
-  if(!sel||sel.options.length)return;
+  if(!sel)return;
+  sel.innerHTML='';
   var now=new Date(),yr=now.getFullYear(),mo=now.getMonth();
   var mN=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   var op=document.createElement('option');op.value=yr+'-'+(mo+1);op.textContent=mN[mo]+' '+yr;op.selected=true;sel.appendChild(op);
