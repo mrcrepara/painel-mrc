@@ -464,7 +464,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
   </div>
   <div class="kpi-grid" id="fatKpi"></div>
   <div class="card"><div class="card-body">
-    <div class="sbar"><input id="fatQ" placeholder="🔍 Pesquisar..." oninput="renderFat()"><select id="fatF" onchange="renderFat()"><option value="">Todos os estados</option><option>Pendente</option><option>Paga</option><option>Pago Parcialmente</option><option>Em Atraso</option></select></div>
+    <div class="sbar"><input id="fatQ" placeholder="🔍 Pesquisar..." oninput="renderFat()"><select id="fatF" onchange="renderFat()"><option value="">Todos os estados</option><option>Pendente</option><option>Paga</option><option>Pago Parcialmente</option><option>Em Atraso</option></select><select id="fatMes" onchange="renderFat()" style="min-width:130px"><option value="">Todos os meses</option></select></div>
     <div class="tbl-wrap"><table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Descrição</th><th>Total c/IVA</th><th>Estado</th><th>Ações</th></tr></thead><tbody id="fatTbl"></tbody></table></div>
   </div></div>
 </div>
@@ -1021,14 +1021,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div id="import-step1">
       <div style="border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer" onclick="document.getElementById('csv-file').click()" ondragover="event.preventDefault()" ondrop="handleCsvDrop(event)">
         <div style="font-size:32px;margin-bottom:10px">📂</div>
-        <div style="font-size:14px;color:var(--muted)">Clique ou arraste o ficheiro CSV</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
+        <div style="font-sizconst K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
          desp:'m3_desp',rec:'m3_rec',forn:'m3_forn',hist:'m3_hist',desl:'m3_desl',
          users:'m3_users',def:'m3_def',cats:'m3_cats',os:'m3_os',
          svc:'m3_svc',evt:'m3_evt',pdvh:'m3_pdvhist',fiado:'m3_fiado'};
@@ -1569,8 +1562,24 @@ function marcarPaga(id){
 function renderFat(){
   const all=ld('fat');let fats=[...all];
   const q=gv('fatQ').toLowerCase(),f=gv('fatF');
+  const mes=(document.getElementById('fatMes')||{}).value||'';
+  // Populate month selector
+  (function(){
+    var sel=document.getElementById('fatMes');
+    if(!sel||sel.options.length>1)return;
+    var meses={};
+    all.forEach(function(fat){if(fat.data){var m=fat.data.slice(0,7);meses[m]=1;}});
+    Object.keys(meses).sort().reverse().forEach(function(m){
+      var op=document.createElement('option');
+      var pts=m.split('-');
+      var mN=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      op.value=m;op.textContent=mN[parseInt(pts[1])-1]+' '+pts[0];
+      sel.appendChild(op);
+    });
+  })();
   if(q)fats=fats.filter(x=>(x.num||'').toLowerCase().includes(q)||(x.cli||'').toLowerCase().includes(q));
   if(f)fats=fats.filter(x=>x.est===f);
+  if(mes)fats=fats.filter(x=>(x.data||'').startsWith(mes));
   const paga=all.filter(x=>x.est==='Paga').reduce((s,x)=>s+fatTot(x),0);
   const pend=all.filter(x=>x.est==='Pendente').reduce((s,x)=>s+fatTot(x),0);
   const atras=all.filter(x=>x.est==='Em Atraso').reduce((s,x)=>s+fatTot(x),0);
@@ -5148,6 +5157,23 @@ function calcDeslAuto(){
   var tf=document.getElementById('fat_desl_total_manual');
   if(tf&&total>0)tf.value=total.toFixed(2);
   calcFatModal();
+}
+
+
+
+
+
+
+
+
+
+function closeModalById(id){var el=document.getElementById(id);if(el)el.remove();}
+
+
+
+
+
+ calcFatModal();
 }
 
 
