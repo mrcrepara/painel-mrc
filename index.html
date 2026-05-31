@@ -8,6 +8,59 @@
 <meta name="theme-color" content="#0A0E1A">
 <title>MRC — Sistema de Gestão</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  firebase.initializeApp({
+    apiKey:"AIzaSyALX9QWi4o89zO0wBd3A3znkP_YD-bPwwA",
+    authDomain:"mrc-47d1f.firebaseapp.com",
+    projectId:"mrc-47d1f",
+    storageBucket:"mrc-47d1f.firebasestorage.app",
+    messagingSenderId:"4766445522",
+    appId:"1:4766445522:web:ffd8567ff468e24810620b"
+  });
+  var db=firebase.firestore();
+  var col='mrc_dados';
+
+  // Save to Firestore
+  window._fbSave=function(key,data){
+    db.collection(col).doc(key).set({value:JSON.stringify(data),ts:Date.now()}).catch(function(e){console.warn('FB save:',e);});
+  };
+
+  // Load all data from Firestore into cache
+  window._fbLoad=function(cb){
+    db.collection(col).get().then(function(snap){
+      window._cache=window._cache||{};
+      // Map Firestore keys back to K keys
+      var kMap={};
+      Object.keys(window.K||{}).forEach(function(k){kMap[(window.K||{})[k]]=k;});
+      snap.forEach(function(doc){
+        var k=kMap[doc.id]||doc.id;
+        try{window._cache[k]=JSON.parse(doc.data().value||'[]');}catch(e){}
+      });
+      if(cb)cb();
+    }).catch(function(e){console.warn('FB load:',e);if(cb)cb();});
+  };
+
+  // Realtime listener
+  window._fbStartRealtime=function(){
+    var kMap={};
+    Object.keys(window.K||{}).forEach(function(k){kMap[(window.K||{})[k]]=k;});
+    db.collection(col).onSnapshot(function(snap){
+      window._cache=window._cache||{};
+      snap.docChanges().forEach(function(change){
+        if(change.type==='removed')return;
+        var doc=change.doc;
+        var k=kMap[doc.id]||doc.id;
+        try{window._cache[k]=JSON.parse(doc.data().value||'[]');}catch(e){}
+      });
+      if(typeof renderAll==='function')renderAll();
+      if(typeof renderDash==='function'&&typeof CurPage!=='undefined'&&CurPage==='dashboard')renderDash();
+    },function(e){console.warn('FB realtime:',e);});
+  };
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 
 <style>
@@ -2567,10 +2620,19 @@ document.addEventListener('DOMContentLoaded',function(){
   var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
   _s('tbAv','R');_s('tbName','Rui Veloso');_s('tbRole','Administrador');
   _s('umName','Rui Veloso');_s('umRole','Administrador');
-  setTimeout(function(){
-    try{fillCatSelects();}catch(e){}
-    try{renderAll();}catch(e){}
-  },50);
+  // Load from Firebase first, then render
+  if(typeof window._fbLoad==='function'){
+    window._fbLoad(function(){
+      try{fillCatSelects();}catch(e){}
+      try{renderAll();}catch(e){}
+      if(typeof window._fbStartRealtime==='function') window._fbStartRealtime();
+    });
+  } else {
+    setTimeout(function(){
+      try{fillCatSelects();}catch(e){}
+      try{renderAll();}catch(e){}
+    },50);
+  }
 });;
 
 // ══════════════════════════════════════════════════════════
