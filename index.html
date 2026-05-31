@@ -5018,18 +5018,8 @@ function renderDashBanner(){
   var hoje=new Date();hoje.setHours(0,0,0,0);
   var fats=ld('fat');
 
-  var atrasadas=fats.filter(function(f){
-    if(f.est==='Paga')return false;
-    if(!f.venc)return false;
-    var v=new Date(f.venc);v.setHours(0,0,0,0);
-    return v<hoje;
-  });
-  var pendentes=fats.filter(function(f){
-    if(f.est==='Paga')return false;
-    if(!f.venc)return true;
-    var v=new Date(f.venc);v.setHours(0,0,0,0);
-    return v>=hoje && f.est==='Pendente';
-  });
+  var atrasadas=fats.filter(function(f){ return f.est==='Em Atraso'; });
+  var pendentes=fats.filter(function(f){ return f.est==='Pendente'; });
   var pagas=fats.filter(function(f){return f.est==='Paga';});
 
   var totA=atrasadas.reduce(function(s,f){return s+fatTot(f);},0);
