@@ -23,44 +23,60 @@
   var db=firebase.firestore();
   var col='mrc_dados';
 
-  // Save to Firestore
-  window._fbSave=function(key,data){
-    db.collection(col).doc(key).set({value:JSON.stringify(data),ts:Date.now()}).catch(function(e){console.warn('FB save:',e);});
+  // Hardcoded key mapping (Firestore key -> localStorage key)
+  var KEY_MAP={
+    'm3_mat':'mat','m3_rep':'rep','m3_cli':'cli','m3_eq':'eq',
+    'm3_orc':'orc','m3_fat':'fat','m3_desp':'desp','m3_rec':'rec',
+    'm3_forn':'forn','m3_hist':'hist','m3_desl':'desl','m3_users':'users',
+    'm3_def':'def','m3_cats':'cats','m3_svc':'svc','m3_evt':'evt',
+    'm3_pdvh':'pdvh','m3_fiado':'fiado','m3_os':'os'
+  };
+  var REV_MAP={};
+  Object.keys(KEY_MAP).forEach(function(fk){REV_MAP[KEY_MAP[fk]]=fk;});
+
+  // Save to Firestore using firebase key
+  window._fbSave=function(fbKey,data){
+    db.collection(col).doc(fbKey).set({value:JSON.stringify(data),ts:Date.now()}).catch(function(e){console.warn('FB save:',e);});
   };
 
-  // Load all data from Firestore into cache
+  // Load all data from Firestore and put in cache + localStorage
   window._fbLoad=function(cb){
     db.collection(col).get().then(function(snap){
       window._cache=window._cache||{};
-      // Map Firestore keys back to K keys
-      var kMap={};
-      Object.keys(window.K||{}).forEach(function(k){kMap[(window.K||{})[k]]=k;});
       snap.forEach(function(doc){
-        var k=kMap[doc.id]||doc.id;
-        try{window._cache[k]=JSON.parse(doc.data().value||'[]');}catch(e){}
+        var fbKey=doc.id;
+        var shortKey=KEY_MAP[fbKey]||fbKey;
+        var val;
+        try{val=JSON.parse(doc.data().value||'[]');}catch(e){val=[];}
+        // Store in cache by SHORT key
+        window._cache[shortKey]=val;
+        // Also store in localStorage for offline use
+        try{localStorage.setItem(fbKey,JSON.stringify(val));}catch(e){}
       });
       if(cb)cb();
     }).catch(function(e){console.warn('FB load:',e);if(cb)cb();});
   };
 
-  // Realtime listener
+  // Realtime listener - updates cache and re-renders
   window._fbStartRealtime=function(){
-    var kMap={};
-    Object.keys(window.K||{}).forEach(function(k){kMap[(window.K||{})[k]]=k;});
     db.collection(col).onSnapshot(function(snap){
       window._cache=window._cache||{};
       snap.docChanges().forEach(function(change){
         if(change.type==='removed')return;
         var doc=change.doc;
-        var k=kMap[doc.id]||doc.id;
-        try{window._cache[k]=JSON.parse(doc.data().value||'[]');}catch(e){}
+        var fbKey=doc.id;
+        var shortKey=KEY_MAP[fbKey]||fbKey;
+        var val;
+        try{val=JSON.parse(doc.data().value||'[]');}catch(e){val=[];}
+        window._cache[shortKey]=val;
+        try{localStorage.setItem(fbKey,JSON.stringify(val));}catch(e){}
       });
-      if(typeof renderAll==='function')renderAll();
-      if(typeof renderDash==='function'&&typeof CurPage!=='undefined'&&CurPage==='dashboard')renderDash();
+      if(typeof renderAll==='function')setTimeout(renderAll,100);
     },function(e){console.warn('FB realtime:',e);});
   };
 })();
 </script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 
 <style>
