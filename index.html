@@ -223,6 +223,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
   <div class="ni" data-p="faturas" onclick="goPage('faturas')">🧾 Faturas</div>
   <div class="ni" data-p="recebimentos" onclick="goPage('recebimentos')">💰 Recebimentos</div>
   <div class="ni" data-p="despesas" onclick="goPage('despesas')">💸 Despesas</div>
+  <div class="ni" data-p="fluxo" onclick="goPage('fluxo')">📊 Fluxo de Caixa</div>
   <div class="ni" data-p="deslocacoes" onclick="goPage('deslocacoes')">🚗 Deslocações</div>
   <div class="nav-sec">Sistema</div>
   <div class="ni" data-p="relatorios" onclick="goPage('relatorios')">📈 Relatórios</div>
@@ -989,14 +990,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div id="import-step1">
       <div style="border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer" onclick="document.getElementById('csv-file').click()" ondragover="event.preventDefault()" ondrop="handleCsvDrop(event)">
         <div style="font-size:32px;margin-bottom:10px">📂</div>
-        <div style="font-size:14px;color:var(--muted)">Clique ou arraste o ficheiro CSV</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
+        <div style="font-size:14px;color:var(--muted)">Clique const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_fat',
          desp:'m3_desp',rec:'m3_rec',forn:'m3_forn',hist:'m3_hist',desl:'m3_desl',
          users:'m3_users',def:'m3_def',cats:'m3_cats',os:'m3_os',
          svc:'m3_svc',evt:'m3_evt',pdvh:'m3_pdvhist',fiado:'m3_fiado'};
@@ -1108,9 +1102,9 @@ function doLogout(){
 // ══════════════════════════════════════════════════════════
 // NAV
 // ══════════════════════════════════════════════════════════
-const TITLES={dashboard:'Dashboard',agenda:'📅 Agenda',pdv:'🛒 PDV — Venda Rápida',os:'📋 Ordens de Serviço',servicos:'🛠 Catálogo de Serviços',fiado:'💳 Fiado / A Receber',reparacoes:'🔧 Reparações',orcamentos:'📋 Orçamentos',clientes:'👤 Clientes',equipamentos:'🖥 Equipamentos',materiais:'📦 Materiais',entrada:'↑ Entrada de Stock',saida:'↓ Saída de Stock',inventario:'📑 Inventário',fornecedores:'🏭 Fornecedores',faturas:'🧾 Faturas',recebimentos:'💰 Recebimentos',despesas:'💸 Despesas',deslocacoes:'🚗 Deslocações',relatorios:'📈 Relatórios',calculadora:'🧮 Calculadora',definicoes:'⚙ Definições',backup:'💾 Backup'};
+const TITLES={dashboard:'Dashboard',fluxo:'📊 Fluxo de Caixa',agenda:'📅 Agenda',pdv:'🛒 PDV — Venda Rápida',os:'📋 Ordens de Serviço',servicos:'🛠 Catálogo de Serviços',fiado:'💳 Fiado / A Receber',reparacoes:'🔧 Reparações',orcamentos:'📋 Orçamentos',clientes:'👤 Clientes',equipamentos:'🖥 Equipamentos',materiais:'📦 Materiais',entrada:'↑ Entrada de Stock',saida:'↓ Saída de Stock',inventario:'📑 Inventário',fornecedores:'🏭 Fornecedores',faturas:'🧾 Faturas',recebimentos:'💰 Recebimentos',despesas:'💸 Despesas',deslocacoes:'🚗 Deslocações',relatorios:'📈 Relatórios',calculadora:'🧮 Calculadora',definicoes:'⚙ Definições',backup:'💾 Backup'};
 let CurPage='dashboard';
-const RENDERS={dashboard:renderDash,agenda:renderAgenda,pdv:renderPDV,os:renderOS,servicos:renderSvc,fiado:renderFiado,reparacoes:renderRep,orcamentos:renderOrc,clientes:renderCli,equipamentos:renderEq,materiais:renderMat,entrada:renderEntrada,saida:renderSaida,inventario:renderInv,fornecedores:renderForn,faturas:renderFat,recebimentos:renderRec,despesas:renderDesp,deslocacoes:renderDesl,relatorios:renderRel};
+const RENDERS={dashboard:renderDash,fluxo:renderFluxo,agenda:renderAgenda,pdv:renderPDV,os:renderOS,servicos:renderSvc,fiado:renderFiado,reparacoes:renderRep,orcamentos:renderOrc,clientes:renderCli,equipamentos:renderEq,materiais:renderMat,entrada:renderEntrada,saida:renderSaida,inventario:renderInv,fornecedores:renderForn,faturas:renderFat,recebimentos:renderRec,despesas:renderDesp,deslocacoes:renderDesl,relatorios:renderRel};
 function goPage(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
@@ -2990,6 +2984,7 @@ function saveFat() {
 
   const linhas = getLinhas('fat');
   const totalMat = linhas.reduce((s, l) => s + l.total, 0);
+  const custoMatReal = linhas.reduce((s, l) => s + (l.totalCusto || 0), 0);
 
   const deslOn = document.getElementById('fat_desl_on')?.checked;
   const deslKm = deslOn ? gf('fat_desl_km') : 0;
@@ -4968,6 +4963,122 @@ function renderDashBanner(){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var _fluxoChart=null;
+function _initFluxoPeriodo(){
+  var sel=document.getElementById('fluxoPeriodo');
+  if(!sel||sel.options.length)return;
+  var now=new Date(),yr=now.getFullYear(),mo=now.getMonth();
+  var mN=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  var op=document.createElement('option');op.value=yr+'-'+(mo+1);op.textContent=mN[mo]+' '+yr;op.selected=true;sel.appendChild(op);
+  for(var m=mo-1;m>=0;m--){var o2=document.createElement('option');o2.value=yr+'-'+(m+1);o2.textContent=mN[m]+' '+yr;sel.appendChild(o2);}
+  for(var m=11;m>=0;m--){var o3=document.createElement('option');o3.value=(yr-1)+'-'+(m+1);o3.textContent=mN[m]+' '+(yr-1);sel.appendChild(o3);}
+  var oA=document.createElement('option');oA.value='total';oA.textContent='Total Acumulado';sel.appendChild(oA);
+}
+function renderFluxo(){
+  _initFluxoPeriodo();
+  var sel=document.getElementById('fluxoPeriodo');
+  var period=sel?sel.value:'total';
+  function inP(d){
+    if(period==='total')return true;
+    var pts=period.split('-'),yr=parseInt(pts[0]),mo=parseInt(pts[1])-1;
+    var dt=new Date(d);return dt.getFullYear()===yr&&dt.getMonth()===mo;
+  }
+  var movs=[];
+  ld('fat').filter(function(f){return f.est==='Paga'&&inP(f.data);}).forEach(function(f){
+    movs.push({data:f.data,desc:(f.cli||'')+(f.desc?' — '+f.desc:''),tipo:'Entrada',val:fatTot(f)});
+  });
+  ld('desp').filter(function(d){return inP(d.data);}).forEach(function(d){
+    movs.push({data:d.data,desc:d.desc||d.cat||'Despesa',tipo:'Saida',val:-(d.val+(d.iva||0))});
+  });
+  ld('desl').filter(function(d){return inP(d.data);}).forEach(function(d){
+    movs.push({data:d.data,desc:'Desloc. '+(d.dest||''),tipo:'Saida',val:-(d.total||0)});
+  });
+  ld('os').filter(function(o){return inP(o.data);}).forEach(function(o){
+    var c=((o.horas||0)*(o.valor_hora||0))+(o.custo_mat||0);
+    if(c>0)movs.push({data:o.data,desc:o.desc||'OS',tipo:'Saida',val:-c});
+  });
+  movs.sort(function(a,b){return new Date(a.data)-new Date(b.data);});
+  var saldo=0,totEnt=0,totSai=0;
+  movs.forEach(function(m){saldo+=m.val;m.saldo=saldo;if(m.val>0)totEnt+=m.val;else totSai+=Math.abs(m.val);});
+  var kpi=document.getElementById('fluxoKpi');
+  if(kpi)kpi.innerHTML=(
+    '<div class="kpi"><div style="font-size:20px;margin-bottom:6px">💵</div><div class="kpi-label">Entradas</div><div class="kpi-val" style="color:var(--green)">'+eur(totEnt)+'</div></div>'+
+    '<div class="kpi"><div style="font-size:20px;margin-bottom:6px">💸</div><div class="kpi-label">Saidas</div><div class="kpi-val" style="color:#f87171">'+eur(totSai)+'</div></div>'+
+    '<div class="kpi"><div style="font-size:20px;margin-bottom:6px">'+(saldo>=0?'📈':'📉')+'</div><div class="kpi-label">Saldo</div><div class="kpi-val" style="color:'+(saldo>=0?'var(--green)':'#f87171')+'">'+eur(saldo)+'</div></div>'
+  );
+  var tbody=document.getElementById('fluxoTabela');
+  if(tbody)tbody.innerHTML=movs.length?movs.map(function(m){
+    var cor=m.val>=0?'var(--green)':'#f87171';
+    var badge=m.val>=0?'<span style="background:rgba(16,201,122,.15);color:var(--green);padding:2px 8px;border-radius:20px;font-size:11px">Entrada</span>':'<span style="background:rgba(239,68,68,.15);color:#f87171;padding:2px 8px;border-radius:20px;font-size:11px">Saida</span>';
+    return '<tr style="border-top:1px solid var(--border)">'+
+      '<td style="padding:10px 14px;font-size:12px;color:var(--muted)">'+m.data+'</td>'+
+      '<td style="padding:10px 14px;font-size:13px">'+m.desc+'</td>'+
+      '<td style="padding:10px 14px">'+badge+'</td>'+
+      '<td style="padding:10px 14px;text-align:right;font-weight:700;color:'+cor+'">'+eur(Math.abs(m.val))+'</td>'+
+      '<td style="padding:10px 14px;text-align:right;font-size:12px;color:'+(m.saldo>=0?'var(--green)':'#f87171')+'">'+eur(m.saldo)+'</td>'+
+      '</tr>';
+  }).join(''):'<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted)">Sem movimentos neste periodo</td></tr>';
+  _renderFluxoChart();
+}
+function _renderFluxoChart(){
+  var canvas=document.getElementById('fluxoChart');if(!canvas)return;
+  var now=new Date(),labels=[],entradas=[],saidas=[];
+  var mN=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  for(var i=11;i>=0;i--){
+    var d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    var yr=d.getFullYear(),mo=d.getMonth();
+    labels.push(mN[mo]);
+    function inM(ds){var dt=new Date(ds);return dt.getFullYear()===yr&&dt.getMonth()===mo;}
+    var ent=ld('fat').filter(function(f){return f.est==='Paga'&&inM(f.data);}).reduce(function(s,f){return s+fatTot(f);},0);
+    var sai=ld('desp').filter(function(d){return inM(d.data);}).reduce(function(s,d){return s+(d.val+(d.iva||0));},0)+
+            ld('desl').filter(function(d){return inM(d.data);}).reduce(function(s,d){return s+(d.total||0);},0)+
+            ld('os').filter(function(o){return inM(o.data);}).reduce(function(s,o){return s+((o.horas||0)*(o.valor_hora||0))+(o.custo_mat||0);},0);
+    entradas.push(+ent.toFixed(2));saidas.push(+sai.toFixed(2));
+  }
+  if(_fluxoChart)_fluxoChart.destroy();
+  _fluxoChart=new Chart(canvas,{
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'Entradas',data:entradas,backgroundColor:'rgba(16,201,122,.7)',borderRadius:4},
+      {label:'Saidas',data:saidas,backgroundColor:'rgba(239,68,68,.7)',borderRadius:4}
+    ]},
+    options:{responsive:true,plugins:{legend:{labels:{color:'#E2E8F4'}}},
+      scales:{x:{ticks:{color:'#7B8DB0'}},y:{ticks:{color:'#7B8DB0',callback:function(v){return v+'';}}}}
+    }
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function migrarCustoFaturas(){
   var fats=ld('fat'),mats=ld('mat'),count=0;
   fats=fats.map(function(f){
@@ -5136,6 +5247,34 @@ function closeModalById(id){var el=document.getElementById(id);if(el)el.remove()
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mEqCats')">Fechar</button></div>
 </div></div>
+
+<div class="page" id="page-fluxo">
+  <div class="pg-hdr">
+    <div><h1>📊 Fluxo de Caixa</h1><p>Entradas e saídas por período</p></div>
+    <div><select id="fluxoPeriodo" onchange="renderFluxo()" style="padding:7px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:Inter,sans-serif"></select></div>
+  </div>
+  <div class="kpi-grid" id="fluxoKpi" style="margin-bottom:20px"></div>
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-hdr"><h3>📈 Entradas vs Saídas (12 meses)</h3></div>
+    <div class="card-body"><canvas id="fluxoChart" height="80"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><h3>📋 Movimentos do Período</h3></div>
+    <div class="card-body" style="padding:0">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:var(--card2);font-size:11px;text-transform:uppercase;color:var(--muted)">
+          <th style="padding:10px 14px;text-align:left">Data</th>
+          <th style="padding:10px 14px;text-align:left">Descrição</th>
+          <th style="padding:10px 14px;text-align:left">Tipo</th>
+          <th style="padding:10px 14px;text-align:right">Valor</th>
+          <th style="padding:10px 14px;text-align:right">Saldo</th>
+        </tr></thead>
+        <tbody id="fluxoTabela"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
 <!-- MODAL GERIR CATEGORIAS MATERIAIS -->
