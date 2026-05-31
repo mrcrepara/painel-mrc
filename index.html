@@ -314,6 +314,35 @@ tbody td{padding:9px 12px;vertical-align:middle}
     </div>
     <div class="card"><div class="card-hdr"><h3>📦 Últimos Movimentos Stock</h3></div><div class="card-body" id="dashMov"></div></div>
   </div>
+
+
+<div class="page" id="page-fluxo">
+  <div class="pg-hdr">
+    <div><h1>📊 Fluxo de Caixa</h1><p>Entradas e saídas por período</p></div>
+    <div><select id="fluxoPeriodo" onchange="renderFluxo()" style="padding:7px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:Inter,sans-serif"></select></div>
+  </div>
+  <div class="kpi-grid" id="fluxoKpi" style="margin-bottom:20px"></div>
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-hdr"><h3>📈 Entradas vs Saídas (12 meses)</h3></div>
+    <div class="card-body"><canvas id="fluxoChart" height="80"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><h3>📋 Movimentos do Período</h3></div>
+    <div class="card-body" style="padding:0">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:var(--card2);font-size:11px;text-transform:uppercase;color:var(--muted)">
+          <th style="padding:10px 14px;text-align:left">Data</th>
+          <th style="padding:10px 14px;text-align:left">Descrição</th>
+          <th style="padding:10px 14px;text-align:left">Tipo</th>
+          <th style="padding:10px 14px;text-align:right">Valor</th>
+          <th style="padding:10px 14px;text-align:right">Saldo</th>
+        </tr></thead>
+        <tbody id="fluxoTabela"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 </div>
 
 <!-- REPARAÇÕES -->
@@ -5257,34 +5286,6 @@ function closeModalById(id){var el=document.getElementById(id);if(el)el.remove()
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mEqCats')">Fechar</button></div>
 </div></div>
-
-<div class="page" id="page-fluxo">
-  <div class="pg-hdr">
-    <div><h1>📊 Fluxo de Caixa</h1><p>Entradas e saídas por período</p></div>
-    <div><select id="fluxoPeriodo" onchange="renderFluxo()" style="padding:7px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:Inter,sans-serif"></select></div>
-  </div>
-  <div class="kpi-grid" id="fluxoKpi" style="margin-bottom:20px"></div>
-  <div class="card" style="margin-bottom:20px">
-    <div class="card-hdr"><h3>📈 Entradas vs Saídas (12 meses)</h3></div>
-    <div class="card-body"><canvas id="fluxoChart" height="80"></canvas></div>
-  </div>
-  <div class="card">
-    <div class="card-hdr"><h3>📋 Movimentos do Período</h3></div>
-    <div class="card-body" style="padding:0">
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr style="background:var(--card2);font-size:11px;text-transform:uppercase;color:var(--muted)">
-          <th style="padding:10px 14px;text-align:left">Data</th>
-          <th style="padding:10px 14px;text-align:left">Descrição</th>
-          <th style="padding:10px 14px;text-align:left">Tipo</th>
-          <th style="padding:10px 14px;text-align:right">Valor</th>
-          <th style="padding:10px 14px;text-align:right">Saldo</th>
-        </tr></thead>
-        <tbody id="fluxoTabela"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
 <!-- MODAL GERIR CATEGORIAS MATERIAIS -->
