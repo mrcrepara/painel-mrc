@@ -3172,11 +3172,19 @@ function saveFat() {
     obj.id = uid(); obj.num = nextFatNum(); fats.push(obj);
   }
   sv('fat', fats);
-  if(obj.est==='Paga'){
+  if(obj.est==='Paga' || obj.est==='Pago Parcialmente'){
     var recs=ld('rec'),fatId=editId||obj.id;
-    if(!recs.find(function(r){return r.fat_id===fatId;})){
-      recs.push({id:uid(),cli_id:obj.cli_id,cli:obj.cli,fat_id:fatId,fat_num:obj.num||fatId.slice(-6),val:fatTot(obj),data:obj.data||td(),obs:'Auto-registado'});
-      sv('rec',recs);
+    var valRec=obj.est==='Paga'?fatTot(obj):(obj.val_pago||0);
+    var recExist=recs.filter(function(r){return r.fat_id===fatId;});
+    var totalJaRec=recExist.reduce(function(s,r){return s+(r.val||0);},0);
+    if(valRec>0 && Math.abs(totalJaRec-valRec)>0.01){
+      var novoVal=Math.max(0,+(valRec-totalJaRec).toFixed(2));
+      if(novoVal>0){
+        var obsTexto=obj.est==='Paga'?'Pagamento total (auto)':'Pagamento parcial (auto)';
+        recs.push({id:uid(),cli_id:obj.cli_id,cli:obj.cli,fat_id:fatId,fat_num:obj.num||fatId.slice(-6),val:novoVal,data:td(),obs:obsTexto});
+        sv('rec',recs);
+        if(typeof renderRec==='function')renderRec();
+      }
     }
   }
   closeM('mFat');
