@@ -2235,6 +2235,36 @@ function fazerBackup(){
   a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(dados,null,2));
   a.download='mrc_backup_'+td()+'.json';a.click();toast('Backup guardado!');
 }
+function _autoBackup(){
+  try{
+    var hoje=new Date().toISOString().slice(0,10);
+    var ultimo=localStorage.getItem('_last_auto_backup');
+    if(ultimo===hoje)return;
+    var dados={versao:'4.0',data:new Date().toISOString()};
+    Object.keys(K).forEach(k=>{
+      try{
+        if(window._cache&&window._cache[k]!==undefined){dados[k]=window._cache[k];}
+        else{dados[k]=JSON.parse(localStorage.getItem(K[k])||'[]');}
+      }catch{dados[k]=[];}
+    });
+    var json=JSON.stringify(dados,null,2);
+    // Guardar no localStorage como backup do dia
+    localStorage.setItem('_auto_backup_'+hoje, json);
+    // Manter só os ultimos 7 dias
+    for(var i=7;i<=30;i++){
+      var d=new Date();d.setDate(d.getDate()-i);
+      localStorage.removeItem('_auto_backup_'+d.toISOString().slice(0,10));
+    }
+    localStorage.setItem('_last_auto_backup',hoje);
+    // Fazer download automatico
+    var a=document.createElement('a');
+    a.href='data:application/json;charset=utf-8,'+encodeURIComponent(json);
+    a.download='mrc_autobackup_'+hoje+'.json';
+    a.click();
+    toast('💾 Backup automático guardado!');
+    console.log('Auto-backup feito: '+hoje);
+  }catch(e){console.warn('Auto-backup falhou:',e);}
+}
 function restaurar(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
@@ -2653,6 +2683,7 @@ document.addEventListener('DOMContentLoaded',function(){
       try{fillCatSelects();}catch(e){}
       try{renderAll();}catch(e){}
       if(typeof window._fbStartRealtime==='function') window._fbStartRealtime();
+      setTimeout(_autoBackup, 3000);
     });
   } else {
     setTimeout(function(){
