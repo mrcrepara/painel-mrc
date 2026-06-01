@@ -2012,16 +2012,17 @@ function renderDash(){
   renderDashBanner();
   const reps=ld('rep'),mats=ld('mat'),fats=ld('fat'),desps=ld('desp'),desls=ld('desl');
   const fatsFilt=_filterPeriod(fats,'data');
-  const fatPaga=fatsFilt.filter(f=>f.est==='Paga').reduce((s,f)=>s+fatTot(f),0);
-  const totDesp=_filterPeriod(desps,'data').reduce((s,d)=>s+(d.val+d.iva),0)+_filterPeriod(desls,'data').reduce((s,d)=>s+(d.total||0),0);
-  const repsFilt=_filterPeriod(reps,'data');
-  const custoMatRep=repsFilt.reduce((s,r)=>s+(r.custo_mat||0),0);
+  // Faturado pago = recebimentos no periodo
+  const fatPaga=_filterPeriod(ld('rec'),'data').reduce((s,r)=>s+(r.val||0),0);
+  const totDesp=_filterPeriod(desps,'data').reduce((s,d)=>s+(d.val+(d.iva||0)),0)+_filterPeriod(desls,'data').reduce((s,d)=>s+(d.total||0),0);
+  // Custo material das reparacoes (todas, sem filtro de data pois reps nao tem data consistente)
+  const custoMatRep=reps.reduce((s,r)=>s+(r.custo_mat||0),0);
   // Custo real dos materiais das faturas (stock)
   const custoMatFat=fatsFilt.reduce((s,f)=>s+(f.custo_mat_real||0),0);
   const osFilt=_filterPeriod(ld('os'),'data');
   const custoHoras=osFilt.reduce((s,o)=>s+((o.horas||0)*(o.valor_hora||0)),0);
   const custoMatOS=osFilt.reduce((s,o)=>s+(o.custo_mat||0),0);
-  const custoMat=custoMatRep+custoMatFat+custoMatOS;
+  const custoMat=custoMatFat+custoMatOS;
   const lucro=fatPaga-totDesp-custoMat-custoHoras;
   const margemPct=fatPaga>0?((lucro/fatPaga)*100).toFixed(1):0;
   const aberto=reps.filter(r=>r.est!=='Entregue').length;
@@ -2243,14 +2244,27 @@ function restaurar(e){
     try{
       const d=JSON.parse(ev.target.result);
       if(!confirm('Restaurar backup de '+(d.data||'').slice(0,10)+'?\nDados actuais serão substituídos.'))return;
-      const keys=Object.keys(K);
-      let done=0;
-      keys.forEach(k=>{
-        if(d[k]!==undefined){
-          if(typeof window._fbSave==='function'){window._fbSave(k,d[k]);}
-          else{localStorage.setItem(K[k],JSON.stringify(d[k]));}
-          done++;
+      const keys=Object.keys(K).filter(k=>d[k]!==undefined);
+      let idx=0;
+      toast('A restaurar... (0/'+keys.length+')');
+      function saveNext(){
+        if(idx>=keys.length){
+          setTimeout(()=>{renderAll();toast('Dados restaurados! ('+keys.length+' colecções) ✅');},600);
+          return;
         }
+        const k=keys[idx];
+        localStorage.setItem(K[k],JSON.stringify(d[k]));
+        if(window._cache)window._cache[k]=d[k];
+        if(typeof window._fbSave==='function'){window._fbSave(k,d[k]);}
+        idx++;
+        toast('A restaurar... ('+idx+'/'+keys.length+') — '+k);
+        setTimeout(saveNext,800);
+      }
+      saveNext();
+    }catch(err){toast('Erro ao ler ficheiro!','r');console.error(err);}
+  };
+  reader.readAsText(file);e.target.value='';
+}
       });
       setTimeout(()=>{renderAll();toast('Dados restaurados! ('+done+' colecções)');},500);
     }catch(err){toast('Erro ao ler ficheiro!','r');console.error(err);}
