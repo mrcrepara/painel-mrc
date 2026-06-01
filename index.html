@@ -5274,6 +5274,10 @@ function printReciboFat(id){
   var empEmail=emp.email||'rui_527@hotmail.com';
   var empContacto=emp.contacto||'Rui Veloso';
   var total=fatTot(f);
+  var pago=f.val_pago||0;
+  var valorRecibo=(f.est==='Pago Parcialmente' && pago>0) ? pago : total;
+  var isParcial=(f.est==='Pago Parcialmente' && pago>0);
+  var falta=Math.max(0,total-pago);
   var num=f.num||f.id.slice(-6).toUpperCase();
   var dataRecibo=new Date().toLocaleDateString('pt-PT');
 
@@ -5285,6 +5289,7 @@ function printReciboFat(id){
   html+='.contact{text-align:right;font-size:12px;line-height:1.8;color:#444;}';
   html+='.title-bar{background:#374151;color:#fff;text-align:center;padding:11px;font-size:15px;font-weight:700;letter-spacing:3px;margin-bottom:32px;border-radius:3px;}';
   html+='.body-text{font-size:15px;line-height:2.2;margin-bottom:40px;padding:0 10px;}';
+  html+='.parcial-info{margin-top:18px;padding:12px 15px;background:#FFF7ED;border:1px solid #F97316;border-radius:6px;font-size:13px;color:#92400E;line-height:1.8;}';
   html+='.sign-area{display:flex;justify-content:space-between;margin-top:70px;padding:0 20px;}';
   html+='.sign-box{text-align:center;width:42%;}';
   html+='.sign-line{border-top:1px solid #333;padding-top:8px;font-size:12px;margin-top:70px;}';
@@ -5300,9 +5305,17 @@ function printReciboFat(id){
   html+='<div class="title-bar">RECIBO Nº '+num+'</div>';
   
   html+='<div class="body-text">';
-  html+='Recebi de <strong>'+(f.cli||'Cliente')+'</strong> o valor de <strong>'+eur(total)+'</strong>';
+  html+='Recebi de <strong>'+(f.cli||'Cliente')+'</strong> o valor de <strong>'+eur(valorRecibo)+'</strong>';
   html+=' referente à prestação de serviços conforme pedido '+num+'.';
   if(f.desc) html+='<br><span style="font-size:13px;color:#555">'+f.desc+'</span>';
+  if(isParcial){
+    html+='<div class="parcial-info">';
+    html+='<strong>Pagamento Parcial</strong><br>';
+    html+='Total da fatura: '+eur(total)+'<br>';
+    html+='Valor pago neste recibo: '+eur(pago)+'<br>';
+    html+='Valor em falta: '+eur(falta);
+    html+='</div>';
+  }
   html+='</div>';
   
   html+='<div class="sign-area">';
@@ -5404,6 +5417,23 @@ function printReciboFat(id){
     <div class="fg"><label>Tempo Estimado</label><input id="svc_tempo" placeholder="ex: 2 horas, 1 dia, 30 min"></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mSvc')">Cancelar</button><button class="btn btn-purple" onclick="saveSvc()">💾 Guardar</button></div>
+</div></div>
+
+<!-- MODAL CATEGORIAS DESPESAS -->
+<div class="ov" id="mDespCat"><div class="modal modal-lg">
+  <div class="mhdr"><h3>🏷 Categorias de Despesas</h3><button class="mclose" onclick="closeM('mDespCat')">✕</button></div>
+  <div class="mbody">
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Adicionar Nova Categoria</div>
+      <div style="display:flex;gap:8px">
+        <input id="newDespCat2" placeholder="ex: Combustível, Ferramentas, Seguros..." style="flex:1;padding:9px 12px;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif" onkeydown="if(event.key==='Enter')addDespCat()">
+        <button class="btn btn-red btn-sm" onclick="addDespCat()">+ Adicionar</button>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Categorias Existentes</div>
+    <div id="despCatsList"></div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mDespCat')">Fechar</button></div>
 </div></div>
 
 <!-- MODAL FIADO -->
