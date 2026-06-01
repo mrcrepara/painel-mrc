@@ -5123,8 +5123,11 @@ function _initFluxoPeriodo(){
   var oA=document.createElement('option');oA.value='total';oA.textContent='Total Acumulado';sel.appendChild(oA);
 }
 function renderFluxo(){
-  _initFluxoPeriodo();
   var sel=document.getElementById('fluxoPeriodo');
+  var prevVal=sel?sel.value:null;
+  _initFluxoPeriodo();
+  sel=document.getElementById('fluxoPeriodo');
+  if(prevVal&&sel){var found=false;for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===prevVal){sel.value=prevVal;found=true;break;}}if(!found)sel.selectedIndex=0;}
   var period=sel?sel.value:'total';
   function inP(d){
     if(period==='total')return true;
@@ -5134,8 +5137,9 @@ function renderFluxo(){
     return dt.getFullYear()===yr&&dt.getMonth()===mo;
   }
   var movs=[];
-  ld('fat').filter(function(f){return f.est==='Paga'&&inP(f.data);}).forEach(function(f){
-    movs.push({data:f.data,desc:(f.cli||'')+(f.desc?' — '+f.desc:''),tipo:'Entrada',val:fatTot(f)});
+  // Recebimentos registados (inclui pagamentos parciais e totais)
+  ld('rec').filter(function(r){return inP(r.data);}).forEach(function(r){
+    movs.push({data:r.data,desc:(r.cli||'')+(r.fat_num?' — FT'+r.fat_num:'')+(r.obs&&r.obs!=='Auto-registado'&&r.obs!=='Pagamento total (auto)'&&r.obs!=='Pagamento parcial (auto)'?' ('+r.obs+')':''),tipo:'Entrada',val:r.val||0});
   });
   ld('desp').filter(function(d){return inP(d.data);}).forEach(function(d){
     movs.push({data:d.data,desc:d.desc||d.cat||'Despesa',tipo:'Saida',val:-(d.val+(d.iva||0))});
@@ -5179,7 +5183,7 @@ function _renderFluxoChart(){
     var yr=d.getFullYear(),mo=d.getMonth();
     labels.push(mN[mo]);
     function inM(ds){if(!ds)return false;var dt=new Date(ds.length===7?ds+'-01':ds);return dt.getFullYear()===yr&&dt.getMonth()===mo;}
-    var ent=ld('fat').filter(function(f){return f.est==='Paga'&&inM(f.data);}).reduce(function(s,f){return s+fatTot(f);},0);
+    var ent=ld('rec').filter(function(r){return inM(r.data);}).reduce(function(s,r){return s+(r.val||0);},0);
     var sai=ld('desp').filter(function(d){return inM(d.data);}).reduce(function(s,d){return s+(d.val+(d.iva||0));},0)+
             ld('desl').filter(function(d){return inM(d.data);}).reduce(function(s,d){return s+(d.total||0);},0)+
             ld('os').filter(function(o){return inM(o.data);}).reduce(function(s,o){return s+((o.horas||0)*(o.valor_hora||0))+(o.custo_mat||0);},0);
