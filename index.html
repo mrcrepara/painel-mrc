@@ -58,8 +58,10 @@
   };
 
   // Realtime listener - updates cache and re-renders
+  window._fbRestoring=false;
   window._fbStartRealtime=function(){
     db.collection(col).onSnapshot(function(snap){
+      if(window._fbRestoring)return;
       window._cache=window._cache||{};
       snap.docChanges().forEach(function(change){
         if(change.type==='removed')return;
@@ -2242,10 +2244,15 @@ function restaurar(e){
       if(!confirm('Restaurar backup de '+(d.data||'').slice(0,10)+'?\nDados actuais serão substituídos.'))return;
       const keys=Object.keys(K).filter(k=>d[k]!==undefined);
       let idx=0;
+      window._fbRestoring=true;
       toast('A restaurar... (0/'+keys.length+')');
       function saveNext(){
         if(idx>=keys.length){
-          setTimeout(()=>{renderAll();toast('Dados restaurados! ('+keys.length+' colecções) ✅');},600);
+          setTimeout(()=>{
+            window._fbRestoring=false;
+            renderAll();
+            toast('Dados restaurados! ('+keys.length+' colecções) ✅');
+          },2000);
           return;
         }
         const k=keys[idx];
