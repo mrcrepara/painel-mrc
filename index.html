@@ -4606,22 +4606,7 @@ const _prevOpenM = openM;
 // ===================================================================
 
 
-function _supaWrite(key,val){
-  fetch(_SUPA_URL+'/rest/v1/mrc_dados',{
-    method:'POST',
-    headers:{'apikey':_SUPA_KEY,'Authorization':'Bearer '+_SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-    body:JSON.stringify({chave:key,valor:JSON.stringify(val),atualizado:new Date().toISOString()})
-  }).catch(function(){});
-}
-
-// Wrap sv to sync to Supabase
-(function(){
-  var _origSv=window.sv;
-  window.sv=function(k,d){
-    if(_origSv)_origSv(k,d);
-    if(typeof K!=='undefined'&&K[k])_supaWrite(K[k],d);
-  };
-})();
+function _supaWrite(key,val){ /* Supabase desativado */ }
 
 // MARGEM DE LUCRO
 var _cMarg=null,_cComp=null;
