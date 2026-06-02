@@ -1550,7 +1550,7 @@ function renderCli(){
   const tb=g('cliTbl');if(!tb)return;
   if(!clis.length){tb.innerHTML=eRow(7,'Nenhum cliente');return}
   let html='';
-  clis.forEach(c=>{html+='<tr><td><strong style="color:#fff">'+c.nome+'</strong></td><td><span class="badge '+(c.tipo==='Empresa'?'bb':'bg')+'">'+c.tipo+'</span></td><td style="color:var(--muted)">'+(c.nif||'—')+'</td><td style="color:var(--muted)">'+(c.tel||'—')+'</td><td style="color:var(--muted)">'+(c.email||'—')+'</td><td style="color:var(--muted)">'+(c.morada||'—')+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-cli" data-id="'+c.id+'">✏ Editar</button><button class="btn-xs" style="background:var(--red)" data-action="del-cli" data-id="'+c.id+'">🗑</button></td></tr>'});
+  clis.forEach(c=>{html+='<tr><td><strong style="color:#fff">'+c.nome+'</strong></td><td><span class="badge '+(c.tipo==='Empresa'?'bb':'bg')+'">'+c.tipo+'</span></td><td style="color:var(--muted)">'+(c.nif||'—')+'</td><td style="color:var(--muted)">'+(c.tel||'—')+'</td><td style="color:var(--muted)">'+(c.email||'—')+'</td><td style="color:var(--muted)">'+(c.morada||'—')+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-cli" data-id="'+c.id+'">✏ Editar</button><button class="btn-xs" style="background:var(--teal)" data-action="ficha-cli" data-id="'+c.id+'">📋 Ficha</button><button class="btn-xs" style="background:var(--red)" data-action="del-cli" data-id="'+c.id+'">🗑</button></td></tr>'});
   tb.innerHTML=html;
 }
 
