@@ -50,18 +50,16 @@
         var fbTs=docData.ts||0;
         var localTsKey='_ts_'+fbKey;
         var localTs=parseInt(localStorage.getItem(localTsKey)||'0');
-        // So aceita dados do Firebase se forem mais recentes que os locais
-        if(fbTs>0 && localTs>0 && fbTs<localTs){
+        if(fbTs>0&&localTs>0&&fbTs<localTs){
           console.log('Load: mantendo dados locais mais recentes para '+fbKey);
           return;
         }
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
-        // Protecao contra dados de exemplo
         var localVal;
         try{localVal=JSON.parse(localStorage.getItem(fbKey)||'[]');}catch(e){localVal=[];}
-        if(localVal.length>10 && val.length<5 && (shortKey==='cli'||shortKey==='fat')){
-          console.warn('Load: protecao activada para '+shortKey+' - mantendo dados locais');
+        if(localVal.length>10&&val.length<5&&(shortKey==='cli'||shortKey==='fat')){
+          console.warn('Load: protecao activada para '+shortKey);
           return;
         }
         window._cache[shortKey]=val;
@@ -86,28 +84,25 @@
         var shortKey=KEY_MAP[fbKey]||fbKey;
         var docData=doc.data();
         var fbTs=docData.ts||0;
-        // Verificar timestamp local
         var localTsKey='_ts_'+fbKey;
         var localTs=parseInt(localStorage.getItem(localTsKey)||'0');
-        // So aceita dados do Firebase se forem mais recentes
-        if(fbTs>0 && fbTs<localTs){
+        if(fbTs>0&&localTs>0&&fbTs<localTs){
           console.log('Ignorando dados antigos do Firebase para '+fbKey+' (fb:'+fbTs+' < local:'+localTs+')');
           return;
         }
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
-        // Protecao: nao aceitar dados de exemplo (cli com menos de 5 registos quando temos mais)
         var localVal;
-        try{localVal=JSON.parse(localStorage.getItem(fbKey)||localStorage.getItem(K&&K[shortKey])||'[]');}catch(e){localVal=[];}
-        if(localVal.length>10 && val.length<5 && (shortKey==='cli'||shortKey==='fat')){
-          console.warn('Protecao activada: Firebase tem menos dados que local para '+shortKey+'. Ignorando.');
+        try{localVal=JSON.parse(localStorage.getItem(fbKey)||'[]');}catch(e){localVal=[];}
+        if(localVal.length>10&&val.length<5&&(shortKey==='cli'||shortKey==='fat')){
+          console.warn('Protecao activada para '+shortKey+' - ignorando dados do Firebase');
           return;
         }
         window._cache[shortKey]=val;
         try{localStorage.setItem(fbKey,JSON.stringify(val));}catch(e){}
         changed=true;
       });
-      if(changed && typeof renderAll==='function')setTimeout(renderAll,100);
+      if(changed&&typeof renderAll==='function')setTimeout(renderAll,100);
     },function(e){console.warn('FB realtime:',e);});
   };
 })();
@@ -896,7 +891,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 
 <!-- MODAIS -->
 <!-- Material -->
-<div class="ov" id="mMat"><div class="modal">
+<div class="ov" id="mMat" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mMatT">+ Novo Material</h3><button class="mclose" onclick="closeM('mMat')">✕</button></div>
   <div class="mbody">
     <div class="frow"><div class="fg"><label>Referência *</label><input id="mat_ref"></div><div class="fg"><label>Unidade</label><input id="mat_un" list="mat_un_list" placeholder="Un/KG/M..." autocomplete="off">
@@ -911,7 +906,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div></div>
 
 <!-- Reparação -->
-<div class="ov" id="mRep"><div class="modal">
+<div class="ov" id="mRep" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mRepT">+ Nova Reparação</h3><button class="mclose" onclick="closeM('mRep')">✕</button></div>
   <div class="mbody">
     <div class="frow"><div class="fg"><label>Cliente</label><select id="rep_cli"></select></div><div class="fg"><label>Estado</label><select id="rep_est"><option>Pendente</option><option>Em Reparação</option><option>Aguardando Peças</option><option>Pronta</option><option>Entregue</option></select></div></div>
@@ -924,7 +919,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div></div>
 
 <!-- Orçamento -->
-<div class="ov" id="mOrc"><div class="modal modal-lg">
+<div class="ov" id="mOrc" style="z-index:999999"><div class="modal modal-lg">
   <div class="mhdr"><h3 id="mOrcT">+ Novo Orçamento</h3><button class="mclose" onclick="closeM('mOrc')">✕</button></div>
   <div class="mbody">
     <div class="fg"><label>Cliente</label><select id="orc_cli"></select></div>
@@ -964,7 +959,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div></div>
 
 <!-- Cliente -->
-<div class="ov" id="mCli"><div class="modal">
+<div class="ov" id="mCli" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mCliT">+ Novo Cliente</h3><button class="mclose" onclick="closeM('mCli')">✕</button></div>
   <div class="mbody">
     <div class="fg"><label>Tipo</label><select id="cli_tipo"><option>Empresa</option><option>Particular</option></select></div>
@@ -978,7 +973,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div></div>
 
 <!-- Equipamento -->
-<div class="ov" id="mEq"><div class="modal">
+<div class="ov" id="mEq" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mEqT">+ Novo Equipamento</h3><button class="mclose" onclick="closeM('mEq')">✕</button></div>
   <div class="mbody">
     <div class="frow"><div class="fg"><label>Nº Série *</label><input id="eq_serie"></div><div class="fg"><label>Categoria</label><select id="eq_cat"><option>Motor</option><option>Compressor</option><option>Gerador</option><option>Bomba</option><option>Portão</option><option>Outro</option></select></div></div>
@@ -990,7 +985,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div></div>
 
 <!-- Fornecedor -->
-<div class="ov" id="mForn"><div class="modal">
+<div class="ov" id="mForn" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mFornT">+ Novo Fornecedor</h3><button class="mclose" onclick="closeM('mForn')">✕</button></div>
   <div class="mbody">
     <div class="fg"><label>Nome *</label><input id="forn_nome"></div>
@@ -1003,7 +998,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div></div>
 
 <!-- Fatura -->
-<div class="ov" id="mFat"><div class="modal modal-lg">
+<div class="ov" id="mFat" style="z-index:999999"><div class="modal modal-lg">
   <div class="mhdr"><h3 id="mFatT">🧾 Nova Fatura</h3><button class="mclose" onclick="closeM('mFat')">✕</button></div>
   <div class="mbody">
     <div class="frow"><div class="fg"><label>Cliente *</label><select id="fat_cli" onchange="fatCliChange()"></select></div><div class="fg"><label>Reparação (opç.)</label><input id="fat_rep" placeholder="ex: R-2025-0001"></div></div>
@@ -1078,7 +1073,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div></div>
 
 <!-- Recebimento -->
-<div class="ov" id="mRec"><div class="modal">
+<div class="ov" id="mRec" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mRecT">+ Registar Recebimento</h3><button class="mclose" onclick="closeM('mRec')">✕</button></div>
   <div class="mbody">
     <div class="fg"><label>Cliente *</label><select id="rec_cli"></select></div>
@@ -1092,7 +1087,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div></div>
 
 <!-- Despesa -->
-<div class="ov" id="mDesp"><div class="modal">
+<div class="ov" id="mDesp" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mDespT">+ Nova Despesa</h3><button class="mclose" onclick="closeM('mDesp')">✕</button></div>
   <div class="mbody">
     <div class="fg"><label>Categoria</label><select id="desp_cat"><option>Matérias-Primas</option><option>Rendas</option><option>Serviços</option><option>Salários</option><option>Ferramentas</option><option>Outros</option></select></div>
@@ -1105,7 +1100,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div></div>
 
 <!-- Deslocação -->
-<div class="ov" id="mDesl"><div class="modal">
+<div class="ov" id="mDesl" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mDeslT">+ Nova Deslocação</h3><button class="mclose" onclick="closeM('mDesl')">✕</button></div>
   <div class="mbody">
     <div class="fg"><label>Cliente</label><select id="desl_cli"></select></div>
@@ -1119,7 +1114,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div></div>
 
 <!-- Importar CSV Clientes -->
-<div class="ov" id="mImportCli"><div class="modal modal-lg">
+<div class="ov" id="mImportCli" style="z-index:999999"><div class="modal modal-lg">
   <div class="mhdr"><h3>⬆ Importar Clientes CSV</h3><button class="mclose" onclick="closeM('mImportCli')">✕</button></div>
   <div class="mbody">
     <div class="info-box" style="margin-bottom:14px"><strong style="color:#60A5FA">Colunas aceites:</strong> nome, tipo, nif, telefone, email, morada, obs<br><span style="color:var(--muted);font-size:12px">Separador: vírgula ou ponto-e-vírgula. Primeira linha = cabeçalho.</span></div>
@@ -1139,7 +1134,7 @@ const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_
          svc:'m3_svc',evt:'m3_evt',pdvh:'m3_pdvhist',fiado:'m3_fiado'};
 const ld=k=>{if(window._cache&&window._cache[k]!==undefined){var v=window._cache[k];return Array.isArray(v)?v:[];}try{return JSON.parse(localStorage.getItem(K[k]))||[]}catch{return[]}};
 const ldO=k=>{if(window._cache&&window._cache[k]!==undefined&&!Array.isArray(window._cache[k]))return window._cache[k];try{return JSON.parse(localStorage.getItem(K[k]))||{}}catch{return{}}};
-const sv=(k,d)=>{var fbKey=window.REV_MAP&&window.REV_MAP[k]?window.REV_MAP[k]:('m3_'+k);var ts=Date.now();localStorage.setItem(K[k],JSON.stringify(d));localStorage.setItem('_ts_'+fbKey,ts);if(window._cache)window._cache[k]=d;if(typeof window._fbSave==="function"){window._fbSave(fbKey,d,ts);}};
+const sv=(k,d)=>{var fbKey=window.REV_MAP&&window.REV_MAP[k]?window.REV_MAP[k]:('m3_'+k);var ts=Date.now();localStorage.setItem(K[k],JSON.stringify(d));localStorage.setItem('_ts_'+fbKey,ts);if(window._cache)window._cache[k]=d;if(typeof window._fbSave==="function"){window._fbSave(fbKey,d);}};
 const eur=v=>parseFloat(v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const td=()=>new Date().toISOString().slice(0,10);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -2048,13 +2043,16 @@ function renderDash(){
   renderDashBanner();
   const reps=ld('rep'),mats=ld('mat'),fats=ld('fat'),desps=ld('desp'),desls=ld('desl');
   const fatsFilt=_filterPeriod(fats,'data');
-  const fatPaga=_filterPeriod(ld('rec'),'data').reduce((s,r)=>s+(r.val||0),0);
-  const totDesp=_filterPeriod(desps,'data').reduce((s,d)=>s+(d.val+(d.iva||0)),0)+_filterPeriod(desls,'data').reduce((s,d)=>s+(d.total||0),0);
+  const fatPaga=fatsFilt.filter(f=>f.est==='Paga').reduce((s,f)=>s+fatTot(f),0);
+  const totDesp=_filterPeriod(desps,'data').reduce((s,d)=>s+(d.val+d.iva),0)+_filterPeriod(desls,'data').reduce((s,d)=>s+(d.total||0),0);
+  const repsFilt=_filterPeriod(reps,'data');
+  const custoMatRep=repsFilt.reduce((s,r)=>s+(r.custo_mat||0),0);
+  // Custo real dos materiais das faturas (stock)
   const custoMatFat=fatsFilt.reduce((s,f)=>s+(f.custo_mat_real||0),0);
   const osFilt=_filterPeriod(ld('os'),'data');
   const custoHoras=osFilt.reduce((s,o)=>s+((o.horas||0)*(o.valor_hora||0)),0);
   const custoMatOS=osFilt.reduce((s,o)=>s+(o.custo_mat||0),0);
-  const custoMat=custoMatFat+custoMatOS;
+  const custoMat=custoMatRep+custoMatFat+custoMatOS;
   const lucro=fatPaga-totDesp-custoMat-custoHoras;
   const margemPct=fatPaga>0?((lucro/fatPaga)*100).toFixed(1):0;
   const aberto=reps.filter(r=>r.est!=='Entregue').length;
@@ -2269,36 +2267,6 @@ function fazerBackup(){
   a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(dados,null,2));
   a.download='mrc_backup_'+td()+'.json';a.click();toast('Backup guardado!');
 }
-function _autoBackup(){
-  try{
-    var hoje=new Date().toISOString().slice(0,10);
-    var ultimo=localStorage.getItem('_last_auto_backup');
-    if(ultimo===hoje)return;
-    var dados={versao:'4.0',data:new Date().toISOString()};
-    Object.keys(K).forEach(k=>{
-      try{
-        if(window._cache&&window._cache[k]!==undefined){dados[k]=window._cache[k];}
-        else{dados[k]=JSON.parse(localStorage.getItem(K[k])||'[]');}
-      }catch{dados[k]=[];}
-    });
-    var json=JSON.stringify(dados,null,2);
-    // Guardar no localStorage como backup do dia
-    localStorage.setItem('_auto_backup_'+hoje, json);
-    // Manter só os ultimos 7 dias
-    for(var i=7;i<=30;i++){
-      var d=new Date();d.setDate(d.getDate()-i);
-      localStorage.removeItem('_auto_backup_'+d.toISOString().slice(0,10));
-    }
-    localStorage.setItem('_last_auto_backup',hoje);
-    // Fazer download automatico
-    var a=document.createElement('a');
-    a.href='data:application/json;charset=utf-8,'+encodeURIComponent(json);
-    a.download='mrc_autobackup_'+hoje+'.json';
-    a.click();
-    toast('💾 Backup automático guardado!');
-    console.log('Auto-backup feito: '+hoje);
-  }catch(e){console.warn('Auto-backup falhou:',e);}
-}
 function restaurar(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
@@ -2320,9 +2288,12 @@ function restaurar(e){
           return;
         }
         const k=keys[idx];
+        var fbKey=window.REV_MAP&&window.REV_MAP[k]?window.REV_MAP[k]:('m3_'+k);
+        var ts=Date.now();
         localStorage.setItem(K[k],JSON.stringify(d[k]));
+        localStorage.setItem('_ts_'+fbKey,ts);
         if(window._cache)window._cache[k]=d[k];
-        if(typeof window._fbSave==='function'){window._fbSave(k,d[k]);}
+        if(typeof window._fbSave==='function'){window._fbSave(fbKey,d[k]);}
         idx++;
         toast('A restaurar... ('+idx+'/'+keys.length+') — '+k);
         setTimeout(saveNext,800);
@@ -2717,7 +2688,6 @@ document.addEventListener('DOMContentLoaded',function(){
       try{fillCatSelects();}catch(e){}
       try{renderAll();}catch(e){}
       if(typeof window._fbStartRealtime==='function') window._fbStartRealtime();
-      setTimeout(_autoBackup, 3000);
     });
   } else {
     setTimeout(function(){
@@ -4172,6 +4142,12 @@ ${desls.map(d=>'<tr><td>'+d.data+'</td><td>'+d.dest+'</td><td>'+d.km+' km</td><t
 }
 
 // Add ficha button to clients table
+const _origRenderCli = renderCli;
+window.renderCli = function() {
+  _origRenderCli();
+  // patch each row to add ficha button — done via delegation below
+};
+
 // Delegation for ficha-cli
 document.addEventListener('click', function(e) {
   const btn = e.target.closest('[data-action="ficha-cli"]');
@@ -5249,7 +5225,7 @@ function _renderFluxoChart(){
     var yr=d.getFullYear(),mo=d.getMonth();
     labels.push(mN[mo]);
     function inM(ds){if(!ds)return false;var dt=new Date(ds.length===7?ds+'-01':ds);return dt.getFullYear()===yr&&dt.getMonth()===mo;}
-    var ent=ld('rec').filter(function(r){return inM(r.data);}).reduce(function(s,r){return s+(r.val||0);},0);
+    var ent=ld('fat').filter(function(f){return f.est==='Paga'&&inM(f.data);}).reduce(function(s,f){return s+fatTot(f);},0);
     var sai=ld('desp').filter(function(d){return inM(d.data);}).reduce(function(s,d){return s+(d.val+(d.iva||0));},0)+
             ld('desl').filter(function(d){return inM(d.data);}).reduce(function(s,d){return s+(d.total||0);},0)+
             ld('os').filter(function(o){return inM(o.data);}).reduce(function(s,o){return s+((o.horas||0)*(o.valor_hora||0))+(o.custo_mat||0);},0);
@@ -5386,7 +5362,7 @@ function printReciboFat(id){
   html+='Recebi de <strong>'+(f.cli||'Cliente')+'</strong> o valor de <strong>'+eur(valorRecibo)+'</strong>';
   html+=' referente à prestação de serviços conforme pedido '+num+'.';
   if(f.desc) html+='<br><span style="font-size:13px;color:#555">'+f.desc+'</span>';
-  if(isParcial){html+='<div class="parcial-info"><strong>Pagamento Parcial</strong><br>Total da fatura: '+eur(total)+'<br>Valor pago neste recibo: '+eur(pago)+'<br>Valor em falta: '+eur(falta)+'</div>';}
+  if(isParcial){html+='<div class="parcial-info"><strong>Pagamento Parcial</strong><br>Total da fatura: '+eur(total)+'<br>Valor pago: '+eur(pago)+'<br>Valor em falta: '+eur(falta)+'</div>';}
   html+='</div>';
   
   html+='<div class="sign-area">';
@@ -5409,7 +5385,7 @@ function printReciboFat(id){
 
 
 <!-- MODAL EVENTO AGENDA -->
-<div class="ov" id="mEvt"><div class="modal">
+<div class="ov" id="mEvt" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mEvtT">+ Novo Evento</h3><button class="mclose" onclick="closeM('mEvt')">✕</button></div>
   <div class="mbody">
     <div class="fg"><label>Título *</label><input id="evt_titulo" placeholder="ex: Entrega Motor WEG, Visita ao cliente..."></div>
@@ -5443,7 +5419,7 @@ function printReciboFat(id){
 </div></div>
 
 <!-- MODAL ORDEM DE SERVIÇO -->
-<div class="ov" id="mOS"><div class="modal modal-lg">
+<div class="ov" id="mOS" style="z-index:999999"><div class="modal modal-lg">
   <div class="mhdr"><h3 id="mOST">📋 Nova O.S.</h3><button class="mclose" onclick="closeM('mOS')">✕</button></div>
   <div class="mbody">
     <div class="frow">
@@ -5475,7 +5451,7 @@ function printReciboFat(id){
 </div></div>
 
 <!-- MODAL SERVIÇO -->
-<div class="ov" id="mSvc"><div class="modal">
+<div class="ov" id="mSvc" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mSvcT">+ Novo Serviço</h3><button class="mclose" onclick="closeM('mSvc')">✕</button></div>
   <div class="mbody">
     <div class="fg"><label>Nome do Serviço *</label><input id="svc_nome" placeholder="ex: Revisão Geral Motor"></div>
@@ -5490,25 +5466,8 @@ function printReciboFat(id){
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mSvc')">Cancelar</button><button class="btn btn-purple" onclick="saveSvc()">💾 Guardar</button></div>
 </div></div>
 
-<!-- MODAL CATEGORIAS DESPESAS -->
-<div class="ov" id="mDespCat"><div class="modal modal-lg">
-  <div class="mhdr"><h3>🏷 Categorias de Despesas</h3><button class="mclose" onclick="closeM('mDespCat')">✕</button></div>
-  <div class="mbody">
-    <div style="margin-bottom:16px">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Adicionar Nova Categoria</div>
-      <div style="display:flex;gap:8px">
-        <input id="newDespCat2" placeholder="ex: Combustível, Ferramentas, Seguros..." style="flex:1;padding:9px 12px;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif" onkeydown="if(event.key==='Enter')addDespCat()">
-        <button class="btn btn-red btn-sm" onclick="addDespCat()">+ Adicionar</button>
-      </div>
-    </div>
-    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Categorias Existentes</div>
-    <div id="despCatsList"></div>
-  </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mDespCat')">Fechar</button></div>
-</div></div>
-
 <!-- MODAL FIADO -->
-<div class="ov" id="mFiado"><div class="modal">
+<div class="ov" id="mFiado" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mFiadoT">+ Registar Fiado</h3><button class="mclose" onclick="closeM('mFiado')">✕</button></div>
   <div class="mbody">
     <div class="fg"><label>Cliente *</label><select id="fiado_cli"></select></div>
@@ -5528,7 +5487,7 @@ function printReciboFat(id){
 </div></div>
 
 <!-- MODAL CATEGORIAS EQUIPAMENTOS -->
-<div class="ov" id="mEqCats"><div class="modal">
+<div class="ov" id="mEqCats" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3>⚙ Categorias de Equipamentos</h3><button class="mclose" onclick="closeM('mEqCats')">✕</button></div>
   <div class="mbody">
     <div style="margin-bottom:14px">
@@ -5543,10 +5502,26 @@ function printReciboFat(id){
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mEqCats')">Fechar</button></div>
 </div></div>
+<!-- MODAL CATEGORIAS DESPESAS -->
+<div class="ov" id="mDespCat" style="z-index:999999"><div class="modal modal-lg">
+  <div class="mhdr"><h3>🏷 Categorias de Despesas</h3><button class="mclose" onclick="closeM('mDespCat')">✕</button></div>
+  <div class="mbody">
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Adicionar Nova Categoria</div>
+      <div style="display:flex;gap:8px">
+        <input id="newDespCat2" placeholder="ex: Combustível, Ferramentas, Seguros..." style="flex:1;padding:9px 12px;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif" onkeydown="if(event.key==='Enter')addDespCat()">
+        <button class="btn btn-red btn-sm" onclick="addDespCat()">+ Adicionar</button>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Categorias Existentes</div>
+    <div id="despCatsList"></div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mDespCat')">Fechar</button></div>
+</div></div>
 </body>
 </html>
 <!-- MODAL GERIR CATEGORIAS MATERIAIS -->
-<div class="ov" id="mCats"><div class="modal modal-lg">
+<div class="ov" id="mCats" style="z-index:999999"><div class="modal modal-lg">
   <div class="mhdr"><h3>⚙ Categorias de Materiais</h3><button class="mclose" onclick="closeM('mCats')">✕</button></div>
   <div class="mbody">
 
@@ -5609,3 +5584,7 @@ function printReciboFat(id){
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mCats')">Fechar</button></div>
 </div></div>
+
+
+</body>
+</html>
