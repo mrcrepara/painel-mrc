@@ -4172,12 +4172,6 @@ ${desls.map(d=>'<tr><td>'+d.data+'</td><td>'+d.dest+'</td><td>'+d.km+' km</td><t
 }
 
 // Add ficha button to clients table
-const _origRenderCli = renderCli;
-window.renderCli = function() {
-  _origRenderCli();
-  // patch each row to add ficha button — done via delegation below
-};
-
 // Delegation for ficha-cli
 document.addEventListener('click', function(e) {
   const btn = e.target.closest('[data-action="ficha-cli"]');
