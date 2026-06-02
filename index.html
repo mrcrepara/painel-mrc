@@ -46,12 +46,27 @@
       snap.forEach(function(doc){
         var fbKey=doc.id;
         var shortKey=KEY_MAP[fbKey]||fbKey;
+        var docData=doc.data();
+        var fbTs=docData.ts||0;
+        var localTsKey='_ts_'+fbKey;
+        var localTs=parseInt(localStorage.getItem(localTsKey)||'0');
+        // So aceita dados do Firebase se forem mais recentes que os locais
+        if(fbTs>0 && localTs>0 && fbTs<localTs){
+          console.log('Load: mantendo dados locais mais recentes para '+fbKey);
+          return;
+        }
         var val;
-        try{val=JSON.parse(doc.data().value||'[]');}catch(e){val=[];}
-        // Store in cache by SHORT key
+        try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
+        // Protecao contra dados de exemplo
+        var localVal;
+        try{localVal=JSON.parse(localStorage.getItem(fbKey)||'[]');}catch(e){localVal=[];}
+        if(localVal.length>10 && val.length<5 && (shortKey==='cli'||shortKey==='fat')){
+          console.warn('Load: protecao activada para '+shortKey+' - mantendo dados locais');
+          return;
+        }
         window._cache[shortKey]=val;
-        // Also store in localStorage for offline use
         try{localStorage.setItem(fbKey,JSON.stringify(val));}catch(e){}
+        if(fbTs)localStorage.setItem(localTsKey,fbTs);
       });
       if(cb)cb();
     }).catch(function(e){console.warn('FB load:',e);if(cb)cb();});
@@ -63,17 +78,36 @@
     db.collection(col).onSnapshot(function(snap){
       if(window._fbRestoring)return;
       window._cache=window._cache||{};
+      var changed=false;
       snap.docChanges().forEach(function(change){
         if(change.type==='removed')return;
         var doc=change.doc;
         var fbKey=doc.id;
         var shortKey=KEY_MAP[fbKey]||fbKey;
+        var docData=doc.data();
+        var fbTs=docData.ts||0;
+        // Verificar timestamp local
+        var localTsKey='_ts_'+fbKey;
+        var localTs=parseInt(localStorage.getItem(localTsKey)||'0');
+        // So aceita dados do Firebase se forem mais recentes
+        if(fbTs>0 && fbTs<localTs){
+          console.log('Ignorando dados antigos do Firebase para '+fbKey+' (fb:'+fbTs+' < local:'+localTs+')');
+          return;
+        }
         var val;
-        try{val=JSON.parse(doc.data().value||'[]');}catch(e){val=[];}
+        try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
+        // Protecao: nao aceitar dados de exemplo (cli com menos de 5 registos quando temos mais)
+        var localVal;
+        try{localVal=JSON.parse(localStorage.getItem(fbKey)||localStorage.getItem(K&&K[shortKey])||'[]');}catch(e){localVal=[];}
+        if(localVal.length>10 && val.length<5 && (shortKey==='cli'||shortKey==='fat')){
+          console.warn('Protecao activada: Firebase tem menos dados que local para '+shortKey+'. Ignorando.');
+          return;
+        }
         window._cache[shortKey]=val;
         try{localStorage.setItem(fbKey,JSON.stringify(val));}catch(e){}
+        changed=true;
       });
-      if(typeof renderAll==='function')setTimeout(renderAll,100);
+      if(changed && typeof renderAll==='function')setTimeout(renderAll,100);
     },function(e){console.warn('FB realtime:',e);});
   };
 })();
@@ -1105,7 +1139,7 @@ const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_
          svc:'m3_svc',evt:'m3_evt',pdvh:'m3_pdvhist',fiado:'m3_fiado'};
 const ld=k=>{if(window._cache&&window._cache[k]!==undefined){var v=window._cache[k];return Array.isArray(v)?v:[];}try{return JSON.parse(localStorage.getItem(K[k]))||[]}catch{return[]}};
 const ldO=k=>{if(window._cache&&window._cache[k]!==undefined&&!Array.isArray(window._cache[k]))return window._cache[k];try{return JSON.parse(localStorage.getItem(K[k]))||{}}catch{return{}}};
-const sv=(k,d)=>{localStorage.setItem(K[k],JSON.stringify(d));if(window._cache)window._cache[k]=d;if(typeof window._fbSave==="function"){var fbKey=window.REV_MAP&&window.REV_MAP[k]?window.REV_MAP[k]:('m3_'+k);window._fbSave(fbKey,d);}};
+const sv=(k,d)=>{var fbKey=window.REV_MAP&&window.REV_MAP[k]?window.REV_MAP[k]:('m3_'+k);var ts=Date.now();localStorage.setItem(K[k],JSON.stringify(d));localStorage.setItem('_ts_'+fbKey,ts);if(window._cache)window._cache[k]=d;if(typeof window._fbSave==="function"){window._fbSave(fbKey,d,ts);}};
 const eur=v=>parseFloat(v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const td=()=>new Date().toISOString().slice(0,10);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -4796,8 +4830,8 @@ var _DC_DEF=[
   {id:'dc8',nome:'Seguros',subs:['Viatura','Responsabilidade Civil','Outros']},
   {id:'dc9',nome:'Outros',subs:[]}
 ];
-function loadDespCats(){try{if(window._cache&&window._cache['cats']&&window._cache['cats'].length)return window._cache['cats'];var s=localStorage.getItem('m3_despcat')||localStorage.getItem(K['cats']);return(s&&JSON.parse(s).length)?JSON.parse(s):_DC_DEF;}catch(e){return _DC_DEF;}}
-function saveDespCatsData(c){try{localStorage.setItem('m3_despcat',JSON.stringify(c));sv('cats',c);}catch(e){}}
+function loadDespCats(){try{var s=localStorage.getItem('m3_despcat');return(s&&JSON.parse(s).length)?JSON.parse(s):_DC_DEF;}catch(e){return _DC_DEF;}}
+function saveDespCatsData(c){try{localStorage.setItem('m3_despcat',JSON.stringify(c));}catch(e){}}
 function fillDespCatSelect(){
   var cats=loadDespCats();var sel=document.getElementById('desp_cat');if(!sel)return;
   sel.innerHTML=cats.map(function(c){return'<option value="'+c.nome+'">'+c.nome+'</option>';}).join('');
@@ -5462,6 +5496,23 @@ function printReciboFat(id){
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mSvc')">Cancelar</button><button class="btn btn-purple" onclick="saveSvc()">💾 Guardar</button></div>
 </div></div>
 
+<!-- MODAL CATEGORIAS DESPESAS -->
+<div class="ov" id="mDespCat"><div class="modal modal-lg">
+  <div class="mhdr"><h3>🏷 Categorias de Despesas</h3><button class="mclose" onclick="closeM('mDespCat')">✕</button></div>
+  <div class="mbody">
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Adicionar Nova Categoria</div>
+      <div style="display:flex;gap:8px">
+        <input id="newDespCat2" placeholder="ex: Combustível, Ferramentas, Seguros..." style="flex:1;padding:9px 12px;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif" onkeydown="if(event.key==='Enter')addDespCat()">
+        <button class="btn btn-red btn-sm" onclick="addDespCat()">+ Adicionar</button>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Categorias Existentes</div>
+    <div id="despCatsList"></div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mDespCat')">Fechar</button></div>
+</div></div>
+
 <!-- MODAL FIADO -->
 <div class="ov" id="mFiado"><div class="modal">
   <div class="mhdr"><h3 id="mFiadoT">+ Registar Fiado</h3><button class="mclose" onclick="closeM('mFiado')">✕</button></div>
@@ -5497,22 +5548,6 @@ function printReciboFat(id){
     <div id="eqCatsList"></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mEqCats')">Fechar</button></div>
-</div></div>
-<!-- MODAL CATEGORIAS DESPESAS -->
-<div class="ov" id="mDespCat" style="z-index:999999"><div class="modal modal-lg">
-  <div class="mhdr"><h3>🏷 Categorias de Despesas</h3><button class="mclose" onclick="closeM('mDespCat')">✕</button></div>
-  <div class="mbody">
-    <div style="margin-bottom:16px">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Adicionar Nova Categoria</div>
-      <div style="display:flex;gap:8px">
-        <input id="newDespCat2" placeholder="ex: Combustível, Ferramentas, Seguros..." style="flex:1;padding:9px 12px;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif" onkeydown="if(event.key==='Enter')addDespCat()">
-        <button class="btn btn-red btn-sm" onclick="addDespCat()">+ Adicionar</button>
-      </div>
-    </div>
-    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Categorias Existentes</div>
-    <div id="despCatsList"></div>
-  </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mDespCat')">Fechar</button></div>
 </div></div>
 </body>
 </html>
