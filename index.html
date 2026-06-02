@@ -4796,8 +4796,8 @@ var _DC_DEF=[
   {id:'dc8',nome:'Seguros',subs:['Viatura','Responsabilidade Civil','Outros']},
   {id:'dc9',nome:'Outros',subs:[]}
 ];
-function loadDespCats(){try{var s=localStorage.getItem('m3_despcat');return(s&&JSON.parse(s).length)?JSON.parse(s):_DC_DEF;}catch(e){return _DC_DEF;}}
-function saveDespCatsData(c){try{localStorage.setItem('m3_despcat',JSON.stringify(c));}catch(e){}}
+function loadDespCats(){try{if(window._cache&&window._cache['cats']&&window._cache['cats'].length)return window._cache['cats'];var s=localStorage.getItem('m3_despcat')||localStorage.getItem(K['cats']);return(s&&JSON.parse(s).length)?JSON.parse(s):_DC_DEF;}catch(e){return _DC_DEF;}}
+function saveDespCatsData(c){try{localStorage.setItem('m3_despcat',JSON.stringify(c));sv('cats',c);}catch(e){}}
 function fillDespCatSelect(){
   var cats=loadDespCats();var sel=document.getElementById('desp_cat');if(!sel)return;
   sel.innerHTML=cats.map(function(c){return'<option value="'+c.nome+'">'+c.nome+'</option>';}).join('');
