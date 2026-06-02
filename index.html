@@ -5462,23 +5462,6 @@ function printReciboFat(id){
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mSvc')">Cancelar</button><button class="btn btn-purple" onclick="saveSvc()">💾 Guardar</button></div>
 </div></div>
 
-<!-- MODAL CATEGORIAS DESPESAS -->
-<div class="ov" id="mDespCat" style="z-index:999999"><div class="modal modal-lg">
-  <div class="mhdr"><h3>🏷 Categorias de Despesas</h3><button class="mclose" onclick="closeM('mDespCat')">✕</button></div>
-  <div class="mbody">
-    <div style="margin-bottom:16px">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Adicionar Nova Categoria</div>
-      <div style="display:flex;gap:8px">
-        <input id="newDespCat2" placeholder="ex: Combustível, Ferramentas, Seguros..." style="flex:1;padding:9px 12px;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif" onkeydown="if(event.key==='Enter')addDespCat()">
-        <button class="btn btn-red btn-sm" onclick="addDespCat()">+ Adicionar</button>
-      </div>
-    </div>
-    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Categorias Existentes</div>
-    <div id="despCatsList"></div>
-  </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mDespCat')">Fechar</button></div>
-</div></div>
-
 <!-- MODAL FIADO -->
 <div class="ov" id="mFiado"><div class="modal">
   <div class="mhdr"><h3 id="mFiadoT">+ Registar Fiado</h3><button class="mclose" onclick="closeM('mFiado')">✕</button></div>
@@ -5514,6 +5497,22 @@ function printReciboFat(id){
     <div id="eqCatsList"></div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mEqCats')">Fechar</button></div>
+</div></div>
+<!-- MODAL CATEGORIAS DESPESAS -->
+<div class="ov" id="mDespCat" style="z-index:999999"><div class="modal modal-lg">
+  <div class="mhdr"><h3>🏷 Categorias de Despesas</h3><button class="mclose" onclick="closeM('mDespCat')">✕</button></div>
+  <div class="mbody">
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Adicionar Nova Categoria</div>
+      <div style="display:flex;gap:8px">
+        <input id="newDespCat2" placeholder="ex: Combustível, Ferramentas, Seguros..." style="flex:1;padding:9px 12px;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif" onkeydown="if(event.key==='Enter')addDespCat()">
+        <button class="btn btn-red btn-sm" onclick="addDespCat()">+ Adicionar</button>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Categorias Existentes</div>
+    <div id="despCatsList"></div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mDespCat')">Fechar</button></div>
 </div></div>
 </body>
 </html>
