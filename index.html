@@ -1083,6 +1083,13 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div class="fg"><label>Fornecedor</label><input id="desp_forn"></div>
     <div class="frow"><div class="fg"><label>Valor s/IVA (€)</label><input type="number" id="desp_val" value="0" step="0.01"></div><div class="fg"><label>IVA (€)</label><input type="number" id="desp_iva" value="0" step="0.01"></div></div>
     <div class="fg"><label>Data</label><input type="date" id="desp_data"></div>
+    <div class="fg"><label>Cliente (opcional)</label><select id="desp_cli"><option value="">— Nenhum —</option></select></div>
+    <div id="desp_fat_box" style="display:none;padding:10px 12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:8px;margin-top:4px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="desp_criar_fat" style="accent-color:var(--blue);width:15px;height:15px">
+        <span>Criar fatura para este cliente com esta despesa</span>
+      </label>
+    </div>
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mDesp')">Cancelar</button><button class="btn btn-red" onclick="saveDesp()">💾 Registar</button></div>
 </div></div>
@@ -1315,7 +1322,7 @@ function fillForm(id,d){
     mForn:{forn_nome:'nome',forn_nif:'nif',forn_tel:'tel',forn_email:'email',forn_morada:'morada',forn_cats:'cats'},
     mFat:{fat_cli:'cli_id',fat_rep:'rep',fat_desc:'desc',fat_mo:'mo',fat_mat:'mat',fat_iva:'iva',fat_est:'est',fat_data:'data',fat_venc:'venc'},
     mOS:{os_cli:'cli_id',os_desc:'desc',os_data:'data',os_horas:'horas',os_valor_hora:'valor_hora',os_custo_mat:'custo_mat',os_est:'est',os_notas:'notas',os_materiais:'materiais'},
-    mDesp:{desp_cat:'cat',desp_desc:'desc',desp_forn:'forn',desp_val:'val',desp_iva:'iva',desp_data:'data'},
+    mDesp:{desp_cat:'cat',desp_desc:'desc',desp_forn:'forn',desp_val:'val',desp_iva:'iva',desp_data:'data',desp_cli:'cli_id'},
     mDesl:{desl_cli:'cli_id',desl_dest:'dest',desl_rep:'rep',desl_km:'km',desl_preco:'preco',desl_total:'total',desl_data:'data',desl_obs:'obs'},
   };
   const m=maps[id]||{};
@@ -1733,10 +1740,44 @@ function renderRec(){
 function saveDesp(){
   const desc=gv('desp_desc').trim();if(!desc){toast('Descrição é obrigatória!','r');return}
   const desps=ld('desp'),editId=_eids['mDesp'];
-  const obj={cat:gv('desp_cat'),desc,forn:gv('desp_forn'),val:gf('desp_val'),iva:gf('desp_iva'),data:gv('desp_data')||td()};
+  const cliSel=document.getElementById('desp_cli');
+  const cliId=cliSel?cliSel.value:'';
+  const cliNome=cliSel&&cliId?cliSel.options[cliSel.selectedIndex].text:'';
+  const obj={cat:gv('desp_cat'),desc,forn:gv('desp_forn'),val:gf('desp_val'),iva:gf('desp_iva'),data:gv('desp_data')||td(),cli_id:cliId,cli:cliNome};
   if(editId){const i=desps.findIndex(d=>d.id===editId);if(i>=0)desps[i]={...desps[i],...obj}}
   else{obj.id=uid();desps.push(obj)}
-  sv('desp',desps);closeM('mDesp');renderDesp();toast(editId?'Despesa actualizada!':'Despesa registada!');
+  sv('desp',desps);
+  // Criar fatura se checkbox marcada
+  const criarFat=document.getElementById('desp_criar_fat');
+  if(criarFat&&criarFat.checked&&cliId){
+    const cli=ld('cli').find(c=>c.id===cliId);
+    const fats=ld('fat');
+    const novaFat={
+      id:uid(),
+      num:'FT'+new Date().getFullYear()+'/'+(String(fats.length+1).padStart(3,'0')),
+      cli_id:cliId,
+      cli:cliNome,
+      desc:desc,
+      data:obj.data,
+      venc:obj.data,
+      est:'Pendente',
+      tipo:'fatura',
+      mo:obj.val,
+      mat:0,
+      iva:obj.val>0?(obj.iva/obj.val*100).toFixed(0)*1:0,
+      desl_total:0,
+      desc_pct:0,
+      linhas:[],
+      obs:'Gerada a partir de despesa: '+desc
+    };
+    fats.push(novaFat);
+    sv('fat',fats);
+    if(typeof renderFat==='function')renderFat();
+    toast('Despesa registada e fatura criada! ✅');
+  } else {
+    toast(editId?'Despesa actualizada!':'Despesa registada!');
+  }
+  closeM('mDesp');renderDesp();
 }
 function renderDesp(){
   const all=ld('desp');let desps=[...all];
@@ -4870,7 +4911,26 @@ document.addEventListener('DOMContentLoaded',function(){
   });
   // Desp modals observer
   var mDesp=document.getElementById('mDesp');
-  if(mDesp)new MutationObserver(function(ms){ms.forEach(function(m){if(m.target.classList.contains('open'))fillDespCatSelect();});}).observe(mDesp,{attributes:true,attributeFilter:['class']});
+  if(mDesp)new MutationObserver(function(ms){ms.forEach(function(m){
+    if(m.target.classList.contains('open')){
+      fillDespCatSelect();
+      // Preencher clientes
+      var sel=document.getElementById('desp_cli');
+      if(sel){
+        sel.innerHTML='<option value="">— Nenhum —</option>'+ld('cli').sort(function(a,b){return a.nome.localeCompare(b.nome);}).map(function(c){return'<option value="'+c.id+'">'+c.nome+'</option>';}).join('');
+      }
+      // Reset checkbox
+      var cb=document.getElementById('desp_criar_fat');if(cb)cb.checked=false;
+      var box=document.getElementById('desp_fat_box');if(box)box.style.display='none';
+    }
+  });}).observe(mDesp,{attributes:true,attributeFilter:['class']});
+  // Mostrar/esconder opção fatura ao selecionar cliente
+  document.addEventListener('change',function(e){
+    if(e.target.id==='desp_cli'){
+      var box=document.getElementById('desp_fat_box');
+      if(box)box.style.display=e.target.value?'block':'none';
+    }
+  });
   var mDespCat=document.getElementById('mDespCat');
   if(mDespCat)new MutationObserver(function(ms){ms.forEach(function(m){if(m.target.classList.contains('open'))renderDespCatsList();});}).observe(mDespCat,{attributes:true,attributeFilter:['class']});
   // fat_cli observer
