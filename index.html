@@ -50,18 +50,12 @@
         var fbTs=docData.ts||0;
         var localTsKey='_ts_'+fbKey;
         var localTs=parseInt(localStorage.getItem(localTsKey)||'0');
-        if(fbTs>0&&localTs>0&&fbTs<localTs){
-          console.log('Load: mantendo dados locais mais recentes para '+fbKey);
-          return;
-        }
+        if(fbTs>0&&localTs>0&&fbTs<localTs){return;}
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
         var localVal;
         try{localVal=JSON.parse(localStorage.getItem(fbKey)||'[]');}catch(e){localVal=[];}
-        if(localVal.length>10&&val.length<5&&(shortKey==='cli'||shortKey==='fat')){
-          console.warn('Load: protecao activada para '+shortKey);
-          return;
-        }
+        if(localVal.length>10&&val.length<5&&(shortKey==='cli'||shortKey==='fat')){return;}
         window._cache[shortKey]=val;
         try{localStorage.setItem(fbKey,JSON.stringify(val));}catch(e){}
         if(fbTs)localStorage.setItem(localTsKey,fbTs);
@@ -86,18 +80,12 @@
         var fbTs=docData.ts||0;
         var localTsKey='_ts_'+fbKey;
         var localTs=parseInt(localStorage.getItem(localTsKey)||'0');
-        if(fbTs>0&&localTs>0&&fbTs<localTs){
-          console.log('Ignorando dados antigos do Firebase para '+fbKey+' (fb:'+fbTs+' < local:'+localTs+')');
-          return;
-        }
+        if(fbTs>0&&localTs>0&&fbTs<localTs){return;}
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
         var localVal;
         try{localVal=JSON.parse(localStorage.getItem(fbKey)||'[]');}catch(e){localVal=[];}
-        if(localVal.length>10&&val.length<5&&(shortKey==='cli'||shortKey==='fat')){
-          console.warn('Protecao activada para '+shortKey+' - ignorando dados do Firebase');
-          return;
-        }
+        if(localVal.length>10&&val.length<5&&(shortKey==='cli'||shortKey==='fat')){return;}
         window._cache[shortKey]=val;
         try{localStorage.setItem(fbKey,JSON.stringify(val));}catch(e){}
         changed=true;
@@ -2280,11 +2268,7 @@ function restaurar(e){
       toast('A restaurar... (0/'+keys.length+')');
       function saveNext(){
         if(idx>=keys.length){
-          setTimeout(()=>{
-            window._fbRestoring=false;
-            renderAll();
-            toast('Dados restaurados! ('+keys.length+' colecções) ✅');
-          },2000);
+          setTimeout(()=>{window._fbRestoring=false;renderAll();toast('Dados restaurados! ✅');},2000);
           return;
         }
         const k=keys[idx];
@@ -3226,10 +3210,8 @@ function saveFat() {
     if(valRec>0&&Math.abs(totalJaRec-valRec)>0.01){
       var novoVal=Math.max(0,+(valRec-totalJaRec).toFixed(2));
       if(novoVal>0){
-        var obsTexto=obj.est==='Paga'?'Pagamento total (auto)':'Pagamento parcial (auto)';
-        recs.push({id:uid(),cli_id:obj.cli_id,cli:obj.cli,fat_id:fatId,fat_num:obj.num||fatId.slice(-6),val:novoVal,data:td(),obs:obsTexto});
+        recs.push({id:uid(),cli_id:obj.cli_id,cli:obj.cli,fat_id:fatId,fat_num:obj.num||fatId.slice(-6),val:novoVal,data:td(),obs:obj.est==='Paga'?'Pagamento total (auto)':'Pagamento parcial (auto)'});
         sv('rec',recs);
-        if(typeof renderRec==='function')renderRec();
       }
     }
   }
@@ -5362,7 +5344,7 @@ function printReciboFat(id){
   html+='Recebi de <strong>'+(f.cli||'Cliente')+'</strong> o valor de <strong>'+eur(valorRecibo)+'</strong>';
   html+=' referente à prestação de serviços conforme pedido '+num+'.';
   if(f.desc) html+='<br><span style="font-size:13px;color:#555">'+f.desc+'</span>';
-  if(isParcial){html+='<div class="parcial-info"><strong>Pagamento Parcial</strong><br>Total da fatura: '+eur(total)+'<br>Valor pago: '+eur(pago)+'<br>Valor em falta: '+eur(falta)+'</div>';}
+  if(isParcial){html+='<div class="parcial-info"><strong>Pagamento Parcial</strong><br>Total: '+eur(total)+'<br>Pago: '+eur(pago)+'<br>Em falta: '+eur(falta)+'</div>';}
   html+='</div>';
   
   html+='<div class="sign-area">';
@@ -5502,24 +5484,6 @@ function printReciboFat(id){
   </div>
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mEqCats')">Fechar</button></div>
 </div></div>
-<!-- MODAL CATEGORIAS DESPESAS -->
-<div class="ov" id="mDespCat" style="z-index:999999"><div class="modal modal-lg">
-  <div class="mhdr"><h3>🏷 Categorias de Despesas</h3><button class="mclose" onclick="closeM('mDespCat')">✕</button></div>
-  <div class="mbody">
-    <div style="margin-bottom:16px">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Adicionar Nova Categoria</div>
-      <div style="display:flex;gap:8px">
-        <input id="newDespCat2" placeholder="ex: Combustível, Ferramentas, Seguros..." style="flex:1;padding:9px 12px;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif" onkeydown="if(event.key==='Enter')addDespCat()">
-        <button class="btn btn-red btn-sm" onclick="addDespCat()">+ Adicionar</button>
-      </div>
-    </div>
-    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Categorias Existentes</div>
-    <div id="despCatsList"></div>
-  </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mDespCat')">Fechar</button></div>
-</div></div>
-</body>
-</html>
 <!-- MODAL GERIR CATEGORIAS MATERIAIS -->
 <div class="ov" id="mCats" style="z-index:999999"><div class="modal modal-lg">
   <div class="mhdr"><h3>⚙ Categorias de Materiais</h3><button class="mclose" onclick="closeM('mCats')">✕</button></div>
@@ -5585,6 +5549,21 @@ function printReciboFat(id){
   <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mCats')">Fechar</button></div>
 </div></div>
 
-
+<!-- MODAL CATEGORIAS DESPESAS -->
+<div class="ov" id="mDespCat" style="z-index:999999"><div class="modal modal-lg">
+  <div class="mhdr"><h3>🏷 Categorias de Despesas</h3><button class="mclose" onclick="closeM('mDespCat')">✕</button></div>
+  <div class="mbody">
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Adicionar Nova Categoria</div>
+      <div style="display:flex;gap:8px">
+        <input id="newDespCat2" placeholder="ex: Combustível, Ferramentas..." style="flex:1;padding:9px 12px;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px" onkeydown="if(event.key==='Enter')addDespCat()">
+        <button class="btn btn-red btn-sm" onclick="addDespCat()">+ Adicionar</button>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Categorias Existentes</div>
+    <div id="despCatsList"></div>
+  </div>
+  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mDespCat')">Fechar</button></div>
+</div></div>
 </body>
 </html>
