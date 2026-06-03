@@ -370,6 +370,48 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
     </div>
   </div>
 
+<!-- MODAL CATÁLOGO DISJUNTORES/DIFERENCIAIS -->
+<div class="overlay" id="mDisj">
+  <div class="modal" style="max-width:700px">
+    <div class="mhdr">
+      <h3>⚡ Catálogo de Disjuntores &amp; Diferenciais</h3>
+      <button class="mclose" onclick="fecharModalDisj()">✕</button>
+    </div>
+    <div class="mbody" style="padding:16px;max-height:70vh;overflow-y:auto">
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--yellow);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;font-family:'DM Mono',monospace">Tipos disponíveis</div>
+        <div id="disjCatalogo" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px"></div>
+      </div>
+      <hr style="border-color:var(--border);margin:16px 0">
+      <div style="font-size:11px;font-weight:700;color:var(--yellow);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;font-family:'DM Mono',monospace">➕ Adicionar Tipo Personalizado</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end">
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Categoria</label>
+          <select id="nd_cat" style="width:100%">
+            <option value="disjuntor">Disjuntor</option>
+            <option value="diferencial">Diferencial</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Descrição</label>
+          <input type="text" id="nd_desc" placeholder="ex: Disjuntor 25A C" style="width:100%">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Preço unit. (€)</label>
+          <input type="number" id="nd_preco" value="12" step="0.5" min="0" style="width:100%">
+        </div>
+        <div>
+          <button onclick="adicionarTipoDisj()" class="btn btn-green" style="white-space:nowrap">+ Adicionar</button>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="fecharModalDisj()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 </main>
 
 <!-- MODAL DIVISÃO -->
@@ -593,50 +635,6 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
     <div class="mfoot">
       <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-green" onclick="guardarDiv()" style="background:#10C97A;color:#000;font-weight:700">💾 Guardar Divisão</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL CATÁLOGO DISJUNTORES/DIFERENCIAIS -->
-<div class="overlay" id="mDisj">
-  <div class="modal" style="max-width:700px">
-    <div class="mhdr">
-      <h3>⚡ Catálogo de Disjuntores & Diferenciais</h3>
-      <button class="mclose" onclick="fecharModalDisj()">✕</button>
-    </div>
-    <div class="mbody" style="padding:16px;max-height:70vh;overflow-y:auto">
-      <!-- Tipos predefinidos -->
-      <div style="margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;color:var(--yellow);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;font-family:'DM Mono',monospace">Tipos disponíveis (arrasta para o orçamento)</div>
-        <div id="disjCatalogo" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px"></div>
-      </div>
-      <hr style="border-color:var(--border);margin:16px 0">
-      <!-- Adicionar tipo personalizado -->
-      <div style="font-size:11px;font-weight:700;color:var(--yellow);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;font-family:'DM Mono',monospace">➕ Adicionar Tipo Personalizado</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end">
-        <div>
-          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Categoria</label>
-          <select id="nd_cat" style="width:100%">
-            <option value="disjuntor">Disjuntor</option>
-            <option value="diferencial">Diferencial</option>
-            <option value="outro">Outro</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Descrição</label>
-          <input type="text" id="nd_desc" placeholder="ex: Disjuntor 25A C" style="width:100%">
-        </div>
-        <div>
-          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Preço unit. (€)</label>
-          <input type="number" id="nd_preco" value="12" step="0.5" min="0" style="width:100%">
-        </div>
-        <div>
-          <button onclick="adicionarTipoDisj()" class="btn btn-green" style="white-space:nowrap">+ Adicionar</button>
-        </div>
-      </div>
-    </div>
-    <div class="mfoot">
-      <button class="btn btn-ghost" onclick="fecharModalDisj()">Fechar</button>
     </div>
   </div>
 </div>
@@ -1630,113 +1628,6 @@ function guardarDiv() {
 }
 
 function resetPrecos() {
-
-// ── Catálogo Disjuntores/Diferenciais ───────────────────
-// Tipos base (sempre presentes)
-const _DISJ_BASE = [
-  {id:'disj_10A', cat:'disjuntor', desc:'Disjuntor 10A (curva C)', preco:8.00, icone:'🔒', builtin:true},
-  {id:'disj_16A', cat:'disjuntor', desc:'Disjuntor 16A (curva C)', preco:9.00, icone:'🔒', builtin:true},
-  {id:'disj_20A', cat:'disjuntor', desc:'Disjuntor 20A (curva C)', preco:10.00, icone:'🔒', builtin:true},
-  {id:'disj_25A', cat:'disjuntor', desc:'Disjuntor 25A (curva C)', preco:11.00, icone:'🔒', builtin:true},
-  {id:'disj_32A', cat:'disjuntor', desc:'Disjuntor 32A (curva C)', preco:12.50, icone:'🔒', builtin:true},
-  {id:'disj_40A', cat:'disjuntor', desc:'Disjuntor 40A (curva C)', preco:14.00, icone:'🔒', builtin:true},
-  {id:'dif_25A30', cat:'diferencial', desc:'Diferencial 25A 30mA (tipo A)', preco:45.00, icone:'⚡', builtin:true},
-  {id:'dif_40A30', cat:'diferencial', desc:'Diferencial 40A 30mA (tipo A)', preco:52.00, icone:'⚡', builtin:true},
-  {id:'dif_63A30', cat:'diferencial', desc:'Diferencial 63A 30mA (tipo A)', preco:65.00, icone:'⚡', builtin:true},
-  {id:'dif_25A300', cat:'diferencial', desc:'Diferencial 25A 300mA (tipo AC)', preco:35.00, icone:'⚡', builtin:true},
-  {id:'dif_40A300', cat:'diferencial', desc:'Diferencial 40A 300mA (tipo AC)', preco:42.00, icone:'⚡', builtin:true},
-];
-
-let _disjCatalogo = JSON.parse(localStorage.getItem('mrc_disj_catalogo')||'[]');
-
-function _getDisjAll() {
-  // Merge base com personalizados
-  const todos = [..._DISJ_BASE];
-  _disjCatalogo.forEach(c => {
-    if(!todos.find(t=>t.id===c.id)) todos.push(c);
-  });
-  return todos;
-}
-
-function salvarDisjCatalogo() {
-  localStorage.setItem('mrc_disj_catalogo', JSON.stringify(_disjCatalogo));
-}
-
-function abrirModalDisj() {
-  renderCatalogo();
-  const m = document.getElementById('mDisj');
-  if(m) { m.classList.add('open'); }
-}
-
-function fecharModalDisj() {
-  const m = document.getElementById('mDisj');
-  if(m) m.classList.remove('open');
-}
-
-function renderCatalogo() {
-  const wrap = document.getElementById('disjCatalogo');
-  if(!wrap) return;
-  const todos = _getDisjAll();
-  const mat_m = 1 + (parseFloat(document.getElementById('p_margem')?.value||20)/100);
-
-  // Agrupar por categoria
-  const grupos = {};
-  todos.forEach(t => {
-    if(!grupos[t.cat]) grupos[t.cat] = [];
-    grupos[t.cat].push(t);
-  });
-
-  let html = '';
-  const catLabels = {disjuntor:'🔒 Disjuntores', diferencial:'⚡ Diferenciais', outro:'🔧 Outros'};
-  Object.keys(grupos).forEach(cat => {
-    html += `<div style="grid-column:1/-1;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:6px;margin-bottom:2px">${catLabels[cat]||cat}</div>`;
-    grupos[cat].forEach(t => {
-      const precoFinal = (t.preco * mat_m).toFixed(2);
-      const isCustom = !t.builtin;
-      html += `<div style="background:var(--s3);border:1.5px solid var(--border);border-radius:10px;padding:10px;position:relative;cursor:default">
-        <div style="font-size:18px;margin-bottom:4px">${t.icone}</div>
-        <div style="font-size:11px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:4px">${t.desc}</div>
-        <div style="font-size:12px;color:var(--yellow);font-family:'DM Mono',monospace;font-weight:700">${precoFinal}€</div>
-        <div style="font-size:10px;color:var(--muted)">(s/ margem: ${t.preco.toFixed(2)}€)</div>
-        ${isCustom ? `<button onclick="removerTipoDisj('${t.id}')" title="Remover" style="position:absolute;top:6px;right:6px;background:var(--s2);border:none;border-radius:4px;color:var(--muted);cursor:pointer;font-size:11px;padding:2px 5px" onmouseover="this.style.color='#E85454'" onmouseout="this.style.color='var(--muted)'">✕</button>`:''}
-        ${t.builtin ? `<div style="position:absolute;top:6px;right:6px;font-size:9px;color:var(--muted);font-family:'DM Mono',monospace">BASE</div>`:''}
-      </div>`;
-    });
-  });
-  wrap.innerHTML = html;
-}
-
-function adicionarTipoDisj() {
-  const cat   = document.getElementById('nd_cat').value;
-  const desc  = document.getElementById('nd_desc').value.trim();
-  const preco = parseFloat(document.getElementById('nd_preco').value)||0;
-
-  if(!desc) { toast('Escreve uma descrição para o tipo.'); return; }
-  if(preco <= 0) { toast('Preço deve ser maior que 0.'); return; }
-
-  const id = 'custom_' + Date.now();
-  const icone = cat==='disjuntor' ? '🔒' : cat==='diferencial' ? '⚡' : '🔧';
-  _disjCatalogo.push({id, cat, desc, preco, icone, builtin:false});
-  salvarDisjCatalogo();
-  renderCatalogo();
-  document.getElementById('nd_desc').value = '';
-  toast('✅ Tipo adicionado ao catálogo!');
-}
-
-function removerTipoDisj(id) {
-  if(!confirm('Remover este tipo do catálogo?')) return;
-  _disjCatalogo = _disjCatalogo.filter(t=>t.id!==id);
-  salvarDisjCatalogo();
-  renderCatalogo();
-  toast('Tipo removido.');
-}
-
-// Fechar modal ao clicar fora
-document.addEventListener('DOMContentLoaded', function() {
-  const m = document.getElementById('mDisj');
-  if(m) m.addEventListener('click', function(e){ if(e.target===m) fecharModalDisj(); });
-});
-
   document.getElementById('p_tomada').value=25;
   document.getElementById('p_interruptor').value=20;
   document.getElementById('p_luz').value=20;
@@ -2318,6 +2209,69 @@ function editarPrecos(){
   }
   if(typeof toast === 'function') toast('Edita os preços — o total actualiza automaticamente!');
 }
+
+// ── Catálogo Disjuntores/Diferenciais ───────────────────
+const _DISJ_BASE = [
+  {id:'disj_10A',  cat:'disjuntor',  desc:'Disjuntor 10A (curva C)',         preco:8.00,  icone:'🔒', builtin:true},
+  {id:'disj_16A',  cat:'disjuntor',  desc:'Disjuntor 16A (curva C)',         preco:9.00,  icone:'🔒', builtin:true},
+  {id:'disj_20A',  cat:'disjuntor',  desc:'Disjuntor 20A (curva C)',         preco:10.00, icone:'🔒', builtin:true},
+  {id:'disj_25A',  cat:'disjuntor',  desc:'Disjuntor 25A (curva C)',         preco:11.00, icone:'🔒', builtin:true},
+  {id:'disj_32A',  cat:'disjuntor',  desc:'Disjuntor 32A (curva C)',         preco:12.50, icone:'🔒', builtin:true},
+  {id:'disj_40A',  cat:'disjuntor',  desc:'Disjuntor 40A (curva C)',         preco:14.00, icone:'🔒', builtin:true},
+  {id:'dif_25A30', cat:'diferencial',desc:'Diferencial 25A 30mA (tipo A)',   preco:45.00, icone:'⚡', builtin:true},
+  {id:'dif_40A30', cat:'diferencial',desc:'Diferencial 40A 30mA (tipo A)',   preco:52.00, icone:'⚡', builtin:true},
+  {id:'dif_63A30', cat:'diferencial',desc:'Diferencial 63A 30mA (tipo A)',   preco:65.00, icone:'⚡', builtin:true},
+  {id:'dif_25A300',cat:'diferencial',desc:'Diferencial 25A 300mA (tipo AC)', preco:35.00, icone:'⚡', builtin:true},
+  {id:'dif_40A300',cat:'diferencial',desc:'Diferencial 40A 300mA (tipo AC)', preco:42.00, icone:'⚡', builtin:true},
+];
+let _disjCatalogo = JSON.parse(localStorage.getItem('mrc_disj_catalogo')||'[]');
+function _getDisjAll(){const todos=[..._DISJ_BASE];_disjCatalogo.forEach(c=>{if(!todos.find(t=>t.id===c.id))todos.push(c);});return todos;}
+function salvarDisjCatalogo(){localStorage.setItem('mrc_disj_catalogo',JSON.stringify(_disjCatalogo));}
+function abrirModalDisj(){renderCatalogo();document.getElementById('mDisj').classList.add('open');}
+function fecharModalDisj(){document.getElementById('mDisj').classList.remove('open');}
+function renderCatalogo(){
+  const wrap=document.getElementById('disjCatalogo'); if(!wrap)return;
+  const mat_m=1+(parseFloat(document.getElementById('p_margem')?.value||20)/100);
+  const todos=_getDisjAll();
+  const grupos={};
+  todos.forEach(t=>{if(!grupos[t.cat])grupos[t.cat]=[];grupos[t.cat].push(t);});
+  const catLabels={disjuntor:'🔒 Disjuntores',diferencial:'⚡ Diferenciais',outro:'🔧 Outros'};
+  let html='';
+  Object.keys(grupos).forEach(cat=>{
+    html+=`<div style="grid-column:1/-1;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:8px;margin-bottom:2px">${catLabels[cat]||cat}</div>`;
+    grupos[cat].forEach(t=>{
+      const pf=(t.preco*mat_m).toFixed(2);
+      html+=`<div style="background:var(--s3);border:1.5px solid var(--border);border-radius:10px;padding:10px;position:relative">
+        <div style="font-size:18px;margin-bottom:4px">${t.icone}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:4px">${t.desc}</div>
+        <div style="font-size:12px;color:var(--yellow);font-family:'DM Mono',monospace;font-weight:700">${pf}€</div>
+        <div style="font-size:10px;color:var(--muted)">s/ margem: ${t.preco.toFixed(2)}€</div>
+        ${!t.builtin?`<button onclick="removerTipoDisj('${t.id}')" style="position:absolute;top:5px;right:5px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 4px" title="Remover">✕</button>`:''}
+        ${t.builtin?`<div style="position:absolute;top:5px;right:5px;font-size:9px;color:var(--muted);font-family:'DM Mono',monospace">BASE</div>`:''}
+      </div>`;
+    });
+  });
+  wrap.innerHTML=html;
+}
+function adicionarTipoDisj(){
+  const cat=document.getElementById('nd_cat').value;
+  const desc=document.getElementById('nd_desc').value.trim();
+  const preco=parseFloat(document.getElementById('nd_preco').value)||0;
+  if(!desc){toast('Escreve uma descrição.');return;}
+  if(preco<=0){toast('Preço deve ser > 0.');return;}
+  const icone=cat==='disjuntor'?'🔒':cat==='diferencial'?'⚡':'🔧';
+  _disjCatalogo.push({id:'custom_'+Date.now(),cat,desc,preco,icone,builtin:false});
+  salvarDisjCatalogo(); renderCatalogo();
+  document.getElementById('nd_desc').value='';
+  toast('✅ Tipo adicionado!');
+}
+function removerTipoDisj(id){
+  if(!confirm('Remover este tipo?'))return;
+  _disjCatalogo=_disjCatalogo.filter(t=>t.id!==id);
+  salvarDisjCatalogo(); renderCatalogo(); toast('Tipo removido.');
+}
+document.getElementById('mDisj').addEventListener('click',function(e){if(e.target===this)fecharModalDisj();});
+
 </script>
 
 <!-- BARRA TOTAL FIXO -->
