@@ -579,6 +579,16 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
               <option value="24">24V (com driver)</option>
             </select>
           </div>
+          <div class="fg" id="ledCorDiv" style="display:none">
+            <label>Temperatura de Cor</label>
+            <select id="f_led_cor" onchange="previewDiv()">
+              <option value="2700">2700K — Quente Relaxante 🟠</option>
+              <option value="3000">3000K — Branco Quente 🟡</option>
+              <option value="4000" selected>4000K — Branco Neutro ⚪</option>
+              <option value="5000">5000K — Daylight Natural 🌤</option>
+              <option value="6000">6000K — Branco Frio 🔵</option>
+            </select>
+          </div>
         </div>
         <div id="ledPreview" style="font-size:11px;color:var(--muted);margin-top:8px;font-family:'DM Mono',monospace"></div>
       </div>
@@ -980,7 +990,7 @@ function renderDivs() {
     return `<div class="div-item">
       <div>
         <div class="div-nome">${d.nome}</div>
-        <div class="div-m2">${d.m2}m² · 📐${d.dist||5}m QS · 🔌${c.tomadas} tomadas · 💡${c.luzes} luzes · ⚡${(d.int_simples||0)+(d.int_comut||0)+(d.int_inver||0)||c.interruptores} cmd.${(d.led_tipo&&d.led_tipo!=='normal')?' · 💡LED':''}${(d.tmista||d.trvsat||d.tv||d.rj45)?' · 📡ATI'+(d.tmista?' '+d.tmista+'×mista':''):''}${d.camaras?' · 🔒CAM':''}</div>
+        <div class="div-m2">${d.m2}m² · 📐${d.dist||5}m QS · 🔌${c.tomadas} tomadas · 💡${c.luzes} luzes · ⚡${(d.int_simples||0)+(d.int_comut||0)+(d.int_inver||0)||c.interruptores} cmd.${(d.led_tipo&&d.led_tipo!=='normal')?' · 💡LED '+({'2700':'🟠','3000':'🟡','4000':'⚪','5000':'🌤','6000':'🔵'}[d.led_cor||'4000']||'')+(d.led_cor||'4000')+'K':''}${(d.tmista||d.trvsat||d.tv||d.rj45)?' · 📡ATI'+(d.tmista?' '+d.tmista+'×mista':''):''}${d.camaras?' · 🔒CAM':''}</div>
         ${d.notas?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${d.notas}</div>`:''}
       </div>
       <span class="div-tipo-badge">${TIPO_NOME[d.tipo]||d.tipo}</span>
@@ -1490,14 +1500,18 @@ function previewDiv() {
   // Show/hide driver field
   const driverDiv = document.getElementById('ledDriverDiv');
   if(driverDiv) driverDiv.style.display = (ledTipo==='led_enc'||ledTipo==='led_sal'||ledTipo==='led_car') ? 'flex' : 'none';
+  const _ledCorDiv = document.getElementById('ledCorDiv');
+  if(_ledCorDiv) _ledCorDiv.style.display = ledTipo!=='normal' ? 'flex' : 'none';
   
   let ledInfo = '';
   if(ledTipo !== 'normal') {
     const tipoLabel = {led_enc:'Encastrados',led_sal:'Salientes',led_car:'Carril',led_fita:'Fita LED'};
     _ilumCustom.forEach(t=>{ tipoLabel[t.id]=t.label; });
+    const _ledCor = document.getElementById('f_led_cor')?.value||'4000';
+    const _corLabel = {'2700':'2700K🟠','3000':'3000K🟡','4000':'4000K⚪','5000':'5000K🌤','6000':'6000K🔵'};
     ledInfo = `<br>💡 LED ${tipoLabel[ledTipo]||''}: ${nFocos} focos × ${ledPot}W = ${potTotal}W total${needsDriver&&nDrivers?` · ${nDrivers} driver(s)${ledTensao}V`:''}`;
     document.getElementById('ledPreview').innerHTML = 
-      `⚡ ${nFocos} focos de ${ledPot}W &nbsp;·&nbsp; Total: ${potTotal}W &nbsp;·&nbsp; Cabo: ${Math.ceil(m2*0.6)}m 1.5mm²${needsDriver&&nDrivers?' &nbsp;·&nbsp; '+nDrivers+' driver(s)':''}`;
+      `⚡ ${nFocos}× ${ledPot}W &nbsp;·&nbsp; ${potTotal}W total &nbsp;·&nbsp; ${_corLabel[_ledCor]||_ledCor+'K'} &nbsp;·&nbsp; ${Math.ceil(m2*0.6)}m cabo 1.5mm²${needsDriver&&nDrivers?' &nbsp;·&nbsp; '+nDrivers+' driver(s)':''}`.replace('undefined','');
   } else {
     document.getElementById('ledPreview').innerHTML = '';
   }
@@ -1586,6 +1600,7 @@ function abrirModal(div) {
   document.getElementById('f_led_pot').value = div ? (div.led_pot||7) : 7;
   document.getElementById('f_led_esp').value = div ? (div.led_esp||2) : 2;
   document.getElementById('f_led_tensao').value = div ? (div.led_tensao||'230') : '230';
+  const _elCor = document.getElementById('f_led_cor'); if(_elCor) _elCor.value = div ? (div.led_cor||'4000') : '4000';
   document.getElementById('f_int_simples').value = div ? (div.int_simples||0) : 0;
   document.getElementById('f_int_comut').value = div ? (div.int_comut||0) : 0;
   document.getElementById('f_int_inver').value = div ? (div.int_inver||0) : 0;
@@ -1644,6 +1659,7 @@ function guardarDiv() {
     led_pot: parseInt(document.getElementById('f_led_pot')?.value)||7,
     led_esp: parseFloat(document.getElementById('f_led_esp')?.value)||2,
     led_tensao: gv('f_led_tensao')||'230',
+    led_cor: gv('f_led_cor')||'4000',
     int_simples: parseInt(document.getElementById('f_int_simples')?.value)||0,
     int_comut: parseInt(document.getElementById('f_int_comut')?.value)||0,
     int_inver: parseInt(document.getElementById('f_int_inver')?.value)||0,
