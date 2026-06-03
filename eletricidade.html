@@ -2400,7 +2400,7 @@ function renderIlumModal(){
   const custom = document.getElementById('ilumCustom');
   if(custom){
     if(_ilumCustom.length===0){
-      custom.innerHTML='<div style="color:var(--muted);font-size:12px;font-family:'DM Mono',monospace;padding:6px 0">Nenhum tipo personalizado ainda.</div>';
+      custom.innerHTML='<div style="color:var(--muted);font-size:12px;font-family:monospace;padding:6px 0">Nenhum tipo personalizado ainda.</div>';
     } else {
       custom.innerHTML = _ilumCustom.map(t=>`
         <div style="background:var(--s3);border:1.5px solid var(--border2);border-radius:10px;padding:10px;position:relative">
