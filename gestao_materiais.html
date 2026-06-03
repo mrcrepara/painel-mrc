@@ -142,6 +142,29 @@ input[type=text]:focus,input[type=number]:focus,select.form-sel:focus{outline:no
 .orc-total-card.margem .orc-total-val{color:var(--green)}
 .orc-actions{display:flex;gap:8px}
 
+
+/* ── Modal Catálogos Fabricantes ── */
+.fab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:4px}
+.fab-card{background:var(--s3);border:2px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s}
+.fab-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.fab-card.active{border-color:var(--yellow)}
+.fab-icon{font-size:28px;margin-bottom:6px}
+.fab-nome{font-size:12px;font-weight:700;color:#fff}
+.fab-count{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.cat-search{width:100%;background:var(--s2);border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--mono);font-size:13px;padding:9px 14px;margin:12px 0 8px}
+.cat-search:focus{outline:none;border-color:var(--yellow)}
+.cat-filter{background:var(--s2);border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px}
+.cat-results{max-height:340px;overflow-y:auto}
+.cat-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);border-radius:6px;transition:.1s}
+.cat-row:hover{background:var(--s3)}
+.cat-row-ref{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:80px;flex-shrink:0}
+.cat-row-desc{flex:1;font-size:12px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-row-preco{font-family:var(--mono);font-size:12px;color:var(--yellow);font-weight:700;min-width:55px;text-align:right;flex-shrink:0}
+.cat-row-btn{background:var(--green);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.cat-row-btn:hover{background:#0eb36a}
+.cat-empty{text-align:center;padding:30px;color:var(--muted);font-size:13px;font-family:var(--mono)}
+.cat-loading{text-align:center;padding:20px;color:var(--muted);font-size:13px}
+
 /* ── TOAST ── */
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--s2);border:1px solid var(--border2);color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;opacity:0;transition:.3s;pointer-events:none;z-index:9999;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -171,6 +194,7 @@ input[type=text]:focus,input[type=number]:focus,select.form-sel:focus{outline:no
     <div id="syncBadge" class="sync-badge loading">⏳ A ligar...</div>
     <button class="btn btn-ghost btn-sm" onclick="abrirModalImport()">⬆ Importar</button>
     <button class="btn btn-ghost btn-sm" onclick="exportarExcel()">⬇ Excel</button>
+    <button class="btn btn-ghost btn-sm" onclick="abrirModalCatalogos()" style="border-color:var(--teal);color:var(--teal)">🏭 Catálogos</button>
     <button class="btn btn-yellow btn-sm" onclick="abrirModalArtigo()">+ Artigo</button>
   </div>
 </header>
@@ -775,6 +799,263 @@ function exportarExcel(){
 carregarDados();
 atualizarFAB();
 if(_lista.length) renderPanel();
+
+// ── Catálogos de Fabricantes ─────────────────────────────────────────
+const _FABRICANTES = [
+  {key:'cat_televes', nome:'Télévés',  icone:'📡', cor:'#E85454', artigos:null},
+  {key:'cat_tev2',    nome:'TEV2',     icone:'🔌', cor:'#3B8BEB', artigos:null},
+  {key:'cat_hager',   nome:'Hager',    icone:'⚡', cor:'#F5C842', artigos:null},
+  {key:'cat_aslo',    nome:'ASLO',     icone:'🔧', cor:'#10C97A', artigos:null},
+  {key:'cat_efapel',  nome:'Efapel',   icone:'💡', cor:'#1FC8C0', artigos:null},
+];
+let _catAtual = null;
+let _catFiltrado = [];
+let _catItemPendente = null;
+
+function abrirModalCatalogos(){
+  renderFabGrid();
+  document.getElementById('mCat').classList.add('open');
+}
+function fecharModalCatalogos(){
+  document.getElementById('mCat').classList.remove('open');
+}
+
+function renderFabGrid(){
+  const grid = document.getElementById('fabGrid');
+  grid.innerHTML = _FABRICANTES.map(f => `
+    <div class="fab-card ${_catAtual===f.key?'active':''}" onclick="selecionarFabricante('${f.key}')" style="${_catAtual===f.key?'border-color:'+f.cor:''}">
+      <div class="fab-icon">${f.icone}</div>
+      <div class="fab-nome">${f.nome}</div>
+      <div class="fab-count">${f.artigos ? f.artigos.length+' artigos' : '—'}</div>
+    </div>`).join('');
+}
+
+async function selecionarFabricante(key){
+  _catAtual = key;
+  renderFabGrid();
+  const fab = _FABRICANTES.find(f=>f.key===key);
+  document.getElementById('catSearchWrap').style.display = 'block';
+  document.getElementById('catMarcaLabel').textContent = fab.icone + ' ' + fab.nome;
+  document.getElementById('catSearch').value = '';
+  document.getElementById('catResults').innerHTML = '<div class="cat-loading">⏳ A carregar...</div>';
+
+  if(!fab.artigos){
+    try{
+      const r = await fetch(key+'.json');
+      if(!r.ok) throw new Error('Ficheiro não encontrado');
+      const data = await r.json();
+      fab.artigos = data.artigos;
+      renderFabGrid();
+      // Preencher filtro de categorias
+      const cats = [...new Set(fab.artigos.map(a=>a.c||'OUTROS'))].sort();
+      const sel = document.getElementById('catFiltCat');
+      sel.innerHTML = '<option value="">Todas as categorias</option>' +
+        cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+    } catch(e){
+      document.getElementById('catResults').innerHTML = `<div class="cat-empty">⚠ Ficheiro ${key}.json não encontrado.<br>Coloca-o na mesma pasta que este ficheiro.</div>`;
+      return;
+    }
+  } else {
+    // Já carregado — actualizar categorias
+    const cats = [...new Set(fab.artigos.map(a=>a.c||'OUTROS'))].sort();
+    const sel = document.getElementById('catFiltCat');
+    sel.innerHTML = '<option value="">Todas as categorias</option>' +
+      cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
+  filtrarCatalogo();
+  document.getElementById('catSearch').focus();
+}
+
+function filtrarCatalogo(){
+  if(!_catAtual) return;
+  const fab = _FABRICANTES.find(f=>f.key===_catAtual);
+  if(!fab || !fab.artigos) return;
+  const q = document.getElementById('catSearch').value.toLowerCase().trim();
+  const cat = document.getElementById('catFiltCat').value;
+
+  if(!q && !cat){
+    _catFiltrado = [];
+    document.getElementById('catCountLabel').textContent = `${fab.artigos.length} artigos disponíveis — pesquisa para encontrar`;
+    document.getElementById('catResults').innerHTML = '<div class="cat-empty">Escreve para pesquisar ou filtra por categoria...</div>';
+    return;
+  }
+
+  _catFiltrado = fab.artigos.filter(a=>{
+    if(cat && a.c !== cat) return false;
+    if(q){
+      const ref = (a.r||'').toLowerCase();
+      const desc = (a.d||'').toLowerCase();
+      const ean = (a.ean||'').toLowerCase();
+      return ref.includes(q) || desc.includes(q) || ean.includes(q);
+    }
+    return true;
+  });
+
+  const max = 80; // Mostrar máx 80 resultados para performance
+  const mostra = _catFiltrado.slice(0, max);
+  document.getElementById('catCountLabel').textContent =
+    _catFiltrado.length === 0 ? 'Nenhum resultado' :
+    `${_catFiltrado.length} resultado${_catFiltrado.length!==1?'s':''}${_catFiltrado.length>max?' (a mostrar os primeiros '+max+')':''}`;
+
+  if(_catFiltrado.length === 0){
+    document.getElementById('catResults').innerHTML = '<div class="cat-empty">Nenhum artigo encontrado.</div>';
+    return;
+  }
+
+  const fab_obj = _FABRICANTES.find(f=>f.key===_catAtual);
+  document.getElementById('catResults').innerHTML = mostra.map(a => `
+    <div class="cat-row">
+      <span class="cat-row-ref">${a.r||'—'}</span>
+      <span class="cat-row-desc" title="${a.d||''}">${a.d||'—'}</span>
+      <span class="cat-row-preco">${(a.p||0).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2})}€</span>
+      <button class="cat-row-btn" onclick="abrirImportCat('${(a.r||'').replace(/'/g,'\\\'')}','${(a.d||'').replace(/'/g,'\\\'')}',${a.p||0},'${a.u||'UN'}')">+ Adicionar</button>
+    </div>`).join('');
+}
+
+// ── Import de artigo do catálogo ──────────────────────────────────────
+function abrirImportCat(ref, desc, preco, un){
+  _catItemPendente = {ref, desc, preco, un};
+  document.getElementById('mImportCatTit').textContent = '➕ Adicionar ao meu catálogo';
+  document.getElementById('icDesc').textContent = desc;
+  document.getElementById('icRef').textContent = 'Ref: '+ref;
+  document.getElementById('icCusto').value = preco.toFixed(2);
+  // Sugerir PVP com margem de 30%
+  const pvpSugerido = (preco * 1.3).toFixed(2);
+  document.getElementById('icPvp').value = pvpSugerido;
+  document.getElementById('icUn').value = un;
+  calcICMargem();
+  document.getElementById('mImportCat').classList.add('open');
+  setTimeout(()=>document.getElementById('icPvp').focus(), 100);
+}
+
+function fecharModalImportCat(){
+  document.getElementById('mImportCat').classList.remove('open');
+}
+
+function calcICMargem(){
+  const c = parseFloat(document.getElementById('icCusto').value)||0;
+  const p = parseFloat(document.getElementById('icPvp').value)||0;
+  const el = document.getElementById('icMargemPreview');
+  if(p > 0){
+    const mg = ((p-c)/p*100).toFixed(1);
+    const lucro = (p-c).toFixed(2);
+    el.style.display='block';
+    el.textContent = `Margem: ${mg}% · Lucro: ${eur(parseFloat(lucro))} por unidade`;
+  } else { el.style.display='none'; }
+}
+
+async function confirmarImportCat(){
+  if(!_catItemPendente) return;
+  const obj = {
+    ref:  _catItemPendente.ref,
+    desc: _catItemPendente.desc.toUpperCase(),
+    cat:  document.getElementById('icCat').value,
+    un:   document.getElementById('icUn').value,
+    custo: parseFloat(document.getElementById('icCusto').value)||0,
+    pvp:   parseFloat(document.getElementById('icPvp').value)||0,
+    stock: 1, stockmin: 0, ean: ''
+  };
+  if(!obj.desc){ toast('Sem descrição','r'); return; }
+  fecharModalImportCat();
+  try{
+    const ref = await _col.add(obj);
+    _data.push({_id:ref.id, ...obj});
+    salvarLocal();
+    renderTudo();
+    toast('✅ '+obj.desc.substring(0,30)+' adicionado!');
+  } catch(e){ toast('Erro: '+e.message,'r'); }
+}
+
+// Fechar ao clicar fora
+['mCat','mImportCat'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('open'); });
+});
+
 </script>
+<!-- MODAL CATÁLOGOS FABRICANTES -->
+<div class="overlay" id="mCat">
+  <div class="modal" style="max-width:720px">
+    <div class="mhdr">
+      <h3>🏭 Catálogos de Fabricantes</h3>
+      <button class="mclose" onclick="fecharModalCatalogos()">✕</button>
+    </div>
+    <div class="mbody" style="padding:16px;max-height:80vh;overflow-y:auto">
+      <!-- Escolha de marca -->
+      <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-family:var(--mono);margin-bottom:10px">Escolhe o fabricante</div>
+      <div class="fab-grid" id="fabGrid"></div>
+      <!-- Pesquisa -->
+      <div id="catSearchWrap" style="display:none;margin-top:12px">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="text" class="cat-search" style="margin:0;flex:1;min-width:180px" id="catSearch" placeholder="Pesquisar por ref. ou descrição..." oninput="filtrarCatalogo()">
+          <select class="cat-filter" id="catFiltCat" onchange="filtrarCatalogo()">
+            <option value="">Todas as categorias</option>
+          </select>
+        </div>
+        <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin:8px 0 4px" id="catCountLabel"></div>
+        <div class="cat-results" id="catResults">
+          <div class="cat-empty">Escreve para pesquisar...</div>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <span style="font-size:11px;color:var(--muted);font-family:var(--mono)" id="catMarcaLabel"></span>
+      <button class="btn btn-ghost" onclick="fecharModalCatalogos()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR DO CATÁLOGO -->
+<div class="overlay" id="mImportCat">
+  <div class="modal" style="max-width:480px">
+    <div class="mhdr">
+      <h3 id="mImportCatTit">Adicionar ao meu catálogo</h3>
+      <button class="mclose" onclick="fecharModalImportCat()">✕</button>
+    </div>
+    <div class="mbody">
+      <div style="background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:4px">
+        <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:2px">Artigo</div>
+        <div id="icDesc" style="font-weight:700;font-size:13px;color:#fff"></div>
+        <div id="icRef" style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:2px"></div>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Preço custo (€) <span style="color:var(--muted);font-weight:400">— catálogo</span></label>
+          <input type="number" id="icCusto" step="0.01" min="0" oninput="calcICMargem()">
+        </div>
+        <div class="fg">
+          <label>PVP (€) <span style="color:var(--muted);font-weight:400">— teu preço</span></label>
+          <input type="number" id="icPvp" step="0.01" min="0" oninput="calcICMargem()">
+        </div>
+      </div>
+      <div id="icMargemPreview" style="font-size:12px;color:var(--teal);font-family:var(--mono);padding:6px 10px;background:rgba(31,200,192,.06);border-radius:6px;display:none"></div>
+      <div class="frow">
+        <div class="fg">
+          <label>Categoria</label>
+          <select id="icCat" class="form-sel">
+            <option value="MATERIAL ELETRICO">Material Elétrico</option>
+            <option value="FERRAGEM">Ferragem</option>
+            <option value="INTERNET/SATELITE">Internet/Satélite</option>
+            <option value="PICHELARIA">Pichelaria</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Unidade</label>
+          <select id="icUn" class="form-sel">
+            <option value="UN">UN</option>
+            <option value="M">M</option>
+            <option value="KG">KG</option>
+            <option value="CX">CX</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="fecharModalImportCat()">Cancelar</button>
+      <button class="btn btn-green" onclick="confirmarImportCat()">✅ Guardar no meu catálogo</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
