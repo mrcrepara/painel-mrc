@@ -5464,7 +5464,7 @@ function imFiltrar(){
   const mats=ld('mat');
   document.getElementById('imStatus').textContent=_imFiltrado.length===0?'Nenhum resultado':_imFiltrado.length+' resultado'+ (_imFiltrado.length!==1?'s':'')+(_imFiltrado.length>max?' (a mostrar os primeiros '+max+')':'');
   if(!_imFiltrado.length){document.getElementById('imResults').innerHTML='<div style="text-align:center;padding:20px;color:var(--muted)">Nenhum artigo encontrado.</div>';return;}
-  document.getElementById('imResults').innerHTML=mostrar.map(a=>{
+  document.getElementById('imResults').innerHTML=mostrar.map((a,i)=>{
     const existe=mats.find(m=>m.ref===(a.r||'').toUpperCase());
     return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border);border-radius:6px">'
       +'<span style="font-family:monospace;font-size:10px;color:var(--muted);min-width:80px;flex-shrink:0">'+(a.r||'—')+'</span>'
@@ -5472,13 +5472,16 @@ function imFiltrar(){
       +'<span style="font-family:monospace;font-size:12px;color:var(--yellow);font-weight:700;min-width:52px;text-align:right;flex-shrink:0">'+((a.p||0).toLocaleString('pt-PT',{minimumFractionDigits:2}))+'€</span>'
       +(existe
         ?'<span style="background:rgba(245,200,66,.15);color:var(--yellow);font-size:10px;padding:3px 8px;border-radius:5px;flex-shrink:0;font-family:monospace">✓ já tens</span>'
-        :'<button onclick="imAdicionar(''+encodeURIComponent(JSON.stringify(a))+'')" style="background:var(--green);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0">+ Adicionar</button>')
+        :'<button data-idx="'+i+'" onclick="imAdicionarIdx(this.dataset.idx)" style="background:var(--green);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0">+ Adicionar</button>')
       +'</div>';
   }).join('');
 }
 
-function imAdicionar(enc){
-  const a=JSON.parse(decodeURIComponent(enc));
+function imAdicionarIdx(idx){
+  const a=_imFiltrado[parseInt(idx)];
+  if(a) imAdicionar(a);
+}
+function imAdicionar(a){
   _imPendente=a;
   document.getElementById('imcDesc').textContent=a.d||'—';
   document.getElementById('imcRef').textContent='Ref: '+(a.r||'—');
