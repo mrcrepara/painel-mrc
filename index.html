@@ -5472,7 +5472,7 @@ function imFiltrar(){
       +'<span style="font-family:monospace;font-size:12px;color:var(--yellow);font-weight:700;min-width:52px;text-align:right;flex-shrink:0">'+((a.p||0).toLocaleString('pt-PT',{minimumFractionDigits:2}))+'€</span>'
       +(existe
         ?'<span style="background:rgba(245,200,66,.15);color:var(--yellow);font-size:10px;padding:3px 8px;border-radius:5px;flex-shrink:0;font-family:monospace">✓ já tens</span>'
-        :'<button onclick="imAdicionar(''+encodeURIComponent(JSON.stringify(a))+'')" style="background:var(--green);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0">+ Adicionar</button>')
+        :'<button onclick="imAdicionar(&quot;'+encodeURIComponent(JSON.stringify(a))+'&quot;)" style="background:var(--green);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0">+ Adicionar</button>')
       +'</div>';
   }).join('');
 }
