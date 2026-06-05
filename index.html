@@ -86,7 +86,7 @@
         try{localStorage.setItem(K[shortKey]||fbKey,JSON.stringify(val));}catch(e){}
         changed=true;
       });
-      if(changed&&typeof renderAll==='function')setTimeout(renderAll,100);
+      if(changed&&typeof renderAll==='function'){setTimeout(renderAll,100);setTimeout(fillCliSel,150);setTimeout(fillFatSel,150);}
     },function(e){console.warn('FB realtime:',e);});
   };
 })();
@@ -1238,7 +1238,7 @@ function goPage(p){
   CurPage=p;cancelDel();closeU();
   RENDERS[p]?.();
 }
-function renderAll(){RENDERS[CurPage]?.();notifBadge()}
+function renderAll(){RENDERS[CurPage]?.();notifBadge();fillCliSel();fillFatSel();}
 function setDate(){
   const d=new Date();
   const days=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
