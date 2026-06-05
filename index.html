@@ -318,7 +318,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
   <div class="ni" data-p="os" onclick="goPage('os')"><span style="margin-right:4px">📋</span>Ordens de Serviço</div>
   <div class="ni" data-p="servicos" onclick="goPage('servicos')"><span style="margin-right:4px">🛠</span>Catálogo de Serviços</div>
   <div class="ni" onclick="window.open('os.html','_blank')" style="cursor:pointer"><span style="margin-right:4px">📋</span>Ordens de Serviço ↗</div>
-  <div class="ni" onclick="window.open('agenda.html','_blank')" style="cursor:pointer"><span style="margin-right:4px">📅</span>Agenda ↗</div>
+
   <div class="ni" onclick="window.open('eletricidade.html','_blank')" style="cursor:pointer"><span style="margin-right:4px">⚡</span>Instalações Elétricas ↗</div>
   <div class="ni" onclick="window.open('gestao_materiais.html','_blank')" style="cursor:pointer"><span style="margin-right:4px">📦</span>Catálogo Materiais ↗</div>
   <div class="ni" data-p="backup" onclick="goPage('backup')">💾 Backup</div>
@@ -696,36 +696,13 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <div class="page" id="page-agenda">
   <div class="pg-hdr">
     <div><h1>📅 Agenda</h1><p>Compromissos, entregas e lembretes</p></div>
-    <button class="btn btn-blue" onclick="openM('mEvt')">+ Novo Evento</button>
+    <button class="btn btn-blue" onclick="window.open('agenda.html','_blank')">↗ Abrir Agenda</button>
   </div>
-  <div class="card">
-    <div class="card-hdr">
-      <div style="display:flex;align-items:center;gap:10px">
-        <button class="btn btn-ghost btn-sm" onclick="agNav(-1)">‹</button>
-        <span style="font-size:14px;font-weight:700;color:#fff" id="agLabel">—</span>
-        <button class="btn btn-ghost btn-sm" onclick="agNav(1)">›</button>
-        <button class="btn btn-ghost btn-sm" onclick="agToday()">Hoje</button>
-      </div>
-    </div>
-    <div class="card-body">
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px">
-        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:4px">Dom</div>
-        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:4px">Seg</div>
-        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:4px">Ter</div>
-        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:4px">Qua</div>
-        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:4px">Qui</div>
-        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:4px">Sex</div>
-        <div style="text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:4px">Sáb</div>
-      </div>
-      <div id="agGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px"></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-hdr"><h3>📋 Próximos Eventos</h3></div>
-    <div class="tbl-wrap">
-      <table><thead><tr><th>Data</th><th>Hora</th><th>Título</th><th>Tipo</th><th>Cliente</th><th>Notas</th><th>Ações</th></tr></thead>
-      <tbody id="evtTbl"></tbody></table>
-    </div>
+  <div class="card" style="text-align:center;padding:60px 20px">
+    <div style="font-size:64px;margin-bottom:16px">📅</div>
+    <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:8px">Agenda Externa</div>
+    <div style="color:var(--muted);font-size:14px;margin-bottom:24px">A agenda funciona num ficheiro separado para melhor desempenho e compatibilidade com tablet e telemóvel.</div>
+    <button class="btn btn-blue" onclick="window.open('agenda.html','_blank')" style="font-size:15px;padding:12px 28px">📅 Abrir Agenda</button>
   </div>
 </div>
 
@@ -1228,7 +1205,7 @@ function doLogout(){
 // ══════════════════════════════════════════════════════════
 const TITLES={dashboard:'Dashboard',fluxo:'📊 Fluxo de Caixa',agenda:'📅 Agenda',pdv:'🛒 PDV — Venda Rápida',os:'📋 Ordens de Serviço',servicos:'🛠 Catálogo de Serviços',fiado:'💳 Fiado / A Receber',reparacoes:'🔧 Reparações',orcamentos:'📋 Orçamentos',clientes:'👤 Clientes',equipamentos:'🖥 Equipamentos',materiais:'📦 Materiais',entrada:'↑ Entrada de Stock',saida:'↓ Saída de Stock',inventario:'📑 Inventário',fornecedores:'🏭 Fornecedores',faturas:'🧾 Faturas',recebimentos:'💰 Recebimentos',despesas:'💸 Despesas',deslocacoes:'🚗 Deslocações',relatorios:'📈 Relatórios',calculadora:'🧮 Calculadora',definicoes:'⚙ Definições',backup:'💾 Backup'};
 let CurPage='dashboard';
-const RENDERS={dashboard:renderDash,fluxo:renderFluxo,agenda:renderAgenda,pdv:renderPDV,os:renderOS,servicos:renderSvc,fiado:renderFiado,reparacoes:renderRep,orcamentos:renderOrc,clientes:renderCli,equipamentos:renderEq,materiais:renderMat,entrada:renderEntrada,saida:renderSaida,inventario:renderInv,fornecedores:renderForn,faturas:renderFat,recebimentos:renderRec,despesas:renderDesp,deslocacoes:renderDesl,relatorios:renderRel};
+const RENDERS={dashboard:renderDash,fluxo:renderFluxo,agenda:function(){},  // agenda externapdv:renderPDV,os:renderOS,servicos:renderSvc,fiado:renderFiado,reparacoes:renderRep,orcamentos:renderOrc,clientes:renderCli,equipamentos:renderEq,materiais:renderMat,entrada:renderEntrada,saida:renderSaida,inventario:renderInv,fornecedores:renderForn,faturas:renderFat,recebimentos:renderRec,despesas:renderDesp,deslocacoes:renderDesl,relatorios:renderRel};
 function goPage(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
@@ -1255,11 +1232,11 @@ let _eids={};
 function openM(id,editId,data){
   _eids[id]=editId||null;
   // fill client selects
-  if(['mRep','mOrc','mFat','mRec','mEq','mDesl','mOS','mEvt'].includes(id))fillCliSel();
+  if(['mRep','mOrc','mFat','mRec','mEq','mDesl','mOS'].includes(id))fillCliSel();
   // fill fat select in rec
   if(id==='mRec')fillFatSel();
   // set title
-  const titles={mMat:'+ Novo Material',mRep:'+ Nova Reparação',mOrc:'+ Novo Orçamento',mCli:'+ Novo Cliente',mEq:'+ Novo Equipamento',mForn:'+ Novo Fornecedor',mFat:'🧾 Nova Fatura',mRec:'+ Registar Recebimento',mDesp:'+ Nova Despesa',mDesl:'+ Nova Deslocação',mOS:'📋 Nova O.S.',mEvt:'+ Novo Evento',mSvc:'+ Novo Serviço',mFiado:'+ Registar Fiado'};
+  const titles={mMat:'+ Novo Material',mRep:'+ Nova Reparação',mOrc:'+ Novo Orçamento',mCli:'+ Novo Cliente',mEq:'+ Novo Equipamento',mForn:'+ Novo Fornecedor',mFat:'🧾 Nova Fatura',mRec:'+ Registar Recebimento',mDesp:'+ Nova Despesa',mDesl:'+ Nova Deslocação',mOS:'📋 Nova O.S.',mSvc:'+ Novo Serviço',mFiado:'+ Registar Fiado'};
   const tel=document.getElementById(id.replace('m','m')+'T');
   if(tel)tel.textContent=editId?('✏ Editar '+titles[id]?.replace('+ ','').replace('🧾 ','')):(titles[id]||'Novo');
   if(data)fillForm(id,data);
@@ -3571,61 +3548,19 @@ function renderAgenda() {
 }
 
 function agDayClick(dateStr) {
-  openM('mEvt');
+  window.open('agenda.html','_blank');
   const el = document.getElementById('evt_data');
   if (el) el.value = dateStr;
 }
 
-function saveEvt() {
-  const titulo = (document.getElementById('evt_titulo')?.value || '').trim();
-  const data = document.getElementById('evt_data')?.value || '';
-  if (!titulo || !data) { toast('Título e data são obrigatórios!', 'r'); return; }
-
-  const evts = ld('evt');
-  const editId = _eids['mEvt'];
-  const clis = ld('cli');
-  const cli_id = document.getElementById('evt_cli')?.value || '';
-  const cli = clis.find(c => c.id === cli_id);
-
-  const obj = {
-    titulo,
-    tipo: document.getElementById('evt_tipo')?.value || 'outro',
-    cli_id, cli: cli?.nome || '—',
-    data,
-    hora: document.getElementById('evt_hora')?.value || '',
-    lembrete: document.getElementById('evt_lembrete')?.value || '',
-    notas: document.getElementById('evt_notas')?.value || ''
-  };
-
-  if (editId) {
-    const i = evts.findIndex(e => e.id === editId);
-    if (i >= 0) evts[i] = { ...evts[i], ...obj };
-  } else {
-    obj.id = uid(); evts.push(obj);
-  }
-
-  sv('evt', evts);
-  closeM('mEvt');
-  renderAgenda();
-  toast(editId ? 'Evento actualizado!' : 'Evento adicionado!');
-}
+function saveEvt() { window.open('agenda.html','_blank'); }
 
 // Hook event delegation for agenda actions
 document.addEventListener('click', function(e) {
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
   const act = btn.dataset.action, id = btn.dataset.id;
-  if (act === 'edit-evt') {
-    const ev = ld('evt').find(x => x.id === id);
-    if (ev) {
-      _eids['mEvt'] = id;
-      openM('mEvt');
-      setTimeout(() => {
-        const fields = {evt_titulo:'titulo',evt_tipo:'tipo',evt_cli:'cli_id',evt_data:'data',evt_hora:'hora',evt_notas:'notas',evt_lembrete:'lembrete'};
-        Object.entries(fields).forEach(([elId,key]) => { const el=document.getElementById(elId); if(el) el.value=ev[key]||''; });
-      }, 60);
-    }
-  } else if (act === 'edit-os') {
+  if (act === 'edit-evt') { window.open('agenda.html','_blank'); } else if (act === 'edit-os') {
     const o=ld('os').find(x=>x.id===id);if(o)openM('mOS',id,o);
   } else if (act === 'fat-os') {
     osFatConvert(id);
@@ -5524,39 +5459,6 @@ document.addEventListener('DOMContentLoaded',function(){
 
 
 
-<!-- MODAL EVENTO AGENDA -->
-<div class="ov" id="mEvt" style="z-index:999999"><div class="modal">
-  <div class="mhdr"><h3 id="mEvtT">+ Novo Evento</h3><button class="mclose" onclick="closeM('mEvt')">✕</button></div>
-  <div class="mbody">
-    <div class="fg"><label>Título *</label><input id="evt_titulo" placeholder="ex: Entrega Motor WEG, Visita ao cliente..."></div>
-    <div class="fg"><label>Tipo</label>
-      <select id="evt_tipo">
-        <option value="entrega">🔧 Entrega de Reparação</option>
-        <option value="visita">🚗 Visita / Deslocação</option>
-        <option value="pagamento">💰 Vencimento de Fatura</option>
-        <option value="reuniao">🤝 Reunião</option>
-        <option value="outro">📌 Outro Lembrete</option>
-      </select>
-    </div>
-    <div class="fg"><label>Cliente</label><select id="evt_cli"></select></div>
-    <div class="frow">
-      <div class="fg"><label>Data *</label><input type="date" id="evt_data"></div>
-      <div class="fg"><label>Hora</label><input type="time" id="evt_hora" value="09:00"></div>
-    </div>
-    <div class="fg"><label>Notas</label><textarea id="evt_notas" placeholder="Detalhes adicionais..."></textarea></div>
-    <div class="fg"><label>🔔 Lembrete</label>
-      <select id="evt_lembrete">
-        <option value="">Sem lembrete</option>
-        <option value="0">Na hora</option>
-        <option value="15">15 minutos antes</option>
-        <option value="30">30 minutos antes</option>
-        <option value="60">1 hora antes</option>
-        <option value="1440">1 dia antes</option>
-      </select>
-    </div>
-  </div>
-  <div class="mfoot"><button class="btn btn-ghost" onclick="closeM('mEvt')">Cancelar</button><button class="btn btn-blue" onclick="saveEvt()">💾 Guardar</button></div>
-</div></div>
 
 <!-- MODAL ORDEM DE SERVIÇO -->
 <div class="ov" id="mOS" style="z-index:999999"><div class="modal modal-lg">
