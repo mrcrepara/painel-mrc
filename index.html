@@ -4095,12 +4095,7 @@ ${desls.map(d=>'<tr><td>'+d.data+'</td><td>'+d.dest+'</td><td>'+d.km+' km</td><t
   w.document.close();
 }
 
-// Add ficha button to clients table
-const _origRenderCli = renderCli;
-window.renderCli = function() {
-  _origRenderCli();
-  // patch each row to add ficha button — done via delegation below
-};
+// ficha-cli handled via delegation
 
 // Delegation for ficha-cli
 document.addEventListener('click', function(e) {
@@ -4335,7 +4330,7 @@ ${emp.iban?'<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radiu
 // ── Add ficha button to renderCli rows ────────────────────
 const _baseRenderCli = renderCli;
 window.renderCli = function() {
-  _baseRenderCli();
+  try { _baseRenderCli(); } catch(e) { console.warn('renderCli error:', e); return; }
   // Patch rows to add ficha button
   const tb = document.getElementById('cliTbl');
   if (!tb) return;
