@@ -313,7 +313,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
   <div class="ni" data-p="relatorios" onclick="goPage('relatorios')">📈 Relatórios</div>
   <div class="ni" data-p="calculadora" onclick="goPage('calculadora')">🧮 Calculadora</div>
   <div class="ni" data-p="definicoes" onclick="goPage('definicoes')">⚙ Definições</div>
-  <div class="ni" data-p="agenda" onclick="goPage('agenda')"><span style="margin-right:4px">📅</span>Agenda</div>
+  <div class="ni" onclick="window.open('agenda.html','_blank')" style="cursor:pointer"><span style="margin-right:4px">📅</span>Agenda ↗</div>
   <div class="ni" data-p="pdv" onclick="goPage('pdv')"><span style="margin-right:4px">🛒</span>PDV / Venda Rápida</div>
   <div class="ni" data-p="os" onclick="goPage('os')"><span style="margin-right:4px">📋</span>Ordens de Serviço</div>
   <div class="ni" data-p="servicos" onclick="goPage('servicos')"><span style="margin-right:4px">🛠</span>Catálogo de Serviços</div>
@@ -693,18 +693,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </div>
 
 <!-- AGENDA PAGE -->
-<div class="page" id="page-agenda">
-  <div class="pg-hdr">
-    <div><h1>📅 Agenda</h1><p>Compromissos, entregas e lembretes</p></div>
-    <button class="btn btn-blue" onclick="window.open('agenda.html','_blank')">↗ Abrir Agenda</button>
-  </div>
-  <div class="card" style="text-align:center;padding:60px 20px">
-    <div style="font-size:64px;margin-bottom:16px">📅</div>
-    <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:8px">Agenda Externa</div>
-    <div style="color:var(--muted);font-size:14px;margin-bottom:24px">A agenda funciona num ficheiro separado para melhor desempenho e compatibilidade com tablet e telemóvel.</div>
-    <button class="btn btn-blue" onclick="window.open('agenda.html','_blank')" style="font-size:15px;padding:12px 28px">📅 Abrir Agenda</button>
-  </div>
-</div>
+<div class="page" id="page-agenda"></div>
 
 <!-- PDV PAGE -->
 <div class="page" id="page-pdv">
