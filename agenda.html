@@ -203,8 +203,12 @@ textarea{resize:vertical;min-height:56px}
         <select id="f_tipo">
           <option value="entrega">🔧 Entrega de Reparação</option>
           <option value="visita">🚗 Visita / Deslocação</option>
+          <option value="instalacao">⚡ Instalação Elétrica</option>
+          <option value="manutencao">🛠 Manutenção / Revisão</option>
+          <option value="orcamento">📋 Orçamento / Vistoria</option>
           <option value="pagamento">💰 Vencimento de Fatura</option>
           <option value="reuniao">🤝 Reunião</option>
+          <option value="compra">🛒 Compra de Material</option>
           <option value="outro">📌 Outro Lembrete</option>
         </select>
       </div>
@@ -212,14 +216,28 @@ textarea{resize:vertical;min-height:56px}
         <label>Cliente</label>
         <select id="f_cli"></select>
       </div>
+      <div class="fg">
+        <label>Serviço / Descrição do trabalho</label>
+        <input id="f_servico" placeholder="ex: Substituição motor, Instalação elétrica...">
+      </div>
       <div class="frow">
         <div class="fg">
-          <label>Data *</label>
+          <label>Data início *</label>
           <input type="date" id="f_data">
         </div>
         <div class="fg">
-          <label>Hora</label>
+          <label>Data fim</label>
+          <input type="date" id="f_data_fim">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Hora início</label>
           <input type="time" id="f_hora" value="09:00">
+        </div>
+        <div class="fg">
+          <label>Hora fim</label>
+          <input type="time" id="f_hora_fim" value="17:00">
         </div>
       </div>
       <div class="fg">
@@ -272,8 +290,8 @@ let _audioCtx = null;
 const td = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const TIPO_COR = {entrega:'#2563EB',visita:'#14B8A6',pagamento:'#EF4444',reuniao:'#8B5CF6',outro:'#F59E0B'};
-const TIPO_LABEL = {entrega:'🔧 Entrega',visita:'🚗 Visita',pagamento:'💰 Fatura',reuniao:'🤝 Reunião',outro:'📌 Outro'};
+const TIPO_COR = {entrega:'#8B5CF6',visita:'#F59E0B',pagamento:'#EF4444',reuniao:'#10B981',outro:'#6B7280',instalacao:'#3B82F6',manutencao:'#F97316',orcamento:'#14B8A6',compra:'#EC4899'};
+const TIPO_LABEL = {entrega:'Entrega',visita:'Visita',pagamento:'Fatura',reuniao:'Reunião',outro:'Lembrete',instalacao:'Instalação',manutencao:'Manutenção',orcamento:'Orçamento',compra:'Compra'};
 
 function toast(msg, tipo='g') {
   const el = document.getElementById('toast');
@@ -360,7 +378,7 @@ async function carregar() {
   try {
     const [evtDoc, cliDoc] = await Promise.all([
       db.collection('mrc').doc('evt').get(),
-      db.collection('mrc').doc('cli').get()
+      db.collection('mrc_dados').doc('m3_cli').get()
     ]);
     _evts = evtDoc.exists ? JSON.parse(evtDoc.data().value || '[]') : [];
     _clis = cliDoc.exists ? JSON.parse(cliDoc.data().value || '[]') : [];
@@ -384,7 +402,7 @@ function evtItem(e, mostrarApagar=true) {
       <div class="evt-titulo">${e.titulo}</div>
       <div class="evt-meta">
         <span class="evt-badge" style="background:${cor}">${label}</span>
-        ${e.data} ${e.hora?'· '+e.hora:''} ${e.cli&&e.cli!=='—'?'· '+e.cli:''} ${temLembrete?'· 🔔':''}
+        ${e.data}${e.data_fim&&e.data_fim!==e.data?' → '+e.data_fim:''} ${e.hora?'· '+e.hora:''}${e.hora_fim?' – '+e.hora_fim:''} ${e.cli&&e.cli!=='—'?'· 👤 '+e.cli:''} ${temLembrete?'· 🔔':''}
         ${e.notas?'<br><span style="color:var(--muted)">' + e.notas + '</span>':''}
       </div>
     </div>
@@ -490,8 +508,11 @@ function abrirModal(data) {
   document.getElementById('f_titulo').value = '';
   document.getElementById('f_tipo').value = 'outro';
   document.getElementById('f_cli').value = '';
+  document.getElementById('f_servico').value = '';
   document.getElementById('f_data').value = data || td();
+  document.getElementById('f_data_fim').value = data || td();
   document.getElementById('f_hora').value = '09:00';
+  document.getElementById('f_hora_fim').value = '17:00';
   document.getElementById('f_lembrete').value = '';
   document.getElementById('f_notas').value = '';
   document.getElementById('modal').classList.add('open');
@@ -511,8 +532,11 @@ function editar(id) {
   document.getElementById('f_titulo').value = e.titulo || '';
   document.getElementById('f_tipo').value = e.tipo || 'outro';
   document.getElementById('f_cli').value = e.cli_id || '';
+  document.getElementById('f_servico').value = e.servico || '';
   document.getElementById('f_data').value = e.data || td();
+  document.getElementById('f_data_fim').value = e.data_fim || e.data || td();
   document.getElementById('f_hora').value = e.hora || '09:00';
+  document.getElementById('f_hora_fim').value = e.hora_fim || '17:00';
   document.getElementById('f_lembrete').value = e.lembrete || '';
   document.getElementById('f_notas').value = e.notas || '';
   document.getElementById('modal').classList.add('open');
@@ -527,7 +551,10 @@ async function guardar() {
   const obj = {
     titulo, tipo: document.getElementById('f_tipo').value,
     cli_id, cli: cli?.nome || '—',
-    data, hora: document.getElementById('f_hora').value,
+    servico: document.getElementById('f_servico').value.trim(),
+    data, data_fim: document.getElementById('f_data_fim').value,
+    hora: document.getElementById('f_hora').value,
+    hora_fim: document.getElementById('f_hora_fim').value,
     lembrete: document.getElementById('f_lembrete').value,
     notas: document.getElementById('f_notas').value,
     lembrete_enviado: false
@@ -572,6 +599,7 @@ document.addEventListener('click', function initAudio() {
 
 carregar().then(() => {
   document.getElementById('syncOv').style.display = 'none';
+  preencherClis();
   render();
   iniciarLembretes();
 
@@ -579,7 +607,7 @@ carregar().then(() => {
   db.collection('mrc').doc('evt').onSnapshot(doc => {
     if (doc.exists) { try{_evts = JSON.parse(doc.data().value||'[]');}catch(e){_evts=[];} render(); }
   });
-  db.collection('mrc').doc('cli').onSnapshot(doc => {
+  db.collection('mrc_dados').doc('m3_cli').onSnapshot(doc => {
     if (doc.exists) { try{_clis = JSON.parse(doc.data().value||'[]');}catch(e){_clis=[];} preencherClis(); }
   });
 });
