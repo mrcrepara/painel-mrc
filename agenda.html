@@ -214,22 +214,12 @@ textarea{resize:vertical;min-height:56px}
       </div>
       <div class="frow">
         <div class="fg">
-          <label>Data início *</label>
+          <label>Data *</label>
           <input type="date" id="f_data">
         </div>
         <div class="fg">
-          <label>Data fim</label>
-          <input type="date" id="f_data_fim">
-        </div>
-      </div>
-      <div class="frow">
-        <div class="fg">
-          <label>Hora início</label>
+          <label>Hora</label>
           <input type="time" id="f_hora" value="09:00">
-        </div>
-        <div class="fg">
-          <label>Hora fim</label>
-          <input type="time" id="f_hora_fim" value="17:00">
         </div>
       </div>
       <div class="fg">
@@ -369,8 +359,8 @@ function iniciarLembretes() {
 async function carregar() {
   try {
     const [evtDoc, cliDoc] = await Promise.all([
-      db.collection('m3_evt').doc('m3_evt').get(),
-      db.collection('m3_cli').doc('m3_cli').get()
+      db.collection('mrc').doc('evt').get(),
+      db.collection('mrc').doc('cli').get()
     ]);
     _evts = evtDoc.exists ? JSON.parse(evtDoc.data().value || '[]') : [];
     _clis = cliDoc.exists ? JSON.parse(cliDoc.data().value || '[]') : [];
@@ -380,7 +370,7 @@ async function carregar() {
 }
 
 async function guardarFB() {
-  await db.collection('m3_evt').doc('m3_evt').set({value: JSON.stringify(_evts), ts: Date.now()});
+  await db.collection('mrc').doc('evt').set({value: JSON.stringify(_evts), ts: Date.now()});
 }
 
 // ── Render ───────────────────────────────────────────────
@@ -394,7 +384,7 @@ function evtItem(e, mostrarApagar=true) {
       <div class="evt-titulo">${e.titulo}</div>
       <div class="evt-meta">
         <span class="evt-badge" style="background:${cor}">${label}</span>
-        ${e.data}${e.data_fim&&e.data_fim!==e.data?' → '+e.data_fim:''} ${e.hora?'· '+e.hora:''}${e.hora_fim&&e.hora_fim!==e.hora?' – '+e.hora_fim:''} ${e.cli&&e.cli!=='—'?'· 👤 '+e.cli:''} ${temLembrete?'· 🔔':''}
+        ${e.data} ${e.hora?'· '+e.hora:''} ${e.cli&&e.cli!=='—'?'· '+e.cli:''} ${temLembrete?'· 🔔':''}
         ${e.notas?'<br><span style="color:var(--muted)">' + e.notas + '</span>':''}
       </div>
     </div>
@@ -488,7 +478,6 @@ function mudarTab(tab) {
 
 // ── Modal ────────────────────────────────────────────────
 function preencherClis() {
-  if(!_clis||!_clis.length)return;
   document.getElementById('f_cli').innerHTML =
     '<option value="">— Sem cliente —</option>' +
     _clis.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
@@ -502,9 +491,7 @@ function abrirModal(data) {
   document.getElementById('f_tipo').value = 'outro';
   document.getElementById('f_cli').value = '';
   document.getElementById('f_data').value = data || td();
-  document.getElementById('f_data_fim').value = data || td();
   document.getElementById('f_hora').value = '09:00';
-  document.getElementById('f_hora_fim').value = '17:00';
   document.getElementById('f_lembrete').value = '';
   document.getElementById('f_notas').value = '';
   document.getElementById('modal').classList.add('open');
@@ -525,9 +512,7 @@ function editar(id) {
   document.getElementById('f_tipo').value = e.tipo || 'outro';
   document.getElementById('f_cli').value = e.cli_id || '';
   document.getElementById('f_data').value = e.data || td();
-  document.getElementById('f_data_fim').value = e.data_fim || e.data || td();
   document.getElementById('f_hora').value = e.hora || '09:00';
-  document.getElementById('f_hora_fim').value = e.hora_fim || '17:00';
   document.getElementById('f_lembrete').value = e.lembrete || '';
   document.getElementById('f_notas').value = e.notas || '';
   document.getElementById('modal').classList.add('open');
@@ -542,9 +527,7 @@ async function guardar() {
   const obj = {
     titulo, tipo: document.getElementById('f_tipo').value,
     cli_id, cli: cli?.nome || '—',
-    data, data_fim: document.getElementById('f_data_fim').value,
-    hora: document.getElementById('f_hora').value,
-    hora_fim: document.getElementById('f_hora_fim').value,
+    data, hora: document.getElementById('f_hora').value,
     lembrete: document.getElementById('f_lembrete').value,
     notas: document.getElementById('f_notas').value,
     lembrete_enviado: false
@@ -589,16 +572,15 @@ document.addEventListener('click', function initAudio() {
 
 carregar().then(() => {
   document.getElementById('syncOv').style.display = 'none';
-  preencherClis();
   render();
   iniciarLembretes();
 
   // Realtime
-  db.collection('m3_evt').doc('m3_evt').onSnapshot(doc => {
+  db.collection('mrc').doc('evt').onSnapshot(doc => {
     if (doc.exists) { try{_evts = JSON.parse(doc.data().value||'[]');}catch(e){_evts=[];} render(); }
   });
-  db.collection('m3_cli').doc('m3_cli').onSnapshot(doc => {
-    if (doc.exists) { try{_clis = JSON.parse(doc.data().value||'[]');}catch(e){_clis=[];} }
+  db.collection('mrc').doc('cli').onSnapshot(doc => {
+    if (doc.exists) { try{_clis = JSON.parse(doc.data().value||'[]');}catch(e){_clis=[];} preencherClis(); }
   });
 });
 </script>
