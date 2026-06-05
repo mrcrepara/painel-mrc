@@ -52,15 +52,8 @@
         var localTs=parseInt(localStorage.getItem(localTsKey)||'0');
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
-        var localVal;
-        try{localVal=JSON.parse(localStorage.getItem(K[shortKey]||fbKey)||'[]');}catch(e){localVal=[];}
-        // Materiais: usar sempre localStorage se tiver dados
-        if(fbKey==='m3_mat'&&Array.isArray(localVal)&&localVal.length>0){window._cache[shortKey]=localVal;return;}
-        // Outros: ignorar Firebase se local for mais recente
-        if(fbTs>0&&localTs>0&&fbTs<localTs){window._cache[shortKey]=localVal;return;}
-        // Nunca sobrescrever com menos dados
-        if(Array.isArray(val)&&Array.isArray(localVal)&&localVal.length>0&&val.length<localVal.length){window._cache[shortKey]=localVal;return;}
-        if(localVal.length>10&&val.length<5&&(shortKey==='cli'||shortKey==='fat')){return;}
+        // Firebase é a fonte de verdade — mas só sobrescreve se for mais recente
+        if(fbTs>0&&localTs>0&&fbTs<=localTs){return;}
         window._cache[shortKey]=val;
         try{localStorage.setItem(K[shortKey]||fbKey,JSON.stringify(val));}catch(e){}
         if(fbTs)localStorage.setItem(localTsKey,String(fbTs));
@@ -69,7 +62,7 @@
     }).catch(function(e){console.warn('FB load:',e);if(cb)cb();});
   };
 
-  // Realtime listener - updates cache and re-renders
+  // Realtime listener
   window._fbRestoring=false;
   window._fbStartRealtime=function(){
     db.collection(col).onSnapshot(function(snap){
@@ -78,8 +71,6 @@
       var changed=false;
       snap.docChanges().forEach(function(change){
         if(change.type==='removed')return;
-        // Materiais geridos localmente - ignorar updates do Firebase em tempo real
-        if(doc.id==='m3_mat')return;
         var doc=change.doc;
         var fbKey=doc.id;
         var shortKey=KEY_MAP[fbKey]||fbKey;
@@ -87,17 +78,15 @@
         var fbTs=docData.ts||0;
         var localTsKey='_ts_'+fbKey;
         var localTs=parseInt(localStorage.getItem(localTsKey)||'0');
-        if(fbTs>0&&localTs>0&&fbTs<localTs){return;}
-        // Se gravámos dados nesta chave nos últimos 5s, ignorar snapshot
+        // Ignorar se acabámos de gravar nesta chave (nos últimos 10s)
         var lastSaveTs=(window._lastSave&&window._lastSave[fbKey])||0;
-        if(Date.now()-lastSaveTs<5000){return;}
+        if(Date.now()-lastSaveTs<10000){return;}
+        // Só actualizar se Firebase for mais recente
+        if(fbTs>0&&localTs>0&&fbTs<=localTs){return;}
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
-        var localVal;
-        try{localVal=JSON.parse(localStorage.getItem(fbKey)||'[]');}catch(e){localVal=[];}
-        if(localVal.length>10&&val.length<5&&(shortKey==='cli'||shortKey==='fat')){return;}
         window._cache[shortKey]=val;
-        try{localStorage.setItem(fbKey,JSON.stringify(val));}catch(e){}
+        try{localStorage.setItem(K[shortKey]||fbKey,JSON.stringify(val));}catch(e){}
         changed=true;
       });
       if(changed&&typeof renderAll==='function')setTimeout(renderAll,100);
@@ -1141,7 +1130,7 @@ const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_
          svc:'m3_svc',evt:'m3_evt',pdvh:'m3_pdvhist',fiado:'m3_fiado'};
 const ld=k=>{if(window._cache&&window._cache[k]!==undefined){var v=window._cache[k];return Array.isArray(v)?v:[];}try{return JSON.parse(localStorage.getItem(K[k]))||[]}catch{return[]}};
 const ldO=k=>{if(window._cache&&window._cache[k]!==undefined&&!Array.isArray(window._cache[k]))return window._cache[k];try{return JSON.parse(localStorage.getItem(K[k]))||{}}catch{return{}}};
-const sv=(k,d)=>{var fbKey=window.REV_MAP&&window.REV_MAP[k]?window.REV_MAP[k]:('m3_'+k);var ts=Date.now();localStorage.setItem(K[k],JSON.stringify(d));localStorage.setItem('_ts_'+fbKey,ts);if(window._cache)window._cache[k]=d;window._lastSave=window._lastSave||{};window._lastSave[fbKey]=ts;if(typeof window._fbSave==="function"){window._fbSave(fbKey,d);}};
+const sv=(k,d)=>{var fbKey=window.REV_MAP&&window.REV_MAP[k]?window.REV_MAP[k]:('m3_'+k);var ts=Date.now();localStorage.setItem(K[k],JSON.stringify(d));localStorage.setItem('_ts_'+fbKey,String(ts));if(window._cache)window._cache[k]=d;window._lastSave=window._lastSave||{};window._lastSave[fbKey]=ts;if(typeof window._fbSave==="function"){window._fbSave(fbKey,d);}};
 const eur=v=>parseFloat(v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const td=()=>new Date().toISOString().slice(0,10);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
