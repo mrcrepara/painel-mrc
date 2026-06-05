@@ -47,16 +47,14 @@
         var fbKey=doc.id;
         var shortKey=KEY_MAP[fbKey]||fbKey;
         var docData=doc.data();
-        var fbTs=docData.ts||0;
-        var localTsKey='_ts_'+fbKey;
-        var localTs=parseInt(localStorage.getItem(localTsKey)||'0');
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
-        // Firebase é a fonte de verdade — mas só sobrescreve se for mais recente
-        if(fbTs>0&&localTs>0&&fbTs<=localTs){return;}
+        // Ignorar apenas se acabámos de gravar nesta chave (últimos 10s)
+        var lastSaveTs=(window._lastSave&&window._lastSave[fbKey])||0;
+        if(Date.now()-lastSaveTs<10000){return;}
+        // Firebase é sempre a fonte de verdade
         window._cache[shortKey]=val;
         try{localStorage.setItem(K[shortKey]||fbKey,JSON.stringify(val));}catch(e){}
-        if(fbTs)localStorage.setItem(localTsKey,String(fbTs));
       });
       if(cb)cb();
     }).catch(function(e){console.warn('FB load:',e);if(cb)cb();});
@@ -78,13 +76,12 @@
         var fbTs=docData.ts||0;
         var localTsKey='_ts_'+fbKey;
         var localTs=parseInt(localStorage.getItem(localTsKey)||'0');
-        // Ignorar se acabámos de gravar nesta chave (nos últimos 10s)
+        // Ignorar se acabámos de gravar nesta chave (últimos 10s)
         var lastSaveTs=(window._lastSave&&window._lastSave[fbKey])||0;
         if(Date.now()-lastSaveTs<10000){return;}
-        // Só actualizar se Firebase for mais recente
-        if(fbTs>0&&localTs>0&&fbTs<=localTs){return;}
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
+        // Firebase é sempre a fonte de verdade
         window._cache[shortKey]=val;
         try{localStorage.setItem(K[shortKey]||fbKey,JSON.stringify(val));}catch(e){}
         changed=true;
