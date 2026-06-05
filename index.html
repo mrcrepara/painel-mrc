@@ -1156,14 +1156,7 @@ function ensureAdmin(){
     {id:uid(),tipo:'Particular',nome:'João Ferreira',nif:'123456789',tel:'912 345 678',email:'joao@gmail.com',morada:'Rua das Flores 3, Setúbal',obs:''},
     {id:uid(),tipo:'Empresa',nome:'Clínica São José',nif:'504567890',tel:'21 456 7890',email:'geral@clinica.pt',morada:'Av. República 45, Lisboa',obs:'Urgências prioritárias'},
   ]);
-  if(!ld('mat').length) sv('mat',[
-    {id:uid(),ref:'ROL-6203',desc:'Rolamento 6203',cat:'Rolamentos',un:'un',custo:2.50,pvp:8.50,stock:45,min:10,loc:'A1'},
-    {id:uid(),ref:'CON-25A',desc:'Contactor 25A',cat:'Contactores',un:'un',custo:12.00,pvp:38.00,stock:18,min:5,loc:'B2'},
-    {id:uid(),ref:'CAP-50UF',desc:'Capacitor 50μF',cat:'Capacitores',un:'un',custo:3.50,pvp:12.00,stock:6,min:10,loc:'C1'},
-    {id:uid(),ref:'FUS-10A',desc:'Fusível 10A',cat:'Fusíveis',un:'un',custo:0.80,pvp:2.50,stock:32,min:20,loc:'D3'},
-    {id:uid(),ref:'REL-18-25',desc:'Relé Térmico 18-25A',cat:'Relés',un:'un',custo:8.00,pvp:25.00,stock:4,min:5,loc:'B4'},
-    {id:uid(),ref:'CAB-2X1',desc:'Cabo 2x1mm²',cat:'Cabos',un:'m',custo:0.85,pvp:2.80,stock:120,min:50,loc:'E1'},
-  ]);
+  // Materiais: não inserir dados de exemplo — o utilizador gere o seu próprio catálogo
   const c=ld('cli');
   if(!ld('rep').length) sv('rep',[
     {id:'R-2025-0001',data:'2025-05-22',cli_id:c[0]?.id,cli:c[0]?.nome||'—',eq:'Motor WEG 15HP',serie:'WEG001',av:'Sobreaquecimento',est:'Em Reparação',urg:'Urgente',val:850},
