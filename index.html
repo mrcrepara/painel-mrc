@@ -50,15 +50,20 @@
         var fbTs=docData.ts||0;
         var localTsKey='_ts_'+fbKey;
         var localTs=parseInt(localStorage.getItem(localTsKey)||'0');
-        if(fbTs>0&&localTs>0&&fbTs<localTs){return;}
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
         var localVal;
-        try{localVal=JSON.parse(localStorage.getItem(fbKey)||'[]');}catch(e){localVal=[];}
+        try{localVal=JSON.parse(localStorage.getItem(K[shortKey]||fbKey)||'[]');}catch(e){localVal=[];}
+        // Materiais: usar sempre localStorage se tiver dados
+        if(fbKey==='m3_mat'&&Array.isArray(localVal)&&localVal.length>0){window._cache[shortKey]=localVal;return;}
+        // Outros: ignorar Firebase se local for mais recente
+        if(fbTs>0&&localTs>0&&fbTs<localTs){window._cache[shortKey]=localVal;return;}
+        // Nunca sobrescrever com menos dados
+        if(Array.isArray(val)&&Array.isArray(localVal)&&localVal.length>0&&val.length<localVal.length){window._cache[shortKey]=localVal;return;}
         if(localVal.length>10&&val.length<5&&(shortKey==='cli'||shortKey==='fat')){return;}
         window._cache[shortKey]=val;
-        try{localStorage.setItem(fbKey,JSON.stringify(val));}catch(e){}
-        if(fbTs)localStorage.setItem(localTsKey,fbTs);
+        try{localStorage.setItem(K[shortKey]||fbKey,JSON.stringify(val));}catch(e){}
+        if(fbTs)localStorage.setItem(localTsKey,String(fbTs));
       });
       if(cb)cb();
     }).catch(function(e){console.warn('FB load:',e);if(cb)cb();});
@@ -73,6 +78,8 @@
       var changed=false;
       snap.docChanges().forEach(function(change){
         if(change.type==='removed')return;
+        // Materiais geridos localmente - ignorar updates do Firebase em tempo real
+        if(doc.id==='m3_mat')return;
         var doc=change.doc;
         var fbKey=doc.id;
         var shortKey=KEY_MAP[fbKey]||fbKey;
