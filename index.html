@@ -3614,17 +3614,23 @@ function renderPDV() {
   if (!items.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1">Sem resultados</div>'; return; }
 
   var h = '';
-  items.forEach(function(item) {
+  items.forEach(function(item, idx) {
     var icon = item._type === 'svc' ? '🛠' : '📦';
-    h += '<div onclick="pdvAdd(' + JSON.stringify(item._type) + ',' + JSON.stringify(item.id) + ')" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px;cursor:pointer;text-align:center">';
+    var semStock = item._type==='mat' && item.stock<=0;
+    h += '<div data-pdv-type="' + item._type + '" data-pdv-id="' + item.id + '" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px;cursor:pointer;text-align:center;user-select:none">';
     h += '<div style="font-size:20px;margin-bottom:5px">' + icon + '</div>';
     h += '<div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + item._label + '</div>';
     h += '<div style="font-size:10px;color:var(--muted);margin-bottom:5px">' + item._sub + '</div>';
-    h += '<div style="font-size:14px;font-weight:800;color:' + (item._type==='mat' && item.stock<=0 ? 'var(--red)' : 'var(--green)') + '">' + eur(item._price) + '</div>';
-    if (item._type==='mat' && item.stock<=0) h += '<div style="font-size:10px;color:var(--red)">Sem stock</div>';
+    h += '<div style="font-size:14px;font-weight:800;color:' + (semStock ? 'var(--red)' : 'var(--green)') + '">' + eur(item._price) + '</div>';
+    if (semStock) h += '<div style="font-size:10px;color:var(--red)">Sem stock</div>';
     h += '</div>';
   });
   grid.innerHTML = h;
+  // Delegação de eventos - mais robusto que onclick inline
+  grid.onclick = function(e) {
+    var card = e.target.closest('[data-pdv-type]');
+    if (card) pdvAdd(card.dataset.pdvType, card.dataset.pdvId);
+  };
   pdvRenderCart();
 }
 
