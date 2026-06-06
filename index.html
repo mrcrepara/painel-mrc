@@ -49,12 +49,17 @@
         var docData=doc.data();
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
-        // Ignorar apenas se acabámos de gravar nesta chave (últimos 10s)
-        var lastSaveTs=(window._lastSave&&window._lastSave[fbKey])||0;
-        if(Date.now()-lastSaveTs<10000){return;}
-        // Firebase é sempre a fonte de verdade
+        // Ignorar se gravámos recentemente (persistido no localStorage)
+        var lastSaveTs=parseInt(localStorage.getItem('_save_'+fbKey)||'0');
+        if(window._lastSave&&window._lastSave[fbKey]) lastSaveTs=Math.max(lastSaveTs,window._lastSave[fbKey]);
+        if(Date.now()-lastSaveTs<30000){return;}
+        // Usar Firebase se for mais recente que o local
+        var localTs=parseInt(localStorage.getItem('_ts_'+fbKey)||'0');
+        var fbTs=docData.ts||0;
+        if(fbTs>0&&localTs>0&&fbTs<=localTs){window._cache[shortKey]=JSON.parse(localStorage.getItem(K[shortKey]||fbKey)||'[]');return;}
         window._cache[shortKey]=val;
         try{localStorage.setItem(K[shortKey]||fbKey,JSON.stringify(val));}catch(e){}
+        if(fbTs)localStorage.setItem('_ts_'+fbKey,String(fbTs));
       });
       if(cb)cb();
     }).catch(function(e){console.warn('FB load:',e);if(cb)cb();});
@@ -76,14 +81,18 @@
         var fbTs=docData.ts||0;
         var localTsKey='_ts_'+fbKey;
         var localTs=parseInt(localStorage.getItem(localTsKey)||'0');
-        // Ignorar se acabámos de gravar nesta chave (últimos 10s)
-        var lastSaveTs=(window._lastSave&&window._lastSave[fbKey])||0;
-        if(Date.now()-lastSaveTs<10000){return;}
+        // Ignorar se gravámos recentemente
+        var lastSaveTs=parseInt(localStorage.getItem('_save_'+fbKey)||'0');
+        if(window._lastSave&&window._lastSave[fbKey]) lastSaveTs=Math.max(lastSaveTs,window._lastSave[fbKey]);
+        if(Date.now()-lastSaveTs<30000){return;}
+        // Só actualizar se Firebase for mais recente
+        var localTs=parseInt(localStorage.getItem('_ts_'+fbKey)||'0');
+        if(fbTs>0&&localTs>0&&fbTs<=localTs){return;}
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
-        // Firebase é sempre a fonte de verdade
         window._cache[shortKey]=val;
         try{localStorage.setItem(K[shortKey]||fbKey,JSON.stringify(val));}catch(e){}
+        if(fbTs)localStorage.setItem('_ts_'+fbKey,String(fbTs));
         changed=true;
       });
       if(changed&&typeof renderAll==='function')setTimeout(renderAll,100);
@@ -1093,7 +1102,7 @@ const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_
          svc:'m3_svc',evt:'m3_evt',pdvh:'m3_pdvhist',fiado:'m3_fiado'};
 const ld=k=>{if(window._cache&&window._cache[k]!==undefined){var v=window._cache[k];return Array.isArray(v)?v:[];}try{return JSON.parse(localStorage.getItem(K[k]))||[]}catch{return[]}};
 const ldO=k=>{if(window._cache&&window._cache[k]!==undefined&&!Array.isArray(window._cache[k]))return window._cache[k];try{return JSON.parse(localStorage.getItem(K[k]))||{}}catch{return{}}};
-const sv=(k,d)=>{var fbKey=window.REV_MAP&&window.REV_MAP[k]?window.REV_MAP[k]:('m3_'+k);var ts=Date.now();localStorage.setItem(K[k],JSON.stringify(d));localStorage.setItem('_ts_'+fbKey,String(ts));if(window._cache)window._cache[k]=d;window._lastSave=window._lastSave||{};window._lastSave[fbKey]=ts;if(typeof window._fbSave==="function"){window._fbSave(fbKey,d);}};
+const sv=(k,d)=>{var fbKey=window.REV_MAP&&window.REV_MAP[k]?window.REV_MAP[k]:('m3_'+k);var ts=Date.now();localStorage.setItem(K[k],JSON.stringify(d));localStorage.setItem('_ts_'+fbKey,String(ts));localStorage.setItem('_save_'+fbKey,String(ts));if(window._cache)window._cache[k]=d;window._lastSave=window._lastSave||{};window._lastSave[fbKey]=ts;if(typeof window._fbSave==="function"){window._fbSave(fbKey,d);}};
 const eur=v=>parseFloat(v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const td=()=>new Date().toISOString().slice(0,10);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
