@@ -904,16 +904,24 @@ function filtrarCatalogo(){
   }
 
   const fab_obj = _FABRICANTES.find(f=>f.key===_catAtual);
-  document.getElementById('catResults').innerHTML = mostra.map(a => `
-    <div class="cat-row">
+  document.getElementById('catResults').innerHTML = mostra.map((a,i) => {
+    const existe = _data.find(d => d.ref === (a.r||'').toUpperCase());
+    return `<div class="cat-row">
       <span class="cat-row-ref">${a.r||'—'}</span>
       <span class="cat-row-desc" title="${a.d||''}">${a.d||'—'}</span>
       <span class="cat-row-preco">${(a.p||0).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2})}€</span>
-      <button class="cat-row-btn" onclick="abrirImportCat('${(a.r||'').replace(/'/g,'\\\'')}','${(a.d||'').replace(/'/g,'\\\'')}',${a.p||0},'${a.u||'UN'}')">+ Adicionar</button>
-    </div>`).join('');
+      ${existe
+        ? `<span style="background:rgba(245,200,66,.15);color:var(--yellow);font-size:10px;padding:3px 8px;border-radius:5px;font-family:'DM Mono',monospace;flex-shrink:0">✓ já tens</span>`
+        : `<button class="cat-row-btn" data-idx="${i}" onclick="abrirImportCatIdx(this.dataset.idx)">+ Adicionar</button>`}
+    </div>`;
+  }).join('');
 }
 
 // ── Import de artigo do catálogo ──────────────────────────────────────
+function abrirImportCatIdx(idx){
+  const a = _catFiltrado[parseInt(idx)];
+  if(a) abrirImportCat(a.r||'', a.d||'', a.p||0, a.u||'UN');
+}
 function abrirImportCat(ref, desc, preco, un){
   _catItemPendente = {ref, desc, preco, un};
   document.getElementById('mImportCatTit').textContent = '➕ Adicionar ao meu catálogo';
