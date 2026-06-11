@@ -1331,7 +1331,13 @@ function calcular() {
     html += `<tr><td colspan="5" class="mat-section">${cat}</td></tr>`;
     html += `<tr style="background:rgba(0,0,0,.3)"><th>Descrição</th><th>Qtd</th><th>Und</th><th class="print-preco">P.Unit.</th><th class="print-preco">Total</th></tr>`;
     matItems.filter(i=>i.cat===cat).forEach(i => {
-      html += `<tr><td>${i.desc}</td><td style="font-family:'DM Mono',monospace">${i.qty}</td><td style="color:var(--muted)">${i.unit||'un.'}</td><td style="font-family:'DM Mono',monospace">${eur(i.pu)}</td><td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--yellow)">${eur(i.qty*i.pu)}</td></tr>`;
+      const autoUnit = i.unit || (()=>{
+        const d=(i.desc||'').toLowerCase();
+        if(/cabo|fio|tubo|fita led|carril|calha|tpc|anelado/.test(d)) return 'm';
+        if(/kg/.test(d)) return 'kg';
+        return 'un.';
+      })();
+      html += `<tr><td>${i.desc}</td><td style="font-family:'DM Mono',monospace">${i.qty} <span style="font-size:10px;color:var(--muted)">${autoUnit}</span></td><td style="color:var(--muted)">${autoUnit}</td><td style="font-family:'DM Mono',monospace">${eur(i.pu)}</td><td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--yellow)">${eur(i.qty*i.pu)}</td></tr>`;
     });
   });
   html += `<tr class="print-preco" style="background:rgba(245,200,66,.08)"><td colspan="4" style="font-weight:800;color:#fff">TOTAL MATERIAL</td><td style="font-weight:800;color:var(--yellow);font-family:'DM Mono',monospace">${eur(totalMat)}</td></tr>`;
