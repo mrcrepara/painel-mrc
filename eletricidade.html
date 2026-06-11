@@ -716,8 +716,8 @@ let _clis = [];
 
 async function carregarClientes() {
   try {
-    const doc = await _db.collection('mrc').doc('cli').get();
-    _clis = doc.exists ? (doc.data().value || []) : [];
+    const doc = await _db.collection('mrc_dados').doc('m3_cli').get();
+    _clis = doc.exists ? JSON.parse(doc.data().value || '[]') : [];
     const sel = document.getElementById('cli_sel');
     if (!sel) return;
     if (_clis.length) {
