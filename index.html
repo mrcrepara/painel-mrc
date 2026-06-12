@@ -2241,14 +2241,14 @@ function renderDef(){
 function saveDef(){
   const d=ldO('def');
   ['nome','nif','morada','tel','email'].forEach(k=>{d[k]=gv('def_'+k)});
-  localStorage.setItem(K.def,JSON.stringify(d));toast('Dados guardados!');
+  sv('def',d);toast('Dados guardados!');
 }
 function saveConf(){
   const d=ldO('def');
   d.iva=parseFloat(gv('def_iva'))||23;
   d.km=parseFloat(gv('def_km'))||0.40;
   d.marg=parseFloat(gv('def_marg'))||30;
-  localStorage.setItem(K.def,JSON.stringify(d));toast('Configurações guardadas!');
+  sv('def',d);toast('Configurações guardadas!');
 }
 function fazerBackup(){
   const dados={versao:'4.0',data:new Date().toISOString()};
@@ -4177,7 +4177,7 @@ function uploadLogo(e) {
   const reader = new FileReader();
   reader.onload = ev => {
     const d = ldO('def'); d.logo = ev.target.result;
-    localStorage.setItem(K.def, JSON.stringify(d));
+    sv('def', d);
     loadLogoPreview();
     toast('Logótipo guardado!');
   };
@@ -4186,7 +4186,7 @@ function uploadLogo(e) {
 
 function removeLogo() {
   const d = ldO('def'); d.logo = '';
-  localStorage.setItem(K.def, JSON.stringify(d));
+  sv('def', d);
   const w = document.getElementById('logoPreviewWrap');
   if (w) w.style.display = 'none';
   const inp = document.getElementById('logoFile');
@@ -4266,7 +4266,7 @@ function sigSave() {
   if (!canvas) return;
   const d = ldO('def');
   d.sig = canvas.toDataURL('image/png');
-  localStorage.setItem(K.def, JSON.stringify(d));
+  sv('def', d);
   toast('Assinatura guardada!');
 }
 
