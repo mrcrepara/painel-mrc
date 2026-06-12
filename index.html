@@ -49,6 +49,8 @@
         var docData=doc.data();
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
+        // Para chaves de objeto (def), nunca guardar array
+        if(shortKey==='def'&&Array.isArray(val))return;
         // Ignorar se gravámos recentemente (persistido no localStorage)
         var lastSaveTs=parseInt(localStorage.getItem('_save_'+fbKey)||'0');
         if(window._lastSave&&window._lastSave[fbKey]) lastSaveTs=Math.max(lastSaveTs,window._lastSave[fbKey]);
@@ -90,6 +92,8 @@
         if(fbTs>0&&localTs>0&&fbTs<=localTs){return;}
         var val;
         try{val=JSON.parse(docData.value||'[]');}catch(e){val=[];}
+        // Para chaves de objeto (def), nunca guardar array
+        if(shortKey==='def'&&Array.isArray(val))return;
         window._cache[shortKey]=val;
         try{localStorage.setItem(K[shortKey]||fbKey,JSON.stringify(val));}catch(e){}
         if(fbTs)localStorage.setItem('_ts_'+fbKey,String(fbTs));
@@ -1101,7 +1105,7 @@ const K={mat:'m3_mat',rep:'m3_rep',cli:'m3_cli',eq:'m3_eq',orc:'m3_orc',fat:'m3_
          users:'m3_users',def:'m3_def',cats:'m3_cats',os:'m3_os',
          svc:'m3_svc',evt:'m3_evt',pdvh:'m3_pdvhist',fiado:'m3_fiado'};
 const ld=k=>{if(window._cache&&window._cache[k]!==undefined){var v=window._cache[k];return Array.isArray(v)?v:[];}try{return JSON.parse(localStorage.getItem(K[k]))||[]}catch{return[]}};
-const ldO=k=>{if(window._cache&&window._cache[k]!==undefined&&!Array.isArray(window._cache[k]))return window._cache[k];try{return JSON.parse(localStorage.getItem(K[k]))||{}}catch{return{}}};
+const ldO=k=>{if(window._cache&&window._cache[k]!==undefined&&!Array.isArray(window._cache[k]))return window._cache[k];try{var v=JSON.parse(localStorage.getItem(K[k]));return(v&&!Array.isArray(v))?v:{};}catch{return{}}};
 const sv=(k,d)=>{var fbKey=window.REV_MAP&&window.REV_MAP[k]?window.REV_MAP[k]:('m3_'+k);var ts=Date.now();localStorage.setItem(K[k],JSON.stringify(d));localStorage.setItem('_ts_'+fbKey,String(ts));localStorage.setItem('_save_'+fbKey,String(ts));if(window._cache)window._cache[k]=d;window._lastSave=window._lastSave||{};window._lastSave[fbKey]=ts;if(typeof window._fbSave==="function"){window._fbSave(fbKey,d);}};
 const eur=v=>parseFloat(v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const td=()=>new Date().toISOString().slice(0,10);
@@ -2239,16 +2243,42 @@ function renderDef(){
   if(g('def_marg'))g('def_marg').value=d.marg||30;
 }
 function saveDef(){
-  const d=ldO('def');
-  ['nome','nif','morada','tel','email'].forEach(k=>{d[k]=gv('def_'+k)});
-  sv('def',d);toast('Dados guardados!');
+  // Ler o que existe (localStorage direto, ignorando cache que pode estar corrompido)
+  var existing={};
+  try{existing=JSON.parse(localStorage.getItem(K.def)||'{}');}catch(e){}
+  if(Array.isArray(existing))existing={};
+  var d=Object.assign({},existing);
+  ['nome','nif','morada','tel','email'].forEach(k=>{d[k]=gv('def_'+k)||'';});
+  // Guardar em localStorage, cache e Firebase
+  localStorage.setItem(K.def,JSON.stringify(d));
+  if(window._cache)window._cache['def']=d;
+  var fbKey='m3_def';
+  var ts=Date.now();
+  localStorage.setItem('_ts_'+fbKey,String(ts));
+  localStorage.setItem('_save_'+fbKey,String(ts));
+  window._lastSave=window._lastSave||{};
+  window._lastSave[fbKey]=ts;
+  if(typeof window._fbSave==='function')window._fbSave(fbKey,d);
+  toast('Dados guardados!');
 }
 function saveConf(){
-  const d=ldO('def');
+  var existing={};
+  try{existing=JSON.parse(localStorage.getItem(K.def)||'{}');}catch(e){}
+  if(Array.isArray(existing))existing={};
+  var d=Object.assign({},existing);
   d.iva=parseFloat(gv('def_iva'))||23;
   d.km=parseFloat(gv('def_km'))||0.40;
   d.marg=parseFloat(gv('def_marg'))||30;
-  sv('def',d);toast('Configurações guardadas!');
+  localStorage.setItem(K.def,JSON.stringify(d));
+  if(window._cache)window._cache['def']=d;
+  var fbKey='m3_def';
+  var ts=Date.now();
+  localStorage.setItem('_ts_'+fbKey,String(ts));
+  localStorage.setItem('_save_'+fbKey,String(ts));
+  window._lastSave=window._lastSave||{};
+  window._lastSave[fbKey]=ts;
+  if(typeof window._fbSave==='function')window._fbSave(fbKey,d);
+  toast('Configurações guardadas!');
 }
 function fazerBackup(){
   const dados={versao:'4.0',data:new Date().toISOString()};
