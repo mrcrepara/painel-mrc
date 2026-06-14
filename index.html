@@ -932,7 +932,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
     </div>
 
     <input type="hidden" id="orc_mat" value="0">
-    <div class="frow3"><div class="fg"><label>Mão de Obra (€)</label><input type="number" id="orc_mo" value="0" step="0.01" oninput="calcOrcModal()"></div><div class="fg"><label>IVA (%)</label><input type="number" id="orc_iva" value="23" oninput="calcOrcModal()"></div><div class="fg"><label>Desconto (%)</label><input type="number" id="orc_desc_pct" value="0" step="0.5" oninput="calcOrcModal()"></div></div>
+    <div class="frow3"><div class="fg"><label>Mão de Obra (€)</label><input type="number" id="orc_mo" value="0" step="0.01" oninput="calcOrcModal()"></div><div class="fg"><label>IVA (%)</label><div style="display:flex;gap:6px;align-items:center"><input type="number" id="orc_iva" value="23" oninput="calcOrcModal()" style="flex:1"><label style="display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer"><input type="checkbox" id="orc_iva_on" checked onchange="calcOrcModal()" style="accent-color:var(--blue)"><span style="font-size:11px;color:var(--muted)">c/IVA</span></label></div></div><div class="fg"><label>Desconto (%)</label><input type="number" id="orc_desc_pct" value="0" step="0.5" oninput="calcOrcModal()"></div></div>
     <div class="calc-wrap" id="orc_calc"></div>
     <div class="frow"><div class="fg"><label>Estado</label><select id="orc_est"><option>Pendente</option><option>Aprovado</option><option>Recusado</option></select></div><div class="fg"><label>Validade (dias)</label><input type="number" id="orc_dias" value="30"></div></div>
   </div>
@@ -3183,12 +3183,13 @@ function calcFatModal() {
 
 function calcOrcModal() {
   const mo  = gf('orc_mo');
-  // Get materials total directly from lines
   const linhasOrc = getLinhas('orc');
   const mat = linhasOrc.length > 0
     ? linhasOrc.reduce((s, l) => s + l.total, 0)
     : gf('orc_mat');
-  const iva = gf('orc_iva');
+  const ivaRate = gf('orc_iva');
+  const ivaOn = document.getElementById('orc_iva_on')?.checked !== false;
+  const iva = ivaOn ? ivaRate : 0;
   const pct = gf('orc_desc_pct');
   const deslOn = document.getElementById('orc_desl_on')?.checked;
   const deslKm = deslOn ? gf('orc_desl_km') : 0;
@@ -3203,13 +3204,13 @@ function calcOrcModal() {
 
   const el = document.getElementById('orc_calc');
   if (el) el.innerHTML =
-    `<div class="calc-row"><span style="color:var(--muted)">Mão de Obra</span><span>${eur(mo)}</span></div>` +
-    `<div class="calc-row"><span style="color:var(--muted)">Materiais</span><span>${eur(mat)}</span></div>` +
+    (mo > 0 ? `<div class="calc-row"><span style="color:var(--muted)">Mão de Obra</span><span>${eur(mo)}</span></div>` : '') +
+    (mat > 0 ? `<div class="calc-row"><span style="color:var(--muted)">Materiais</span><span>${eur(mat)}</span></div>` : '') +
     (deslTotal > 0 ? `<div class="calc-row"><span style="color:var(--muted)">🚗 Deslocação (${deslKm}km × ${eur(deslPreco)})</span><span>${eur(deslTotal)}</span></div>` : '') +
     (pct > 0 ? `<div class="calc-row"><span style="color:var(--amber)">Desconto (${pct}%)</span><span style="color:var(--amber)">−${eur(descVal)}</span></div>` : '') +
-    `<div class="calc-row"><span style="color:var(--muted)">Subtotal s/IVA</span><span>${eur(sivaFinal)}</span></div>` +
-    `<div class="calc-row"><span style="color:var(--muted)">IVA (${iva}%)</span><span>${eur(viva)}</span></div>` +
-    `<div class="calc-row"><span>TOTAL c/IVA</span><span>${eur(total)}</span></div>`;
+    (ivaOn && ivaRate > 0 ? `<div class="calc-row"><span style="color:var(--muted)">Subtotal s/IVA</span><span>${eur(sivaFinal)}</span></div>` : '') +
+    (ivaOn && ivaRate > 0 ? `<div class="calc-row"><span style="color:var(--muted)">IVA (${ivaRate}%)</span><span>${eur(viva)}</span></div>` : '') +
+    `<div class="calc-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px"><span style="font-weight:700">TOTAL ${ivaOn && ivaRate>0 ? 'c/IVA' : 's/IVA'}</span><span style="font-weight:700;color:var(--green)">${eur(total)}</span></div>`;
 }
 
 // ── Updated saveFat to store lines + deslocação ────────────
@@ -3314,10 +3315,11 @@ function saveOrc() {
   const deslTotal = deslKm * deslPreco;
 
   const mo = gf('orc_mo'), iva = gf('orc_iva'), pct = gf('orc_desc_pct');
+  const ivaOn = document.getElementById('orc_iva_on')?.checked !== false;
 
   const obj = {
     cli_id, cli: cli?.nome || '—', desc,
-    mo, mat: totalMat, iva, desc_pct: pct,
+    mo, mat: totalMat, iva, iva_active: ivaOn, desc_pct: pct,
     desl_on: deslOn || false, desl_km: deslKm, desl_preco: deslPreco, desl_dest: deslDest, desl_total: deslTotal,
     linhas,
     est: gv('orc_est'), dias: gi('orc_dias'), data: td()
@@ -3411,6 +3413,7 @@ window.fillForm = function(id, d) {
       const dd = document.getElementById('orc_desl_dest'); if (dd) dd.value = d.desl_dest || '';
     }
     const dpct = document.getElementById('orc_desc_pct'); if (dpct) dpct.value = d.desc_pct || 0;
+    const ivaOnEl = document.getElementById('orc_iva_on'); if (ivaOnEl) ivaOnEl.checked = d.iva_active !== false;
     calcOrcModal();
   }
 };
