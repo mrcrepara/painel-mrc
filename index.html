@@ -668,6 +668,21 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <div class="page" id="page-definicoes">
   <div class="pg-hdr"><div><h1>⚙ Definições</h1></div></div>
   <div class="card" style="margin-bottom:16px;border-color:rgba(59,123,246,.3)"><div class="card-hdr"><h3>🔄 Migração de Dados</h3></div><div class="card-body"><p style="font-size:13px;color:var(--muted);margin-bottom:12px">Calcula automaticamente o custo real de material nas faturas antigas com base nos preços de custo do stock actual.</p><button class="btn btn-blue" onclick="migrarCustoFaturas()">🔄 Calcular Custo das Faturas Antigas</button></div></div>
+
+  <div class="card" style="margin-bottom:16px;border-color:rgba(20,184,166,.3)"><div class="card-hdr"><h3>⏱ Registar Horas em Reparações Antigas</h3></div><div class="card-body">
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Preenche as horas e valor/hora de múltiplas reparações de uma vez.</p>
+    <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center">
+      <input id="mig_horas_default" type="number" value="1" step="0.5" min="0" style="width:80px;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px" placeholder="Horas">
+      <span style="font-size:12px;color:var(--muted)">horas por reparação</span>
+      <input id="mig_vh_default" type="number" value="25" step="0.5" min="0" style="width:80px;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px" placeholder="€/hora">
+      <span style="font-size:12px;color:var(--muted)">€/hora</span>
+    </div>
+    <div id="mig_rep_lista" style="max-height:320px;overflow-y:auto;margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="migRepCarregar()">🔍 Carregar Reparações</button>
+      <button class="btn btn-teal btn-sm" onclick="migRepGuardar()">💾 Guardar Alterações</button>
+    </div>
+  </div></div>
   <div class="g2" style="align-items:start">
     <div class="card"><div class="card-hdr"><h3>🏢 Dados da Empresa</h3></div><div class="card-body">
       <div class="fg"><label>Nome da Empresa</label><input id="def_nome"></div>
@@ -5266,6 +5281,48 @@ function _renderFluxoChart(){
 
 
 
+
+function migRepCarregar(){
+  var reps=ld('rep');
+  var hDef=parseFloat(document.getElementById('mig_horas_default')?.value)||1;
+  var vhDef=parseFloat(document.getElementById('mig_vh_default')?.value)||25;
+  var el=document.getElementById('mig_rep_lista');if(!el)return;
+  if(!reps.length){el.innerHTML='<p style="color:var(--muted);font-size:13px">Sem reparações.</p>';return;}
+  var html='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html+='<thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px 8px;color:var(--muted)">Equipamento</th><th style="text-align:left;padding:6px 8px;color:var(--muted)">Cliente</th><th style="text-align:left;padding:6px 8px;color:var(--muted)">Data</th><th style="padding:6px 4px;color:var(--muted)">Horas</th><th style="padding:6px 4px;color:var(--muted)">€/hora</th></tr></thead><tbody>';
+  reps.forEach(function(r){
+    var h=r.horas||hDef;
+    var vh=r.valor_hora||vhDef;
+    html+='<tr style="border-bottom:1px solid rgba(255,255,255,.04)">';
+    html+='<td style="padding:5px 8px;color:#fff">'+r.eq+'</td>';
+    html+='<td style="padding:5px 8px;color:var(--muted)">'+r.cli+'</td>';
+    html+='<td style="padding:5px 8px;color:var(--muted)">'+r.data+'</td>';
+    html+='<td style="padding:5px 4px"><input type="number" data-rep-id="'+r.id+'" data-field="horas" value="'+h+'" step="0.5" min="0" style="width:60px;padding:4px 5px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;text-align:center"></td>';
+    html+='<td style="padding:5px 4px"><input type="number" data-rep-id="'+r.id+'" data-field="vh" value="'+vh+'" step="0.5" min="0" style="width:65px;padding:4px 5px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;text-align:center"></td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+function migRepGuardar(){
+  var el=document.getElementById('mig_rep_lista');if(!el)return;
+  var reps=ld('rep');
+  var count=0;
+  el.querySelectorAll('[data-rep-id]').forEach(function(input){
+    var id=input.dataset.repId;
+    var field=input.dataset.field;
+    var val=parseFloat(input.value)||0;
+    var i=reps.findIndex(function(r){return r.id===id;});
+    if(i<0)return;
+    if(field==='horas') reps[i].horas=val;
+    else if(field==='vh') reps[i].valor_hora=val;
+    count++;
+  });
+  sv('rep',reps);
+  if(typeof renderDash==='function')setTimeout(renderDash,100);
+  toast('✅ Horas guardadas em '+(count/2|0)+' reparações!');
+}
 
 function migrarCustoFaturas(){
   var fats=ld('fat'),mats=ld('mat'),count=0,totalCusto=0;
