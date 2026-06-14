@@ -100,6 +100,7 @@
         changed=true;
       });
       if(changed&&typeof renderAll==='function')setTimeout(renderAll,100);
+      if(changed&&typeof renderDef==='function')setTimeout(renderDef,150);
     },function(e){console.warn('FB realtime:',e);});
   };
 })();
@@ -1207,7 +1208,7 @@ function doLogout(){
 // ══════════════════════════════════════════════════════════
 const TITLES={dashboard:'Dashboard',fluxo:'📊 Fluxo de Caixa',agenda:'📅 Agenda',pdv:'🛒 PDV — Venda Rápida',os:'📋 Ordens de Serviço',servicos:'🛠 Catálogo de Serviços',fiado:'💳 Fiado / A Receber',reparacoes:'🔧 Reparações',orcamentos:'📋 Orçamentos',clientes:'👤 Clientes',equipamentos:'🖥 Equipamentos',materiais:'📦 Materiais',entrada:'↑ Entrada de Stock',saida:'↓ Saída de Stock',inventario:'📑 Inventário',fornecedores:'🏭 Fornecedores',faturas:'🧾 Faturas',recebimentos:'💰 Recebimentos',despesas:'💸 Despesas',deslocacoes:'🚗 Deslocações',relatorios:'📈 Relatórios',calculadora:'🧮 Calculadora',definicoes:'⚙ Definições',backup:'💾 Backup'};
 let CurPage='dashboard';
-const RENDERS={dashboard:renderDash,fluxo:renderFluxo,agenda:function(){},pdv:renderPDV,os:renderOS,servicos:renderSvc,fiado:renderFiado,reparacoes:renderRep,orcamentos:renderOrc,clientes:renderCli,equipamentos:renderEq,materiais:renderMat,entrada:renderEntrada,saida:renderSaida,inventario:renderInv,fornecedores:renderForn,faturas:renderFat,recebimentos:renderRec,despesas:renderDesp,deslocacoes:renderDesl,relatorios:renderRel};
+const RENDERS={dashboard:renderDash,fluxo:renderFluxo,agenda:function(){},pdv:renderPDV,os:renderOS,servicos:renderSvc,fiado:renderFiado,reparacoes:renderRep,orcamentos:renderOrc,clientes:renderCli,equipamentos:renderEq,materiais:renderMat,entrada:renderEntrada,saida:renderSaida,inventario:renderInv,fornecedores:renderForn,faturas:renderFat,recebimentos:renderRec,despesas:renderDesp,deslocacoes:renderDesl,relatorios:renderRel,definicoes:renderDef};
 function goPage(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
@@ -1649,7 +1650,7 @@ function renderFat(){
       sel.appendChild(op);
     });
   })();
-  if(q)fats=fats.filter(x=>(x.num||'').toLowerCase().includes(q)||(x.cli||'').toLowerCase().includes(q));
+  if(q)fats=fats.filter(x=>(x.num||'').toLowerCase().includes(q)||(x.cli||'').toLowerCase().includes(q)||(x.desc||'').toLowerCase().includes(q)||(x.nif||'').toLowerCase().includes(q));
   if(f)fats=fats.filter(x=>x.est===f);
   if(mes)fats=fats.filter(x=>(x.data||'').startsWith(mes));
   const paga=all.filter(x=>x.est==='Paga').reduce((s,x)=>s+fatTot(x),0);
@@ -2711,6 +2712,7 @@ document.addEventListener('DOMContentLoaded',function(){
       try{fillCliSel();}catch(e){}
       try{fillFatSel();}catch(e){}
       try{renderAll();}catch(e){}
+      try{renderDef();}catch(e){}
       if(typeof window._fbStartRealtime==='function') window._fbStartRealtime();
     });
   } else {
@@ -2719,6 +2721,7 @@ document.addEventListener('DOMContentLoaded',function(){
       try{fillCliSel();}catch(e){}
       try{fillFatSel();}catch(e){}
       try{renderAll();}catch(e){}
+      try{renderDef();}catch(e){}
     },50);
   }
 });;
