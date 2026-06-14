@@ -3504,15 +3504,12 @@ window.printOrcamento = function(id) {
     `<tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6">${l.desc}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:center">${l.qty}${l.un&&l.un!=='un'?' '+l.un:''}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(l.preco)}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right;font-weight:600">${eur(l.total)}</td></tr>`
   ).join('');
 
-  const logoHtml = emp.logo ? '<img src="' + emp.logo + '" style="height:55px;object-fit:contain;margin-bottom:8px;display:block">' : '';
-  const sigHtml = emp.sig ? '<img src="' + emp.sig + '" style="height:50px;object-fit:contain;display:block;margin-bottom:4px">' : '<div style="height:50px"></div>';
-
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Orçamento ${o.num||''}</title>
   <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#111;padding:40px;max-width:820px;margin:0 auto}table{width:100%;border-collapse:collapse}th{padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;border-bottom:2px solid #e5e7eb}td{vertical-align:top}.badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700}@media print{button{display:none}}</style>
   </head><body>
   <button onclick="window.print()" style="position:fixed;top:20px;right:20px;padding:10px 20px;background:#8B5CF6;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🖨 Imprimir</button>
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #e5e7eb">
-    <div>${logoHtml}<div style="font-size:22px;font-weight:800;color:#111;margin-bottom:2px">${emp.nome||'MRC'}</div>${emp.nif?`<div style="font-size:12px;color:#6b7280">NIF: ${emp.nif}</div>`:''} ${emp.morada?`<div style="font-size:12px;color:#6b7280">${emp.morada}</div>`:''} ${emp.tel?`<div style="font-size:12px;color:#6b7280">Tel: ${emp.tel}</div>`:''}</div>
+    <div><div style="font-size:22px;font-weight:800;color:#111;margin-bottom:2px">${emp.nome||'MRC'}</div>${emp.nif?`<div style="font-size:12px;color:#6b7280">NIF: ${emp.nif}</div>`:''} ${emp.morada?`<div style="font-size:12px;color:#6b7280">${emp.morada}</div>`:''}</div>
     <div style="text-align:right"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:4px">ORÇAMENTO</div><div style="font-size:24px;font-weight:800;color:#111">${o.num||'—'}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">Data: ${o.data||''}</div></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px">
@@ -3531,27 +3528,11 @@ window.printOrcamento = function(id) {
     <tr><td style="padding:12px;font-weight:700;font-size:15px;border-top:2px solid #e5e7eb">TOTAL ${ivaOn?'c/IVA':'s/IVA'}</td><td style="padding:12px;text-align:right;font-weight:800;color:#8B5CF6;font-size:20px;border-top:2px solid #e5e7eb">${eur(total)}</td></tr>
   </tbody></table>
   <div style="background:#f9fafb;border-radius:8px;padding:14px;margin-bottom:24px;font-size:12px;color:#6b7280">${ivaOn?`Este orçamento é válido por <strong>${o.dias||30} dias</strong>. Os valores incluem IVA à taxa de ${o.iva||23}%.`:`Este orçamento é válido por <strong>${o.dias||30} dias</strong>. Os valores não incluem IVA (regime de isenção).`}</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:24px;align-items:end">
-    <div>
-      <div style="font-size:11px;color:#9ca3af;margin-bottom:50px">Data e assinatura do cliente:</div>
-      <div style="border-top:1px solid #e5e7eb;padding-top:6px;font-size:11px;color:#9ca3af">______________________</div>
-    </div>
-    <div>
-      <div style="font-size:11px;color:#9ca3af;margin-bottom:6px">Pela empresa:</div>
-      ${sigHtml}
-      <div style="border-top:1px solid #e5e7eb;padding-top:6px;font-size:11px;color:#9ca3af">${emp.nome||'MRC'}${emp.nif?' · NIF '+emp.nif:''}</div>
-    </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:24px">
+    <div><div style="font-size:11px;color:#9ca3af;margin-bottom:28px">Data e assinatura do cliente:</div><div style="border-top:1px solid #e5e7eb;padding-top:6px;font-size:11px;color:#9ca3af">______________________</div></div>
+    <div><div style="font-size:11px;color:#9ca3af;margin-bottom:28px">Pela empresa:</div><div style="border-top:1px solid #e5e7eb;padding-top:6px;font-size:11px;color:#9ca3af">______________________</div></div>
   </div>
-  <div style="margin-top:28px;padding:14px;background:#f9fafb;border-radius:8px;font-size:11px;color:#6b7280;line-height:1.7">
-    <strong style="color:#374151">Notas e condições gerais:</strong><br>
-    1. Este orçamento tem validade de <strong>${o.dias||30} dias</strong> a partir da data de emissão.<br>
-    2. O presente orçamento não constitui fatura. Após aprovação será emitido documento fiscal.<br>
-    3. Trabalhos adicionais não previstos neste orçamento serão objeto de orçamento complementar.<br>
-    4. Os materiais fornecidos têm garantia de acordo com a legislação em vigor.<br>
-    5. Em caso de desistência após início dos trabalhos, poderão ser cobrados custos já incorridos.<br>
-    ${ivaOn?'6. Os valores apresentados incluem IVA à taxa legal de '+(o.iva||23)+'%.':'6. O prestador de serviços está isento de IVA nos termos do artigo 53.º do CIVA.'}
-  </div>
-  <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center">${emp.nome||'MRC'} ${emp.nif?'· NIF '+emp.nif:''} ${emp.morada?'· '+emp.morada:''} ${emp.tel?'· Tel: '+emp.tel:''}</div>
+  <div style="margin-top:40px;padding-top:20px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center">${emp.nome||'MRC'} ${emp.nif?'· NIF '+emp.nif:''} ${emp.morada?'· '+emp.morada:''}</div>
   </body></html>`;
 
   const w = window.open('', '_blank', 'width=900,height=700');
@@ -4362,11 +4343,14 @@ window.printFatura = function(id) {
   const pct = f.desc_pct || 0;
   const descVal = +(siva*(pct/100)).toFixed(2);
   const sivaF = +(siva - descVal).toFixed(2);
-  const viva = +(sivaF*((f.iva_active===false?0:(f.iva!=null?f.iva:23))/100)).toFixed(2);
+  const ivaOn = f.iva_active !== false;
+  const ivaRate = ivaOn ? (f.iva!=null?f.iva:23) : 0;
+  const viva = +(sivaF*(ivaRate/100)).toFixed(2);
   const total = +(sivaF + viva).toFixed(2);
   const cli = ld('cli').find(c => c.id === f.cli_id) || {};
   const estCor = {Paga:'#065f46',Pendente:'#78350f','Em Atraso':'#7f1d1d'};
   const estBg  = {Paga:'#d1fae5',Pendente:'#fef3c7','Em Atraso':'#fee2e2'};
+  const sigHtml = emp.sig ? '<img src="'+emp.sig+'" style="height:50px;object-fit:contain;display:block;margin-bottom:4px">' : '<div style="height:50px"></div>';
   const linhasHTML = (f.linhas||[]).map(l =>
     '<tr><td style="padding:7px 10px;border-bottom:1px solid #f3f4f6">'+l.desc+'</td><td style="padding:7px 10px;border-bottom:1px solid #f3f4f6;text-align:center">'+l.qty+(l.un&&l.un!=='un'?' '+l.un:'')+'</td><td style="padding:7px 10px;border-bottom:1px solid #f3f4f6;text-align:right">'+eur(l.preco)+'</td><td style="padding:7px 10px;border-bottom:1px solid #f3f4f6;text-align:right;font-weight:600">'+eur(l.total)+'</td></tr>'
   ).join('');
@@ -4414,11 +4398,26 @@ ${pct>0?'<tr><td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;color:#
 <tr><td style="padding:11px 10px;font-weight:700;font-size:15px;border-top:2px solid #e5e7eb">TOTAL c/IVA</td><td style="padding:11px 10px;text-align:right;font-weight:800;color:#2563EB;font-size:20px;border-top:2px solid #e5e7eb">${eur(total)}</td></tr>
 </tbody></table>
 ${emp.iban?'<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 13px;font-size:12px;margin-bottom:20px">IBAN: <strong>'+emp.iban+'</strong></div>':''}
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:28px">
-  <div><div style="font-size:11px;color:#9ca3af;margin-bottom:24px">Assinatura do Cliente:</div><div style="border-top:1px solid #e5e7eb;padding-top:5px;font-size:11px;color:#9ca3af">______________________</div></div>
-  <div><div style="font-size:11px;color:#9ca3af;margin-bottom:24px">Pela empresa:</div>${emp.sig?'<img src="'+emp.sig+'" style="height:50px;object-fit:contain;display:block;margin-bottom:4px">':''}<div style="border-top:1px solid #e5e7eb;padding-top:5px;font-size:11px;color:#9ca3af">______________________</div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:28px;align-items:end">
+  <div>
+    <div style="font-size:11px;color:#9ca3af;margin-bottom:50px">Assinatura do Cliente:</div>
+    <div style="border-top:1px solid #e5e7eb;padding-top:5px;font-size:11px;color:#9ca3af">______________________</div>
+  </div>
+  <div>
+    <div style="font-size:11px;color:#9ca3af;margin-bottom:6px">Pela empresa:</div>
+    ${sigHtml}
+    <div style="border-top:1px solid #e5e7eb;padding-top:5px;font-size:11px;color:#9ca3af">${emp.nome||'MRC'}${emp.nif?' · NIF '+emp.nif:''}</div>
+  </div>
 </div>
-<div style="margin-top:36px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center">${emp.nome||'MRC'} ${emp.nif?'· NIF '+emp.nif:''} ${emp.morada?'· '+emp.morada:''}</div>
+<div style="margin-top:28px;padding:14px;background:#f9fafb;border-radius:8px;font-size:11px;color:#6b7280;line-height:1.7">
+  <strong style="color:#374151">Informação legal:</strong><br>
+  1. Esta fatura é o documento comprovativo da prestação de serviços/venda de bens.<br>
+  2. O pagamento deverá ser efetuado até à data de vencimento indicada.<br>
+  3. Em caso de atraso no pagamento poderão ser aplicados juros de mora legais.<br>
+  4. Os materiais e serviços prestados têm garantia nos termos da legislação em vigor.<br>
+  ${ivaOn ? '5. Os valores apresentados incluem IVA à taxa legal de '+ivaRate+'%.' : '5. Fatura isenta de IVA nos termos do artigo 53.º do CIVA.'}
+</div>
+<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center">${emp.nome||'MRC'} ${emp.nif?'· NIF '+emp.nif:''} ${emp.morada?'· '+emp.morada:''} ${emp.tel?'· Tel: '+emp.tel:''}</div>
 </body></html>`);
   w.document.close();
 };
