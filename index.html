@@ -3029,7 +3029,9 @@ let _fatLinhas = 0;
 function addLinhaFat() {
   const cont = document.getElementById('fat_linhas');
   if (!cont) return;
-  cont.insertAdjacentHTML('beforeend', linhaHTML('fat', _fatLinhas));
+  // Usar índice único baseado em timestamp para evitar colisões
+  const idx = Date.now() % 1000000;
+  cont.insertAdjacentHTML('beforeend', linhaHTML('fat', idx));
   _fatLinhas++;
   recalcLinhas('fat');
 }
@@ -3046,7 +3048,8 @@ let _orcLinhas = 0;
 function addLinhaOrc() {
   const cont = document.getElementById('orc_linhas');
   if (!cont) return;
-  cont.insertAdjacentHTML('beforeend', linhaHTML('orc', _orcLinhas));
+  const idx = Date.now() % 1000000;
+  cont.insertAdjacentHTML('beforeend', linhaHTML('orc', idx));
   _orcLinhas++;
   recalcLinhas('orc');
 }
@@ -3360,11 +3363,15 @@ window.fillForm = function(id, d) {
     clearLinhasFat();
     (d.linhas || []).forEach(l => {
       addLinhaFat();
-      const idx = _fatLinhas - 1;
+      // Ler o idx real da última linha inserida no DOM
+      const cont = document.getElementById('fat_linhas');
+      const lastRow = cont.querySelector('[id^="fat_linha_"]:last-child') || cont.lastElementChild;
+      const idx = lastRow ? lastRow.id.replace('fat_linha_', '') : 0;
       const dEl = document.getElementById('fat_l' + idx + '_desc'); if (dEl) dEl.value = l.desc;
       const qEl = document.getElementById('fat_l' + idx + '_qty');  if (qEl) qEl.value = l.qty;
       const unEl = document.getElementById('fat_l' + idx + '_un'); if (unEl && l.un) unEl.value = l.un;
       const pEl = document.getElementById('fat_l' + idx + '_preco'); if (pEl) pEl.value = l.preco;
+      const cEl = document.getElementById('fat_l' + idx + '_custo'); if (cEl) cEl.value = l.custo || 0;
     });
     if (d.desl_on) {
       const cb = document.getElementById('fat_desl_on'); if (cb) { cb.checked = true; toggleDeslFat(); }
@@ -3383,11 +3390,14 @@ window.fillForm = function(id, d) {
     clearLinhasOrc();
     (d.linhas || []).forEach(l => {
       addLinhaOrc();
-      const idx = _orcLinhas - 1;
+      const cont = document.getElementById('orc_linhas');
+      const lastRow = cont.querySelector('[id^="orc_linha_"]:last-child') || cont.lastElementChild;
+      const idx = lastRow ? lastRow.id.replace('orc_linha_', '') : 0;
       const dEl = document.getElementById('orc_l' + idx + '_desc'); if (dEl) dEl.value = l.desc;
       const qEl = document.getElementById('orc_l' + idx + '_qty');  if (qEl) qEl.value = l.qty;
       const unEl = document.getElementById('orc_l' + idx + '_un'); if (unEl && l.un) unEl.value = l.un;
       const pEl = document.getElementById('orc_l' + idx + '_preco'); if (pEl) pEl.value = l.preco;
+      const cEl = document.getElementById('orc_l' + idx + '_custo'); if (cEl) cEl.value = l.custo || 0;
     });
     if (d.desl_on) {
       const cb = document.getElementById('orc_desl_on'); if (cb) { cb.checked = true; toggleDeslOrc(); }
