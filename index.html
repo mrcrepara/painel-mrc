@@ -1500,7 +1500,9 @@ function renderOrc(){
   if(!orcs.length){tb.innerHTML=eRow(7,'Sem orçamentos');return}
   let html='';
   [...orcs].reverse().forEach(o=>{
-    const tot=((o.mo||0)+(o.mat||0))*(1+(o.iva||23)/100);
+    const ivaR = o.iva_active===false ? 0 : (o.iva||23);
+    const siva = ((o.mo||0)+(o.mat||0)+(o.desl_total||0))*(1-(o.desc_pct||0)/100);
+    const tot = siva * (1 + ivaR/100);
     html+='<tr><td><strong style="color:#fff">'+(o.num||'—')+'</strong></td><td style="color:var(--muted)">'+(o.data||'—')+'</td><td>'+(o.cli||'—')+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(o.desc||'—')+'</td><td style="color:var(--green);font-weight:600">'+eur(tot)+'</td><td>'+ebadge(o.est)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-orc" data-id="'+o.id+'">✏ Editar</button><button class="btn-xs" style="background:#8B5CF6" data-action="print-orc" data-id="'+o.id+'">🖨 Imprimir</button><button class="btn-xs" style="background:var(--red)" data-action="del-orc" data-id="'+o.id+'">🗑</button></td></tr>';
   });
   tb.innerHTML=html;
@@ -2546,7 +2548,8 @@ function printOrcamento(id) {
   if (!o) { toast('Orçamento não encontrado!', 'r'); return; }
   const emp = getEmpresa();
   const siva = (o.mo||0) + (o.mat||0);
-  const viva = siva * (o.iva||23) / 100;
+  const ivaR = o.iva_active===false ? 0 : (o.iva||23);
+  const viva = siva * ivaR / 100;
   const total = siva + viva;
   const cli = ld('cli').find(c => c.id === o.cli_id) || {};
   const validade = o.dias ? new Date(Date.now() + o.dias*86400000).toISOString().slice(0,10) : '';
@@ -2590,14 +2593,14 @@ function printOrcamento(id) {
         ${o.mo?`<tr><td style="color:#6b7280;padding-left:20px">→ Mão de Obra</td><td style="text-align:right">${eur(o.mo)}</td></tr>`:''}
         ${o.mat?`<tr><td style="color:#6b7280;padding-left:20px">→ Materiais</td><td style="text-align:right">${eur(o.mat)}</td></tr>`:''}
         <tr><td style="color:#6b7280">Subtotal</td><td style="text-align:right">${eur(siva)}</td></tr>
-        <tr><td style="color:#6b7280">IVA (${o.iva||23}%)</td><td style="text-align:right">${eur(viva)}</td></tr>
-        <tr class="total-row"><td>TOTAL</td><td style="text-align:right;color:#8B5CF6;font-size:18px">${eur(total)}</td></tr>
+        ${ivaR>0?`<tr><td style="color:#6b7280">IVA (${ivaR}%)</td><td style="text-align:right">${eur(viva)}</td></tr>`:''}
+        <tr class="total-row"><td>TOTAL ${ivaR>0?'c/IVA':'s/IVA'}</td><td style="text-align:right;color:#8B5CF6;font-size:18px">${eur(total)}</td></tr>
       </tbody>
     </table>
     <div class="conds">
       <strong style="color:#374151">Condições gerais:</strong><br>
       Este orçamento é válido por <strong>${o.dias||30} dias</strong> a partir da data de emissão.
-      Os valores apresentados incluem IVA à taxa de ${o.iva||23}%.
+      ${ivaR>0?`Os valores apresentados incluem IVA à taxa de ${ivaR}%.`:'Os valores apresentados não incluem IVA (regime de isenção).'}
       Qualquer trabalho adicional não previsto neste orçamento será orçamentado separadamente.
     </div>
     <div style="margin-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
@@ -3488,7 +3491,9 @@ window.printOrcamento = function(id) {
   const pct = o.desc_pct || 0;
   const descVal = siva * (pct/100);
   const sivaFinal = siva - descVal;
-  const viva = sivaFinal * ((o.iva||23) / 100);
+  const ivaOn = o.iva_active !== false;
+  const ivaRate = ivaOn ? (o.iva||23) : 0;
+  const viva = sivaFinal * (ivaRate / 100);
   const total = sivaFinal + viva;
   const cli = ld('cli').find(c => c.id === o.cli_id) || {};
   const validade = o.dias ? new Date(Date.now() + o.dias*86400000).toISOString().slice(0,10) : '';
@@ -3518,11 +3523,11 @@ window.printOrcamento = function(id) {
     ${(o.linhas||[]).length ? `<tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6">Materiais (${(o.linhas||[]).length} linha${(o.linhas||[]).length>1?'s':''})</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(o.mat)}</td></tr>` : ''}
     ${o.desl_total ? `<tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6">🚗 Deslocação ${o.desl_dest?'('+o.desl_dest+')':''} — ${o.desl_km}km × ${eur(o.desl_preco)}</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(o.desl_total)}</td></tr>` : ''}
     ${pct > 0 ? `<tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#d97706">Desconto (${pct}%)</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right;color:#d97706">−${eur(descVal)}</td></tr>` : ''}
-    <tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">Subtotal s/IVA</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(sivaFinal)}</td></tr>
-    <tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">IVA (${o.iva||23}%)</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(viva)}</td></tr>
-    <tr><td style="padding:12px;font-weight:700;font-size:15px;border-top:2px solid #e5e7eb">TOTAL c/IVA</td><td style="padding:12px;text-align:right;font-weight:800;color:#8B5CF6;font-size:20px;border-top:2px solid #e5e7eb">${eur(total)}</td></tr>
+    ${ivaOn ? `<tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">Subtotal s/IVA</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(sivaFinal)}</td></tr>` : ''}
+    ${ivaOn ? `<tr><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">IVA (${o.iva||23}%)</td><td style="padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:right">${eur(viva)}</td></tr>` : ''}
+    <tr><td style="padding:12px;font-weight:700;font-size:15px;border-top:2px solid #e5e7eb">TOTAL ${ivaOn?'c/IVA':'s/IVA'}</td><td style="padding:12px;text-align:right;font-weight:800;color:#8B5CF6;font-size:20px;border-top:2px solid #e5e7eb">${eur(total)}</td></tr>
   </tbody></table>
-  <div style="background:#f9fafb;border-radius:8px;padding:14px;margin-bottom:24px;font-size:12px;color:#6b7280">Este orçamento é válido por <strong>${o.dias||30} dias</strong>. Os valores incluem IVA à taxa de ${o.iva||23}%.</div>
+  <div style="background:#f9fafb;border-radius:8px;padding:14px;margin-bottom:24px;font-size:12px;color:#6b7280">${ivaOn?`Este orçamento é válido por <strong>${o.dias||30} dias</strong>. Os valores incluem IVA à taxa de ${o.iva||23}%.`:`Este orçamento é válido por <strong>${o.dias||30} dias</strong>. Os valores não incluem IVA (regime de isenção).`}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:24px">
     <div><div style="font-size:11px;color:#9ca3af;margin-bottom:28px">Data e assinatura do cliente:</div><div style="border-top:1px solid #e5e7eb;padding-top:6px;font-size:11px;color:#9ca3af">______________________</div></div>
     <div><div style="font-size:11px;color:#9ca3af;margin-bottom:28px">Pela empresa:</div><div style="border-top:1px solid #e5e7eb;padding-top:6px;font-size:11px;color:#9ca3af">______________________</div></div>
@@ -4150,7 +4155,7 @@ ${[...fats].reverse().map(f=>'<tr><td>'+f.num+'</td><td>'+f.data+'</td><td>'+f.d
 </tbody></table>` : ''}
 ${orcs.length ? `<h2>📋 Orçamentos (${orcs.length})</h2>
 <table><thead><tr><th>Nº</th><th>Data</th><th>Descrição</th><th>Total</th><th>Estado</th></tr></thead><tbody>
-${[...orcs].reverse().map(o=>{const t=((o.mo||0)+(o.mat||0)+(o.desl_total||0))*(1-(o.desc_pct||0)/100)*(1+(o.iva||23)/100);return'<tr><td>'+(o.num||'—')+'</td><td>'+o.data+'</td><td>'+o.desc+'</td><td>'+eur(t)+'</td><td>'+o.est+'</td></tr>'}).join('')}
+${[...orcs].reverse().map(o=>{const ivaR=o.iva_active===false?0:(o.iva||23);const t=((o.mo||0)+(o.mat||0)+(o.desl_total||0))*(1-(o.desc_pct||0)/100)*(1+ivaR/100);return'<tr><td>'+(o.num||'—')+'</td><td>'+o.data+'</td><td>'+o.desc+'</td><td>'+eur(t)+'</td><td>'+o.est+'</td></tr>'}).join('')}
 </tbody></table>` : ''}
 ${fds.filter(f=>f.est!=='Pago').length ? `<h2>💳 Fiado Pendente</h2>
 <table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Vencimento</th><th>Estado</th></tr></thead><tbody>
