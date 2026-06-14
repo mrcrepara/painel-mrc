@@ -3509,7 +3509,8 @@ window.printOrcamento = function(id) {
   </head><body>
   <button onclick="window.print()" style="position:fixed;top:20px;right:20px;padding:10px 20px;background:#8B5CF6;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🖨 Imprimir</button>
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #e5e7eb">
-    <div><div style="font-size:22px;font-weight:800;color:#111;margin-bottom:2px">${emp.nome||'MRC'}</div>${emp.nif?`<div style="font-size:12px;color:#6b7280">NIF: ${emp.nif}</div>`:''} ${emp.morada?`<div style="font-size:12px;color:#6b7280">${emp.morada}</div>`:''}</div>
+    <div>${emp.logo?`<img src="${emp.logo}" style="height:55px;object-fit:contain;margin-bottom:8px;display:block">`:''}
+    <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:2px">${emp.nome||'MRC'}</div>${emp.nif?`<div style="font-size:12px;color:#6b7280">NIF: ${emp.nif}</div>`:''} ${emp.morada?`<div style="font-size:12px;color:#6b7280">${emp.morada}</div>`:''} ${emp.tel?`<div style="font-size:12px;color:#6b7280">Tel: ${emp.tel}</div>`:''}</div>
     <div style="text-align:right"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;margin-bottom:4px">ORÇAMENTO</div><div style="font-size:24px;font-weight:800;color:#111">${o.num||'—'}</div><div style="font-size:12px;color:#6b7280;margin-top:4px">Data: ${o.data||''}</div></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px">
@@ -3530,7 +3531,7 @@ window.printOrcamento = function(id) {
   <div style="background:#f9fafb;border-radius:8px;padding:14px;margin-bottom:24px;font-size:12px;color:#6b7280">${ivaOn?`Este orçamento é válido por <strong>${o.dias||30} dias</strong>. Os valores incluem IVA à taxa de ${o.iva||23}%.`:`Este orçamento é válido por <strong>${o.dias||30} dias</strong>. Os valores não incluem IVA (regime de isenção).`}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:24px">
     <div><div style="font-size:11px;color:#9ca3af;margin-bottom:28px">Data e assinatura do cliente:</div><div style="border-top:1px solid #e5e7eb;padding-top:6px;font-size:11px;color:#9ca3af">______________________</div></div>
-    <div><div style="font-size:11px;color:#9ca3af;margin-bottom:28px">Pela empresa:</div><div style="border-top:1px solid #e5e7eb;padding-top:6px;font-size:11px;color:#9ca3af">______________________</div></div>
+    <div><div style="font-size:11px;color:#9ca3af;margin-bottom:${emp.sig?'4px':'28px'}">Pela empresa:</div>${emp.sig?`<img src="${emp.sig}" style="height:50px;object-fit:contain;display:block;margin-bottom:4px">`:''}  <div style="border-top:1px solid #e5e7eb;padding-top:6px;font-size:11px;color:#9ca3af">______________________</div></div>
   </div>
   <div style="margin-top:40px;padding-top:20px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center">${emp.nome||'MRC'} ${emp.nif?'· NIF '+emp.nif:''} ${emp.morada?'· '+emp.morada:''}</div>
   </body></html>`;
