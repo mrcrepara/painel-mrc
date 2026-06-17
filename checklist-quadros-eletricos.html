@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quadros MRC</title>
+<meta name="description" content="Checklist de manutenção de quadros elétricos — MRC Reparação">
+<meta name="theme-color" content="#111318">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Quadros MRC">
+<link rel="apple-touch-icon" id="appleTouchIcon">
+<link rel="manifest" id="pwaManifest">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
+:root{--bg:#E5E7EB;--surface:#F3F4F6;--surface2:#D1D5DB;--border:#9CA3AF;--yellow:#F5C518;--green:#22C55E;--red:#EF4444;--orange:#F97316;--blue:#3B82F6;--muted:#6B7280;--text:#111318;--sub:#374151;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;padding:20px 14px 60px;}
+.header{max-width:920px;margin:0 auto 20px;}
+.header h1{font-family:'JetBrains Mono',monospace;font-size:clamp(1rem,3vw,1.35rem);font-weight:700;color:#fff;}
+.header h1 span{color:var(--yellow);}
+.header-sub{display:flex;align-items:center;gap:12px;margin-top:5px;flex-wrap:wrap;}
+.header p{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.save-indicator{font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:3px 9px;border-radius:99px;background:var(--border);color:var(--muted);transition:all .4s;}
+.save-indicator.saving{background:#1e3a5f;color:#60a5fa;}
+.save-indicator.saved{background:#1f2937;color:#9CA3AF;}
+.global-meta{max-width:920px;margin:0 auto 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;}
+.mf label{display:block;font-size:.62rem;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.mf input,.mf select{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.8rem;padding:7px 10px;border-radius:6px;outline:none;transition:border-color .2s;}
+.mf input:focus,.mf select:focus{border-color:var(--yellow);}
+.global-prog{max-width:920px;margin:0 auto 22px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;}
+.gp-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+.gp-label{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.gp-pct{font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--yellow);transition:color .4s;}
+.gp-pct.done{color:#9CA3AF;}
+.gp-track{height:9px;background:var(--border);border-radius:99px;overflow:hidden;}
+.gp-fill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#F97316 0%,#F5C518 50%,#22C55E 100%);background-size:920px 9px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+.gp-stats{display:flex;gap:18px;margin-top:8px;flex-wrap:wrap;}
+.gp-stat{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--sub);}
+.gp-stat span{color:var(--text);font-weight:600;}
+.tab-bar-wrap{max-width:920px;margin:0 auto 16px;}
+.tab-bar-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.tab-bar-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;white-space:nowrap;}
+.tab-bar{display:flex;gap:6px;flex-wrap:wrap;flex:1;}
+.tab-btn{font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--sub);cursor:pointer;transition:all .2s;white-space:nowrap;}
+.tab-btn:hover{border-color:var(--yellow);color:var(--text);}
+.tab-btn.active{background:var(--yellow);color:#111;border-color:var(--yellow);font-weight:700;}
+.tab-btn.complete{border-color:#6B7280;color:#9CA3AF;}
+.tab-btn.active.complete{background:#4B5563;color:#fff;border-color:#6B7280;}
+.btn-add-panel,.btn-del-panel{font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:6px 11px;border-radius:7px;cursor:pointer;font-weight:600;transition:opacity .2s;}
+.btn-add-panel{background:var(--surface2);color:var(--yellow);border:1px solid var(--border);}
+.btn-del-panel{background:var(--surface2);color:var(--red);border:1px solid var(--border);}
+.btn-add-panel:hover,.btn-del-panel:hover{opacity:.7;}
+.panel{display:none;}.panel.active{display:block;}
+.panel-meta{max-width:920px;margin:0 auto 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px;}
+.panel-meta-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.pm-badge{font-family:'JetBrains Mono',monospace;font-size:.62rem;background:var(--border);color:var(--sub);padding:3px 8px;border-radius:4px;}
+.pm-name{background:transparent;border:none;color:var(--text);font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;outline:none;flex:1;min-width:120px;}
+.pm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:8px;}
+.room-bar{max-width:920px;margin:0 auto 12px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.room-bar-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;white-space:nowrap;}
+.room-btn{font-size:.7rem;font-family:'JetBrains Mono',monospace;padding:5px 12px;border-radius:99px;border:1px solid var(--border);background:var(--surface2);color:var(--sub);cursor:pointer;transition:all .2s;white-space:nowrap;}
+.room-btn:hover{border-color:var(--blue);color:var(--text);}
+.room-btn.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600;}
+.room-btn.done-room{border-color:#6B7280;color:#9CA3AF;}
+.room-btn.active.done-room{background:#4B5563;color:#fff;border-color:#6B7280;}
+.btn-add-room,.btn-del-room{font-size:.68rem;font-family:'JetBrains Mono',monospace;padding:4px 9px;border-radius:99px;border:1px solid var(--border);background:transparent;cursor:pointer;transition:opacity .2s;font-weight:600;}
+.btn-add-room{color:var(--blue);}.btn-del-room{color:var(--red);}
+.btn-add-room:hover,.btn-del-room:hover{opacity:.6;}
+.room-panel{display:none;}.room-panel.active{display:block;}
+.room-prog{max-width:920px;margin:0 auto 10px;display:flex;align-items:center;gap:10px;}
+.room-prog-track{flex:1;height:5px;background:var(--border);border-radius:99px;overflow:hidden;}
+.room-prog-fill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#F97316,#F5C518,#22C55E);background-size:920px 5px;transition:width .4s;}
+.room-prog-label{font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--sub);white-space:nowrap;}
+.section{max-width:920px;margin:0 auto 10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.section-header{display:flex;align-items:center;gap:10px;padding:11px 15px;cursor:pointer;user-select:none;border-bottom:1px solid transparent;transition:border-color .2s;}
+.section-header:hover{background:var(--surface2);}
+.section.open .section-header{border-bottom-color:var(--border);}
+.section-icon{width:27px;height:27px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;}
+.section-title{flex:1;font-weight:600;font-size:.84rem;}
+.section-badge{font-family:'JetBrains Mono',monospace;font-size:.63rem;padding:2px 7px;border-radius:99px;background:var(--border);color:var(--sub);white-space:nowrap;}
+.section-badge.all-done{background:#1f2937;color:#9CA3AF;}
+.section-chevron{color:var(--muted);font-size:.72rem;transition:transform .25s;flex-shrink:0;}
+.section.open .section-chevron{transform:rotate(180deg);}
+.section-body{display:none;padding:4px 0;}
+.section.open .section-body{display:block;}
+.item{display:flex;align-items:flex-start;gap:10px;padding:9px 15px;cursor:pointer;transition:background .15s;}
+.item:hover{background:var(--surface2);}
+.item.checked{opacity:1;}
+.item-check{width:19px;height:19px;border:2px solid var(--border);border-radius:4px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:.7rem;transition:all .2s;}
+.item.checked .item-check{background:#4B5563;border-color:#6B7280;color:#fff;}
+.item-text{flex:1;font-size:.82rem;line-height:1.45;}
+.item.checked .item-text{text-decoration:none;color:var(--text);}
+.item-priority{font-family:'JetBrains Mono',monospace;font-size:.57rem;padding:2px 5px;border-radius:3px;flex-shrink:0;margin-top:2px;font-weight:600;letter-spacing:.4px;}
+.p-crit{background:#DC2626;color:#fff;}.p-imp{background:#EA580C;color:#fff;}.p-rot{background:#6B7280;color:#fff;}
+.item-note-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:.66rem;padding:0;font-family:'JetBrains Mono',monospace;flex-shrink:0;margin-top:2px;transition:color .2s;}
+.item-note-btn:hover{color:var(--yellow);}
+.item-note-wrap{padding:2px 15px 8px calc(15px + 29px);display:none;}
+.item-note-wrap.visible{display:block;}
+.item-note{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--sub);font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:6px 9px;resize:vertical;min-height:34px;outline:none;transition:border-color .2s;}
+.item-note:focus{border-color:var(--yellow);color:var(--text);}
+/* ── INTERVENÇÕES FUTURAS ── */
+.futuras-wrap{max-width:920px;margin:0 auto 14px;background:var(--surface);border:1px solid #1d4ed8;border-radius:10px;overflow:hidden;}
+.futuras-header{display:flex;align-items:center;gap:10px;padding:11px 15px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;}
+.futuras-header:hover{background:var(--surface2);}
+.futuras-icon{width:27px;height:27px;background:#1e3a5f;color:#60a5fa;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;}
+.futuras-title{flex:1;font-weight:600;font-size:.85rem;color:#93c5fd;}
+.futuras-count{font-family:"JetBrains Mono",monospace;font-size:.63rem;padding:2px 7px;border-radius:99px;background:var(--border);color:var(--sub);}
+.futuras-count.has-items{background:#1e3a5f;color:#60a5fa;}
+.futuras-chevron{color:var(--muted);font-size:.72rem;transition:transform .25s;}
+.futuras-wrap.open .futuras-chevron{transform:rotate(180deg);}
+.futuras-body{display:none;padding:12px 15px;}
+.futuras-wrap.open .futuras-body{display:block;}
+.futura-item{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);}
+.futura-item:last-child{border-bottom:none;}
+.futura-tag{font-family:"JetBrains Mono",monospace;font-size:.6rem;padding:2px 6px;border-radius:3px;flex-shrink:0;margin-top:2px;font-weight:600;white-space:nowrap;}
+.tag-troca{background:#DC2626;color:#fff;}
+.tag-insp{background:#EA580C;color:#fff;}
+.tag-outro{background:#6B7280;color:#fff;}
+.futura-text{flex:1;font-size:.82rem;color:var(--text);line-height:1.4;}
+.futura-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:.8rem;padding:0 4px;transition:color .2s;flex-shrink:0;}
+.futura-del:hover{color:var(--red);}
+.futura-add-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.futura-input{flex:1;min-width:150px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:"Inter",sans-serif;font-size:.8rem;padding:7px 10px;border-radius:6px;outline:none;transition:border-color .2s;}
+.futura-input:focus{border-color:#3b82f6;}
+.futura-select{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:"JetBrains Mono",monospace;font-size:.72rem;padding:7px 8px;border-radius:6px;outline:none;cursor:pointer;}
+.btn-futura-add{background:#1e3a5f;color:#60a5fa;border:1px solid #1d4ed8;font-family:"JetBrains Mono",monospace;font-size:.72rem;padding:7px 13px;border-radius:6px;cursor:pointer;font-weight:600;transition:opacity .2s;white-space:nowrap;}
+.btn-futura-add:hover{opacity:.8;}
+.futuras-empty{font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--muted);padding:6px 0 10px;}
+.sig-wrap{max-width:920px;margin:18px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.sig-header{display:flex;align-items:center;gap:10px;padding:11px 15px;border-bottom:1px solid var(--border);}
+.sig-icon{width:27px;height:27px;background:#1a1a1a;color:#e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.88rem;}
+.sig-title{font-weight:600;font-size:.86rem;}
+.sig-sub{font-size:.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.sig-body{padding:13px 15px;}
+.sig-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px;}
+@media(max-width:480px){.sig-fields{grid-template-columns:1fr;}}
+.canvas-label{font-size:.6rem;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+.canvas-wrap{position:relative;border:1.5px dashed var(--border);border-radius:7px;overflow:hidden;background:var(--bg);cursor:crosshair;touch-action:none;}
+.canvas-wrap.has-sig{border-color:#6B7280;border-style:solid;}
+#sigCanvas{display:block;width:100%;height:130px;}
+.canvas-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.74rem;font-family:'JetBrains Mono',monospace;pointer-events:none;transition:opacity .2s;}
+.canvas-ph.hidden{opacity:0;}
+.sig-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;}
+.btn-sc{background:var(--border);color:var(--sub);}
+.btn-sok{background:#1a1a1a;color:#e5e7eb;border:1px solid #374151;}
+.btn-sok.confirmed{background:#374151;color:#fff;}
+.sig-status{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);flex:1;text-align:right;}
+.sig-status.ok{color:#9CA3AF;}
+.sig-stamp{display:none;align-items:center;gap:8px;margin-top:9px;padding:8px 11px;background:#1a1a1a;border:1px solid #374151;border-radius:7px;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#9CA3AF;}
+.sig-stamp.visible{display:flex;}
+.actions{max-width:920px;margin:18px auto 0;display:flex;gap:8px;flex-wrap:wrap;}
+.btn{font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:8px 15px;border-radius:7px;border:none;cursor:pointer;font-weight:600;letter-spacing:.4px;transition:opacity .2s,transform .1s;}
+.btn:active{transform:scale(.97);}
+.btn-print{background:var(--yellow);color:#111;}
+.btn-reset{background:var(--border);color:var(--sub);}
+.btn-expand{background:var(--surface);color:var(--text);border:1px solid var(--border);}
+.btn-newjob{background:#1e3a5f;color:#60a5fa;border:1px solid #1d4ed8;}
+.btn:hover{opacity:.82;}
+@media print{
+  body{background:#fff!important;color:#111;padding:12px;}
+  .tab-bar-wrap,.room-bar,.actions,.sig-actions,.item-note-btn,.btn-add-panel,.btn-del-panel,.btn-add-room,.btn-del-room,.global-prog,.save-indicator,.header-sub{display:none!important;}
+  .panel{display:block!important;}.room-panel{display:block!important;}
+  .section{border:1px solid #ccc;break-inside:avoid;background:#fff!important;}
+  .section-body{display:block!important;}
+  .section-header{background:#f5f5f5!important;}
+  .item-check{width:18px!important;height:18px!important;border:2px solid #333!important;border-radius:4px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  .item.checked .item-check{background:#4B5563!important;border-color:#4B5563!important;color:#fff!important;font-size:12px!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  .p-crit{background:#DC2626!important;color:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  .p-imp{background:#EA580C!important;color:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  .p-rot{background:#6B7280!important;color:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  .sig-wrap,.panel-meta{border:1px solid #ccc;background:#fff!important;}
+  .canvas-wrap{border:1px solid #999;background:#fff!important;}
+  #sigCanvas{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  .sig-stamp{display:flex!important;background:#f9f9f9!important;border:1px solid #374151!important;}
+  .futuras-wrap{border:1px solid #aaa!important;background:#fff!important;}
+  .tag-troca{background:#DC2626!important;color:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  .tag-insp{background:#EA580C!important;color:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  .tag-outro{background:#6B7280!important;color:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ <span>CHECKLIST</span> — MANUTENÇÃO DE QUADROS ELÉTRICOS</h1>
+  <div class="header-sub">
+    <p id="dateStamp">MRC Reparação · a carregar...</p>
+    <span class="save-indicator" id="saveIndicator">💾 A carregar...</span>
+  </div>
+</div>
+
+<div class="global-meta">
+  <div class="mf"><label>Cliente</label><input type="text" id="gCliente" placeholder="Nome do cliente"></div>
+  <div class="mf"><label>Morada / Local</label><input type="text" id="gMorada" placeholder="Ex: Rua X, Braga"></div>
+  <div class="mf"><label>Técnico</label><input type="text" id="gTecnico" placeholder="Nome do técnico"></div>
+  <div class="mf"><label>Data</label><input type="date" id="gData"></div>
+</div>
+
+<div class="global-prog">
+  <div class="gp-row">
+    <span class="gp-label">Progresso Global — Todos os Quadros</span>
+    <span class="gp-pct" id="gpPct">0%</span>
+  </div>
+  <div class="gp-track"><div class="gp-fill" id="gpFill"></div></div>
+  <div class="gp-stats">
+    <div class="gp-stat">Concluídos: <span id="gpDone">0</span></div>
+    <div class="gp-stat">Pendentes: <span id="gpPend">0</span></div>
+    <div class="gp-stat">Total: <span id="gpTotal">0</span></div>
+  </div>
+</div>
+
+<div class="tab-bar-wrap">
+  <div class="tab-bar-top">
+    <span class="tab-bar-label">Quadros:</span>
+    <div class="tab-bar" id="panelTabs"></div>
+    <button class="btn-add-panel" onclick="addPanel()">+ Quadro</button>
+    <button class="btn-del-panel" onclick="deletePanel()">− Remover</button>
+  </div>
+</div>
+
+<div id="panels"></div>
+
+<div class="sig-wrap">
+  <div class="sig-header">
+    <div class="sig-icon">✍️</div>
+    <div>
+      <div class="sig-title">Assinatura do Cliente</div>
+      <div class="sig-sub">Declaro que os trabalhos foram executados conforme descrito</div>
+    </div>
+  </div>
+  <div class="sig-body">
+    <div class="sig-fields">
+      <div class="mf"><label>Nome do Cliente</label><input type="text" id="sigName" placeholder="Nome completo"></div>
+      <div class="mf"><label>NIF / BI (opcional)</label><input type="text" id="sigNif" placeholder="Ex: 123456789"></div>
+    </div>
+    <div class="canvas-label">Assinatura</div>
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="sigCanvas"></canvas>
+      <div class="canvas-ph" id="canvasPh">✍ Assine aqui com o dedo ou rato</div>
+    </div>
+    <div class="sig-actions">
+      <button class="btn btn-sc" onclick="clearSig()">✕ Limpar</button>
+      <button class="btn btn-sok" id="btnConfirmSig" onclick="confirmSig()">✔ Confirmar Assinatura</button>
+      <span class="sig-status" id="sigStatus">Aguarda assinatura</span>
+    </div>
+    <div class="sig-stamp" id="sigStamp">
+      <span>✔</span><span id="sigStampTxt"></span>
+    </div>
+  </div>
+</div>
+
+<div class="actions">
+  <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMIR / PDF</button>
+  <button class="btn btn-newjob" onclick="novaVisita()">🆕 Nova Visita</button>
+  <button class="btn btn-expand" id="btnExpand" onclick="toggleAllSections()">EXPANDIR TUDO</button>
+  <button class="btn btn-reset" onclick="resetAll()">↺ REINICIAR TUDO</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  CHECKLIST TEMPLATE
+// ═══════════════════════════════════════
+const SECTIONS = [
+  { icon:'🔒', color:'#7c3aed', title:'Segurança e Preparação', items:[
+    {t:'Verificar autorização de trabalho / ordem de serviço',p:'crit'},
+    {t:'Confirmar isolamento do circuito (bloqueio LOTO)',p:'crit'},
+    {t:'Medir ausência de tensão com multímetro calibrado',p:'crit'},
+    {t:'Usar EPI: luvas AT, óculos, calçado isolante',p:'crit'},
+    {t:'Sinalizar área de trabalho ("Quadro em Manutenção")',p:'imp'},
+    {t:'Verificar extintor e kit de primeiros socorros próximos',p:'imp'},
+    {t:'Registar condições ambientais (temperatura, humidade)',p:'rot'},
+  ]},
+  { icon:'🔍', color:'#0891b2', title:'Inspeção Visual Exterior', items:[
+    {t:'Estado geral: ferrugem, corrosão, deformações',p:'imp'},
+    {t:'Porta e fechaduras: vedação, dobradiças, fecho',p:'imp'},
+    {t:'Grau de proteção IP adequado ao ambiente',p:'imp'},
+    {t:'Passagens de cabos: prensa-cabos e bucins sem folgas',p:'rot'},
+    {t:'Placa de identificação e esquema elétrico afixado',p:'rot'},
+    {t:'Aterramento do invólucro metálico',p:'crit'},
+    {t:'Ventilação: grelhas desobstruídas, filtros limpos',p:'imp'},
+  ]},
+  { icon:'⚡', color:'#d97706', title:'Inspeção Visual Interior', items:[
+    {t:'Sinais de sobreaquecimento: marcas negras, isolamentos derretidos',p:'crit'},
+    {t:'Barramentos: oxidação, pó condutor, aperto',p:'crit'},
+    {t:'Cabos: isolamento fissurado, raios de curvatura',p:'crit'},
+    {t:'Terminais: corrosão, coloração, esmagamento',p:'imp'},
+    {t:'Organização de cabos: calha com tampa, sem sobrecarga',p:'rot'},
+    {t:'Ausência de materiais estranhos (pó, insetos, humidade)',p:'imp'},
+    {t:'Etiquetagem de todos os circuitos e disjuntores',p:'rot'},
+  ]},
+  { icon:'🔧', color:'#16a34a', title:'Aperto e Limpeza', items:[
+    {t:'Apertar bornes de entrada/saída com torquímetro',p:'crit'},
+    {t:'Apertar parafusos de disjuntores e contactores',p:'imp'},
+    {t:'Apertar ligações nos barramentos (PE, N, fases)',p:'crit'},
+    {t:'Aspirar/soprar pó do interior (aspirador ATEX ou ESD)',p:'imp'},
+    {t:'Limpar componentes com pano antiestático',p:'rot'},
+    {t:'Limpar contactos dos disjuntores com spray próprio',p:'rot'},
+    {t:'Verificar aperto dos terminais de terra (PE)',p:'crit'},
+  ]},
+  { icon:'🔌', color:'#7c3aed', title:'Proteções e Dispositivos', items:[
+    {t:'Calibre (A) de cada disjuntor vs. secção do cabo protegido',p:'crit'},
+    {t:'Testar DDR com botão TEST — tempo < 300 ms',p:'crit'},
+    {t:'Verificar fusíveis com fusímetro — trocar se necessário',p:'crit'},
+    {t:'Contactores: contactos, bobine, auxiliares',p:'imp'},
+    {t:'Relé térmico: ajuste de corrente nominal',p:'imp'},
+    {t:'SPD (descarregadores de sobretensão) — indicador de estado',p:'imp'},
+    {t:'Sondas de temperatura e termostatos (se existirem)',p:'rot'},
+  ]},
+  { icon:'📏', color:'#dc2626', title:'Medições Elétricas', items:[
+    {t:'Tensões de fase (L1, L2, L3) e neutro — desequilíbrio máx. 2%',p:'crit'},
+    {t:'Correntes em carga por fase com pinça amperimétrica',p:'crit'},
+    {t:'Resistência de isolamento dos circuitos (> 1 MΩ)',p:'crit'},
+    {t:'Continuidade do condutor de terra (PE) — R < 1 Ω',p:'crit'},
+    {t:'Temperatura dos bornes com IR (ΔT < 10°C vs. ambiente)',p:'imp'},
+    {t:'Fator de potência (cosφ > 0,9)',p:'rot'},
+    {t:'Impedância de laço de falha (Zs) — verificar tempo de disparo',p:'imp'},
+  ]},
+  { icon:'✅', color:'#16a34a', title:'Fecho e Documentação', items:[
+    {t:'Retirar LOTO e restabelecer alimentação de forma controlada',p:'crit'},
+    {t:'Verificar funcionamento de todos os circuitos',p:'crit'},
+    {t:'Confirmar que a porta fecha e veda corretamente',p:'imp'},
+    {t:'Fotografar estado final do interior do quadro',p:'rot'},
+    {t:'Preencher relatório com todos os valores medidos',p:'imp'},
+    {t:'Atualizar esquema unifilar se houve alterações',p:'imp'},
+    {t:'Afixar etiqueta com data e próxima intervenção',p:'rot'},
+  ]},
+];
+
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+const LS_KEY = 'mrc_checklist_v2';
+let panels = [];
+let activePanelId = null;
+let activeRoomIds = {};
+let checkState  = {};  // "pId-rId-si-ii" -> bool
+let notesState  = {};  // "pId-rId-si-ii" -> string
+let panelMeta   = {};  // pId -> {ref, loc, tipo, tensao}
+let allExpanded = false;
+let panelCounter = 0;
+let roomCounter  = 0;
+let saveTimer    = null;
+
+// ═══════════════════════════════════════
+//  PERSISTENCE
+// ═══════════════════════════════════════
+function saveAll(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    setSaveState('saving');
+    // collect current DOM values before serialising
+    collectDOMInputs();
+    const data = {
+      panels, activePanelId, activeRoomIds,
+      checkState, notesState, panelMeta, futurasState,
+      panelCounter, roomCounter,
+      global: {
+        cliente: document.getElementById('gCliente').value,
+        morada:  document.getElementById('gMorada').value,
+        tecnico: document.getElementById('gTecnico').value,
+        data:    document.getElementById('gData').value,
+      },
+      sig: {
+        name:      document.getElementById('sigName').value,
+        nif:       document.getElementById('sigNif').value,
+        stampTxt:  document.getElementById('sigStampTxt').textContent,
+        confirmed: document.getElementById('btnConfirmSig').classList.contains('confirmed'),
+        imgData:   window._sigGetDataURL ? window._sigGetDataURL() : null,
+      }
+    };
+    try{
+      localStorage.setItem(LS_KEY, JSON.stringify(data));
+      setSaveState('saved');
+    }catch(e){
+      setSaveState('error');
+    }
+  }, 600);
+}
+
+function collectDOMInputs(){
+  // panel meta inputs
+  panels.forEach(p => {
+    const el = document.getElementById('panel-'+p.id);
+    if(!el) return;
+    const inputs = el.querySelectorAll('.pm-grid input, .pm-grid select');
+    if(!panelMeta[p.id]) panelMeta[p.id] = {};
+    panelMeta[p.id].ref    = inputs[0]?.value || '';
+    panelMeta[p.id].loc    = inputs[1]?.value || '';
+    panelMeta[p.id].tipo   = inputs[2]?.value || '';
+    panelMeta[p.id].tensao = inputs[3]?.value || '';
+    // name from inline input
+    const nameEl = el.querySelector('.pm-name');
+    if(nameEl) p.name = nameEl.value;
+    // notes
+    p.rooms.forEach(r => {
+      SECTIONS.forEach((sec,si) => {
+        sec.items.forEach((_,ii) => {
+          const nw = document.getElementById(`nw-item-${p.id}-${r.id}-${si}-${ii}`);
+          if(nw){
+            const ta = nw.querySelector('textarea');
+            if(ta) notesState[`${p.id}-${r.id}-${si}-${ii}`] = ta.value;
+          }
+        });
+      });
+    });
+  });
+}
+
+function loadAll(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    panels         = d.panels        || [];
+    activePanelId  = d.activePanelId || null;
+    activeRoomIds  = d.activeRoomIds || {};
+    checkState     = d.checkState    || {};
+    notesState     = d.notesState    || {};
+    panelMeta      = d.panelMeta     || {};
+    futurasState   = d.futurasState  || {};
+    panelCounter   = d.panelCounter  || 0;
+    roomCounter    = d.roomCounter   || 0;
+    if(d.global){
+      document.getElementById('gCliente').value = d.global.cliente||'';
+      document.getElementById('gMorada').value  = d.global.morada ||'';
+      document.getElementById('gTecnico').value = d.global.tecnico||'';
+      document.getElementById('gData').value    = d.global.data   ||'';
+    }
+    if(d.sig){
+      document.getElementById('sigName').value = d.sig.name||'';
+      document.getElementById('sigNif').value  = d.sig.nif ||'';
+      if(d.sig.confirmed && d.sig.stampTxt){
+        document.getElementById('sigStampTxt').textContent = d.sig.stampTxt;
+        document.getElementById('sigStamp').classList.add('visible');
+        document.getElementById('sigStatus').textContent = '✔ Confirmado';
+        document.getElementById('sigStatus').className   = 'sig-status ok';
+        const btn = document.getElementById('btnConfirmSig');
+        btn.classList.add('confirmed'); btn.textContent = '✔ Assinatura Confirmada';
+      }
+      if(d.sig.imgData) window._sigRestoreDataURL = d.sig.imgData;
+    }
+    return panels.length > 0;
+  }catch(e){ return false; }
+}
+
+function setSaveState(state){
+  const el = document.getElementById('saveIndicator');
+  if(state==='saving'){ el.className='save-indicator saving'; el.textContent='💾 A guardar...'; }
+  else if(state==='saved'){ el.className='save-indicator saved'; el.textContent='✔ Guardado'; }
+  else { el.className='save-indicator'; el.textContent='⚠ Erro ao guardar'; }
+}
+
+// auto-save on any input change
+document.addEventListener('input', saveAll);
+document.addEventListener('change', saveAll);
+
+// ═══════════════════════════════════════
+//  PANEL / ROOM CREATION
+// ═══════════════════════════════════════
+function createPanel(name){
+  const id = 'p'+(++panelCounter);
+  const rooms = ['Geral / Exterior','Piso 0','Piso 1'].map(n=>({id:'r'+(++roomCounter),name:n}));
+  panels.push({id, name: name||'Quadro '+panelCounter, rooms});
+  activeRoomIds[id] = rooms[0].id;
+  panelMeta[id] = {ref:'',loc:'',tipo:'Quadro Geral (QG)',tensao:'230V Monofásico'};
+  return id;
+}
+
+// ═══════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════
+function renderAll(){
+  renderTabs();
+  renderPanels();
+  updateGlobalProgress();
+}
+
+function renderTabs(){
+  const bar = document.getElementById('panelTabs');
+  bar.innerHTML = '';
+  panels.forEach(p => {
+    const done=getPanelDone(p.id), total=getPanelTotal(p.id);
+    const complete = total>0 && done===total;
+    const btn = document.createElement('button');
+    btn.className='tab-btn'+(p.id===activePanelId?' active':'')+(complete?' complete':'');
+    btn.textContent = p.name;
+    btn.onclick = ()=>{ activePanelId=p.id; renderAll(); };
+    bar.appendChild(btn);
+  });
+}
+
+function renderPanels(){
+  const container = document.getElementById('panels');
+  container.innerHTML = '';
+  panels.forEach(p => {
+    const div = document.createElement('div');
+    div.className='panel'+(p.id===activePanelId?' active':'');
+    div.id='panel-'+p.id;
+    div.innerHTML = buildPanelHTML(p);
+    container.appendChild(div);
+  });
+  attachItemEvents();
+  attachNoteEvents();
+}
+
+function buildPanelHTML(p){
+  const activeRoom = activeRoomIds[p.id]||p.rooms[0]?.id;
+  const m = panelMeta[p.id]||{};
+  const tipoOpts = ['Quadro Geral (QG)','Quadro Parcial (QP)','Quadro Secundário','Quadro de Tomadas','Quadro de Comunicações','Outro'];
+  const tensOpts = ['230V Monofásico','400V Trifásico','Outro'];
+  let html = `
+  <div class="panel-meta">
+    <div class="panel-meta-row">
+      <span class="pm-badge">QUADRO</span>
+      <input class="pm-name" value="${escH(p.name)}" onchange="renamePanel('${p.id}',this.value)" placeholder="Nome do quadro">
+    </div>
+    <div class="pm-grid">
+      <div class="mf"><label>Referência</label><input type="text" value="${escH(m.ref||'')}" placeholder="Ex: QGE-01"></div>
+      <div class="mf"><label>Localização</label><input type="text" value="${escH(m.loc||'')}" placeholder="Ex: Cave / Armazém"></div>
+      <div class="mf"><label>Tipo</label><select>${tipoOpts.map(o=>`<option${o===m.tipo?' selected':''}>${o}</option>`).join('')}</select></div>
+      <div class="mf"><label>Tensão</label><select>${tensOpts.map(o=>`<option${o===m.tensao?' selected':''}>${o}</option>`).join('')}</select></div>
+    </div>
+  </div>
+  <div class="room-bar" id="roombar-${p.id}">
+    <span class="room-bar-lbl">Divisões:</span>
+    ${p.rooms.map(r=>{
+      const rd=getRoomDone(p.id,r.id),rt=getRoomTotal();
+      const rc=rt>0&&rd===rt;
+      return `<button class="room-btn${r.id===activeRoom?' active':''}${rc?' done-room':''}" onclick="setActiveRoom('${p.id}','${r.id}')">${escH(r.name)}</button>`;
+    }).join('')}
+    <button class="btn-add-room" onclick="addRoom('${p.id}')">+ Divisão</button>
+    <button class="btn-del-room" onclick="deleteRoom('${p.id}')">− Remover</button>
+  </div>`;
+
+  p.rooms.forEach(r=>{
+    const done=getRoomDone(p.id,r.id), total=getRoomTotal();
+    const pct=total?Math.round(done/total*100):0;
+    html+=`
+  <div class="room-panel${r.id===activeRoom?' active':''}" id="room-${p.id}-${r.id}">
+    <div class="room-prog">
+      <div class="room-prog-track"><div class="room-prog-fill" id="rpf-${p.id}-${r.id}" style="width:${pct}%"></div></div>
+      <span class="room-prog-label" id="rpl-${p.id}-${r.id}">${done}/${total} (${pct}%)</span>
+    </div>
+    ${buildSectionsHTML(p.id,r.id)}
+    ${buildFuturasHTML(p.id,r.id)}
+  </div>`;
+  });
+  return html;
+}
+
+function buildSectionsHTML(pId,rId){
+  return SECTIONS.map((sec,si)=>{
+    const secId=`sec-${pId}-${rId}-${si}`;
+    const done=sec.items.filter((_,ii)=>isChecked(pId,rId,si,ii)).length;
+    return `
+  <div class="section open" id="${secId}">
+    <div class="section-header" onclick="toggleSection('${secId}')">
+      <div class="section-icon" style="background:${sec.color}22;color:${sec.color}">${sec.icon}</div>
+      <div class="section-title">${sec.title}</div>
+      <div class="section-badge${done===sec.items.length?' all-done':''}" id="badge-${secId}">${done}/${sec.items.length}</div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+      ${sec.items.map((item,ii)=>{
+        const itemId=`item-${pId}-${rId}-${si}-${ii}`;
+        const checked=isChecked(pId,rId,si,ii);
+        const note=notesState[`${pId}-${rId}-${si}-${ii}`]||'';
+        return `
+      <div class="item${checked?' checked':''}" id="${itemId}" data-pid="${pId}" data-rid="${rId}" data-si="${si}" data-ii="${ii}">
+        <div class="item-check">${checked?'✓':''}</div>
+        <div class="item-text">${item.t}</div>
+        <span class="item-priority p-${item.p}">${item.p==='crit'?'CRÍTICO':item.p==='imp'?'IMP.':'ROTINA'}</span>
+        <button class="item-note-btn" onclick="toggleNote(event,'${itemId}')">📝</button>
+      </div>
+      <div class="item-note-wrap${note?' visible':''}" id="nw-${itemId}">
+        <textarea class="item-note" placeholder="Nota / observação...">${escH(note)}</textarea>
+      </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+//  INTERVENÇÕES FUTURAS
+// ═══════════════════════════════════════
+let futurasState = {}; // "pId-rId" -> [{tag, text}]
+
+function getFuturas(pId,rId){ return futurasState[pId+'-'+rId] || []; }
+
+function buildFuturasHTML(pId,rId){
+  const items = getFuturas(pId,rId);
+  const count = items.length;
+  const tagLabel = {troca:'TROCAR',insp:'INSPECIONAR',outro:'OUTRO'};
+  const tagClass = {troca:'tag-troca',insp:'tag-insp',outro:'tag-outro'};
+  return `
+  <div class="futuras-wrap open" id="futuras-${pId}-${rId}">
+    <div class="futuras-header" onclick="toggleFuturas('${pId}','${rId}')">
+      <div class="futuras-icon">🔧</div>
+      <div class="futuras-title">Intervenções Futuras</div>
+      <div class="futuras-count${count>0?' has-items':''}" id="fcount-${pId}-${rId}">${count} ${count===1?'item':'itens'}</div>
+      <div class="futuras-chevron">▼</div>
+    </div>
+    <div class="futuras-body">
+      <div id="flist-${pId}-${rId}">
+        ${count===0
+          ? '<div class="futuras-empty">Sem intervenções futuras registadas.</div>'
+          : items.map((it,i)=>`
+        <div class="futura-item" id="fi-${pId}-${rId}-${i}">
+          <span class="futura-tag ${tagClass[it.tag]||'tag-outro'}">${tagLabel[it.tag]||'OUTRO'}</span>
+          <span class="futura-text">${escH(it.text)}</span>
+          <button class="futura-del" onclick="delFutura('${pId}','${rId}',${i})" title="Remover">✕</button>
+        </div>`).join('')
+        }
+      </div>
+      <div class="futura-add-row">
+        <select class="futura-select" id="ftag-${pId}-${rId}">
+          <option value="troca">TROCAR</option>
+          <option value="insp">INSPECIONAR</option>
+          <option value="outro">OUTRO</option>
+        </select>
+        <input class="futura-input" id="finput-${pId}-${rId}" type="text"
+          placeholder="Ex: DDR 30mA, Disjuntor C16, cabo fase L2..."
+          onkeydown="if(event.key==='Enter')addFutura('${pId}','${rId}')">
+        <button class="btn-futura-add" onclick="addFutura('${pId}','${rId}')">+ Adicionar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleFuturas(pId,rId){
+  document.getElementById('futuras-'+pId+'-'+rId)?.classList.toggle('open');
+}
+
+function addFutura(pId,rId){
+  const input = document.getElementById('finput-'+pId+'-'+rId);
+  const sel   = document.getElementById('ftag-'+pId+'-'+rId);
+  const text  = input.value.trim();
+  if(!text) return;
+  const key = pId+'-'+rId;
+  if(!futurasState[key]) futurasState[key]=[];
+  futurasState[key].push({tag: sel.value, text});
+  input.value='';
+  refreshFuturasHTML(pId,rId);
+  saveAll();
+}
+
+function delFutura(pId,rId,idx){
+  const key=pId+'-'+rId;
+  if(!futurasState[key]) return;
+  futurasState[key].splice(idx,1);
+  refreshFuturasHTML(pId,rId);
+  saveAll();
+}
+
+function refreshFuturasHTML(pId,rId){
+  const wrap = document.getElementById('futuras-'+pId+'-'+rId);
+  if(!wrap) return;
+  const wasOpen = wrap.classList.contains('open');
+  wrap.outerHTML = buildFuturasHTML(pId,rId);
+  const newWrap = document.getElementById('futuras-'+pId+'-'+rId);
+  if(newWrap && wasOpen) newWrap.classList.add('open');
+}
+
+function updateFuturasCount(pId,rId){
+  const count = getFuturas(pId,rId).length;
+  const el = document.getElementById('fcount-'+pId+'-'+rId);
+  if(!el) return;
+  el.textContent = count+' '+(count===1?'item':'itens');
+  el.classList.toggle('has-items', count>0);
+}
+
+// ═══════════════════════════════════════
+//  STATE HELPERS
+// ═══════════════════════════════════════
+function isChecked(pId,rId,si,ii){ return !!checkState[`${pId}-${rId}-${si}-${ii}`]; }
+function getRoomTotal(){ return SECTIONS.reduce((a,s)=>a+s.items.length,0); }
+function getRoomDone(pId,rId){ return SECTIONS.reduce((a,s,si)=>a+s.items.filter((_,ii)=>isChecked(pId,rId,si,ii)).length,0); }
+function getPanelTotal(pId){ const p=panels.find(x=>x.id===pId); return p?p.rooms.length*getRoomTotal():0; }
+function getPanelDone(pId){ const p=panels.find(x=>x.id===pId); if(!p)return 0; return p.rooms.reduce((a,r)=>a+getRoomDone(pId,r.id),0); }
+
+function attachItemEvents(){
+  document.querySelectorAll('.item').forEach(el=>{
+    el.addEventListener('click',function(e){
+      if(e.target.classList.contains('item-note-btn'))return;
+      const{pid,rid,si,ii}=this.dataset;
+      const key=`${pid}-${rid}-${si}-${ii}`;
+      checkState[key]=!checkState[key];
+      const checked=checkState[key];
+      this.classList.toggle('checked',checked);
+      this.querySelector('.item-check').textContent=checked?'✓':'';
+      updateSectionBadge(pid,rid,parseInt(si));
+      updateRoomProgress(pid,rid);
+      updateGlobalProgress();
+      saveAll();
+    });
+  });
+}
+
+function attachNoteEvents(){
+  document.querySelectorAll('.item-note').forEach(ta=>{
+    ta.addEventListener('input',saveAll);
+  });
+}
+
+function updateSectionBadge(pId,rId,si){
+  const secId=`sec-${pId}-${rId}-${si}`;
+  const total=SECTIONS[si].items.length;
+  const done=SECTIONS[si].items.filter((_,ii)=>isChecked(pId,rId,si,ii)).length;
+  const badge=document.getElementById('badge-'+secId);
+  if(badge){badge.textContent=`${done}/${total}`;badge.classList.toggle('all-done',done===total);}
+}
+
+function updateRoomProgress(pId,rId){
+  const total=getRoomTotal(), done=getRoomDone(pId,rId);
+  const pct=total?Math.round(done/total*100):0;
+  const fill=document.getElementById(`rpf-${pId}-${rId}`);
+  const lbl=document.getElementById(`rpl-${pId}-${rId}`);
+  if(fill)fill.style.width=pct+'%';
+  if(lbl)lbl.textContent=`${done}/${total} (${pct}%)`;
+}
+
+function updateGlobalProgress(){
+  const total=panels.reduce((a,p)=>a+getPanelTotal(p.id),0);
+  const done=panels.reduce((a,p)=>a+getPanelDone(p.id),0);
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('gpFill').style.width=pct+'%';
+  const lbl=document.getElementById('gpPct');
+  lbl.textContent=pct+'%'; lbl.classList.toggle('done',pct===100);
+  document.getElementById('gpDone').textContent=done;
+  document.getElementById('gpPend').textContent=total-done;
+  document.getElementById('gpTotal').textContent=total;
+}
+
+// ═══════════════════════════════════════
+//  PANEL / ROOM MANAGEMENT
+// ═══════════════════════════════════════
+function addPanel(){
+  const name=prompt('Nome do novo quadro:','Quadro '+(panels.length+1));
+  if(name===null)return;
+  const id=createPanel(name.trim()||'Quadro '+(panels.length));
+  activePanelId=id; renderAll(); saveAll();
+}
+function deletePanel(){
+  if(panels.length<=1){alert('Deve existir pelo menos um quadro.');return;}
+  const p=panels.find(x=>x.id===activePanelId);
+  if(!confirm(`Remover quadro "${p.name}"?`))return;
+  panels=panels.filter(x=>x.id!==activePanelId);
+  activePanelId=panels[0].id; renderAll(); saveAll();
+}
+function renamePanel(id,name){
+  const p=panels.find(x=>x.id===id);
+  if(p){p.name=name;renderTabs();saveAll();}
+}
+function setActiveRoom(pId,rId){
+  activeRoomIds[pId]=rId;
+  const panel=panels.find(p=>p.id===pId);
+  if(!panel)return;
+  panel.rooms.forEach(r=>{
+    document.getElementById(`room-${pId}-${r.id}`)?.classList.toggle('active',r.id===rId);
+  });
+  document.querySelectorAll(`#roombar-${pId} .room-btn`).forEach((btn,i)=>{
+    btn.classList.toggle('active',panel.rooms[i]?.id===rId);
+  });
+  saveAll();
+}
+function addRoom(pId){
+  const p=panels.find(x=>x.id===pId);
+  const name=prompt('Nome da nova divisão:','Divisão '+(p?p.rooms.length+1:1));
+  if(name===null)return;
+  if(!p)return;
+  const rid='r'+(++roomCounter);
+  p.rooms.push({id:rid,name:name.trim()||'Divisão '+p.rooms.length});
+  activeRoomIds[pId]=rid; renderAll(); saveAll();
+}
+function deleteRoom(pId){
+  const p=panels.find(x=>x.id===pId);
+  if(!p||p.rooms.length<=1){alert('Deve existir pelo menos uma divisão.');return;}
+  const rId=activeRoomIds[pId];
+  const r=p.rooms.find(x=>x.id===rId);
+  if(!confirm(`Remover divisão "${r.name}"?`))return;
+  p.rooms=p.rooms.filter(x=>x.id!==rId);
+  activeRoomIds[pId]=p.rooms[0].id; renderAll(); saveAll();
+}
+
+// ═══════════════════════════════════════
+//  SECTIONS / NOTES / RESET
+// ═══════════════════════════════════════
+function toggleSection(secId){ document.getElementById(secId)?.classList.toggle('open'); }
+function toggleAllSections(){
+  allExpanded=!allExpanded;
+  document.querySelectorAll('.section').forEach(el=>el.classList.toggle('open',allExpanded));
+  document.getElementById('btnExpand').textContent=allExpanded?'RECOLHER TUDO':'EXPANDIR TUDO';
+}
+function toggleNote(e,itemId){
+  e.stopPropagation();
+  document.getElementById('nw-'+itemId)?.classList.toggle('visible');
+}
+function resetAll(){
+  if(!confirm('Reiniciar TODOS os checklists e dados?\n(Estrutura dos quadros mantém-se)'))return;
+  Object.keys(checkState).forEach(k=>delete checkState[k]);
+  Object.keys(notesState).forEach(k=>delete notesState[k]);
+  clearSig();
+  ['gCliente','gMorada','gTecnico'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('gData').value=new Date().toISOString().split('T')[0];
+  renderAll(); saveAll();
+}
+function novaVisita(){
+  if(!confirm('Iniciar nova visita?\nLimpa todos os checks, notas e assinatura.\nOs quadros e divisões mantêm-se.'))return;
+  Object.keys(checkState).forEach(k=>delete checkState[k]);
+  Object.keys(notesState).forEach(k=>delete notesState[k]);
+  Object.keys(futurasState).forEach(k=>delete futurasState[k]);
+  clearSig();
+  document.getElementById('gData').value=new Date().toISOString().split('T')[0];
+  renderAll(); saveAll();
+}
+
+// ═══════════════════════════════════════
+//  SIGNATURE CANVAS
+// ═══════════════════════════════════════
+(function(){
+  function init(){
+    const canvas=document.getElementById('sigCanvas');
+    const wrap=document.getElementById('canvasWrap');
+    const ph=document.getElementById('canvasPh');
+    if(!canvas)return;
+    let drawing=false, hasSig=false;
+    const H=130;
+
+    function setupCtx(){
+      const ctx=canvas.getContext('2d');
+      ctx.strokeStyle='#111318';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';
+      return ctx;
+    }
+    function resize(){
+      if(hasSig)return;
+      const w=wrap.clientWidth;
+      canvas.width=w;canvas.height=H;
+      canvas.style.width=w+'px';canvas.style.height=H+'px';
+      setupCtx();
+    }
+    resize();
+    window.addEventListener('resize',resize);
+
+    // restore saved signature image
+    if(window._sigRestoreDataURL){
+      const img=new Image();
+      img.onload=()=>{
+        const w=wrap.clientWidth;
+        canvas.width=w;canvas.height=H;
+        canvas.style.width=w+'px';canvas.style.height=H+'px';
+        setupCtx();
+        canvas.getContext('2d').drawImage(img,0,0,w,H);
+        hasSig=true;wrap.classList.add('has-sig');ph.classList.add('hidden');
+      };
+      img.src=window._sigRestoreDataURL;
+    }
+
+    // pos: always use getBoundingClientRect scale to map screen coords -> canvas coords
+    function pos(e){
+      const r=canvas.getBoundingClientRect();
+      const s=e.touches?e.touches[0]:e;
+      const scaleX=canvas.width/r.width;
+      const scaleY=canvas.height/r.height;
+      return{x:(s.clientX-r.left)*scaleX, y:(s.clientY-r.top)*scaleY};
+    }
+    function start(e){e.preventDefault();drawing=true;const ctx=canvas.getContext('2d');const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);ph.classList.add('hidden');}
+    function move(e){if(!drawing)return;e.preventDefault();const ctx=canvas.getContext('2d');const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();hasSig=true;wrap.classList.add('has-sig');document.getElementById('sigStatus').textContent='Assinatura desenhada — confirme abaixo';saveAll();}
+    function end(){drawing=false;}
+    canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);canvas.addEventListener('mouseup',end);canvas.addEventListener('mouseleave',end);
+    canvas.addEventListener('touchstart',start,{passive:false});canvas.addEventListener('touchmove',move,{passive:false});canvas.addEventListener('touchend',end);
+    window._sigHasSig=()=>hasSig;
+    window._sigGetDataURL=()=>hasSig?canvas.toDataURL('image/png'):null;
+    window._sigClearCanvas=()=>{
+      const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
+      hasSig=false;wrap.classList.remove('has-sig');ph.classList.remove('hidden');
+    };
+  }
+  setTimeout(init,150);
+})();
+
+window.clearSig=function(){
+  if(window._sigClearCanvas)window._sigClearCanvas();
+  document.getElementById('sigStatus').textContent='Aguarda assinatura';
+  document.getElementById('sigStatus').className='sig-status';
+  document.getElementById('sigStamp').classList.remove('visible');
+  const btn=document.getElementById('btnConfirmSig');
+  btn.classList.remove('confirmed');btn.textContent='✔ Confirmar Assinatura';
+  saveAll();
+};
+window.confirmSig=function(){
+  const name=document.getElementById('sigName').value.trim();
+  if(!window._sigHasSig||!window._sigHasSig()){document.getElementById('sigStatus').textContent='⚠ Desenhe a assinatura primeiro';return;}
+  if(!name){document.getElementById('sigStatus').textContent='⚠ Preencha o nome do cliente';return;}
+  const ts=new Date().toLocaleString('pt-PT');
+  document.getElementById('sigStatus').textContent='✔ Confirmado';
+  document.getElementById('sigStatus').className='sig-status ok';
+  const btn=document.getElementById('btnConfirmSig');
+  btn.classList.add('confirmed');btn.textContent='✔ Assinatura Confirmada';
+  document.getElementById('sigStamp').classList.add('visible');
+  document.getElementById('sigStampTxt').textContent=`"${name}" — assinado digitalmente em ${ts}`;
+  saveAll();
+};
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+const today=new Date();
+document.getElementById('dateStamp').textContent=
+  'MRC Reparação · '+today.toLocaleDateString('pt-PT',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+const loaded=loadAll();
+if(!loaded){
+  createPanel('QGE — Quadro Geral');
+  createPanel('QS-Cave — Quadro Secundário');
+  activePanelId=panels[0].id;
+  document.getElementById('gData').value=today.toISOString().split('T')[0];
+}
+if(!activePanelId&&panels.length) activePanelId=panels[0].id;
+
+renderAll();
+setSaveState('saved');
+</script>
+</body>
+</html>
+
+<!-- ═══════════════════════════════════
+     PWA — ÍCONE + MANIFESTO + SW
+═══════════════════════════════════ -->
+<script>
+(function(){
+  function makeIcon(size){
+    const c=document.createElement('canvas');
+    c.width=c.height=size;
+    const ctx=c.getContext('2d');
+    const r=size*0.18;
+    ctx.beginPath();
+    ctx.moveTo(r,0);ctx.lineTo(size-r,0);ctx.quadraticCurveTo(size,0,size,r);
+    ctx.lineTo(size,size-r);ctx.quadraticCurveTo(size,size,size-r,size);
+    ctx.lineTo(r,size);ctx.quadraticCurveTo(0,size,0,size-r);
+    ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);ctx.closePath();
+    const g=ctx.createLinearGradient(0,0,size,size);
+    g.addColorStop(0,'#1A1D24');g.addColorStop(1,'#111318');
+    ctx.fillStyle=g;ctx.fill();
+    const cx=size/2,cy=size*0.46,cr=size*0.30;
+    ctx.beginPath();ctx.arc(cx,cy,cr,0,Math.PI*2);
+    ctx.strokeStyle='#F5C518';ctx.lineWidth=size*0.055;ctx.stroke();
+    const bh=size*0.32,bw=size*0.13;
+    ctx.beginPath();
+    ctx.moveTo(cx+bw*0.3,cy-bh*0.5);
+    ctx.lineTo(cx-bw*0.15,cy+bh*0.08);
+    ctx.lineTo(cx+bw*0.08,cy+bh*0.08);
+    ctx.lineTo(cx-bw*0.3,cy+bh*0.5);
+    ctx.lineTo(cx+bw*0.6,cy-bh*0.02);
+    ctx.lineTo(cx+bw*0.15,cy-bh*0.02);
+    ctx.closePath();
+    ctx.fillStyle='#F5C518';ctx.fill();
+    const fs=Math.round(size*0.13);
+    ctx.font='700 '+fs+'px monospace';
+    ctx.fillStyle='#9CA3AF';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillText('MRC',cx,size*0.93);
+    return c.toDataURL('image/png');
+  }
+
+  const icon192=makeIcon(192);
+  const icon512=makeIcon(512);
+
+  // apple-touch-icon
+  document.getElementById('appleTouchIcon').href=icon192;
+
+  // manifesto
+  const manifest={
+    name:'Checklist Quadros Elétricos',
+    short_name:'Quadros MRC',
+    description:'Checklist de manutenção de quadros elétricos — MRC Reparação',
+    start_url:'./',
+    display:'standalone',
+    background_color:'#111318',
+    theme_color:'#111318',
+    orientation:'any',
+    icons:[
+      {src:icon192,sizes:'192x192',type:'image/png',purpose:'any maskable'},
+      {src:icon512,sizes:'512x512',type:'image/png',purpose:'any maskable'}
+    ]
+  };
+  const mblob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
+  document.getElementById('pwaManifest').href=URL.createObjectURL(mblob);
+
+  // service worker
+  const swCode=`const CACHE='mrc-ck-v1';
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).catch(()=>{}));});
+self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim());});
+self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;
+  if('serviceWorker' in navigator){
+    const swBlob=new Blob([swCode],{type:'text/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(swBlob),{scope:'./'}).catch(()=>{});
+  }
+})();
+</script>
