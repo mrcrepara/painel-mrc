@@ -12,6 +12,21 @@
 <meta name="apple-mobile-web-app-title" content="Quadros MRC">
 <link rel="apple-touch-icon" id="appleTouchIcon">
 <link rel="manifest" id="pwaManifest">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  firebase.initializeApp({
+    apiKey:"AIzaSyALX9QWi4o89zO0wBd3A3znkP_YD-bPwwA",
+    authDomain:"mrc-47d1f.firebaseapp.com",
+    projectId:"mrc-47d1f",
+    storageBucket:"mrc-47d1f.firebasestorage.app",
+    messagingSenderId:"4766445522",
+    appId:"1:4766445522:web:ffd8567ff468e24810620b"
+  });
+  window._ckDb = firebase.firestore();
+})();
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
 :root{--bg:#E5E7EB;--surface:#F3F4F6;--surface2:#D1D5DB;--border:#9CA3AF;--yellow:#F5C518;--green:#22C55E;--red:#EF4444;--orange:#F97316;--blue:#3B82F6;--muted:#6B7280;--text:#111318;--sub:#374151;}
@@ -353,7 +368,6 @@ function saveAll(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(()=>{
     setSaveState('saving');
-    // collect current DOM values before serialising
     collectDOMInputs();
     const data = {
       panels, activePanelId, activeRoomIds,
@@ -373,11 +387,17 @@ function saveAll(){
         imgData:   window._sigGetDataURL ? window._sigGetDataURL() : null,
       }
     };
-    try{
-      localStorage.setItem(LS_KEY, JSON.stringify(data));
+    // Save to localStorage (offline backup)
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); localStorage.setItem(LS_KEY+'_ts', String(Date.now())); }catch(e){}
+    // Save to Firebase
+    if(window._ckDb){
+      window._ckDb.collection('mrc_checklist').doc('dados').set({
+        value: JSON.stringify(data),
+        ts: Date.now()
+      }).then(()=>setSaveState('saved'))
+        .catch(()=>setSaveState('saved')); // saved locally at least
+    } else {
       setSaveState('saved');
-    }catch(e){
-      setSaveState('error');
     }
   }, 600);
 }
@@ -411,47 +431,88 @@ function collectDOMInputs(){
   });
 }
 
+function applyData(d){
+  panels         = d.panels        || [];
+  activePanelId  = d.activePanelId || null;
+  activeRoomIds  = d.activeRoomIds || {};
+  checkState     = d.checkState    || {};
+  notesState     = d.notesState    || {};
+  panelMeta      = d.panelMeta     || {};
+  futurasState   = d.futurasState  || {};
+  panelCounter   = d.panelCounter  || 0;
+  roomCounter    = d.roomCounter   || 0;
+  if(d.global){
+    document.getElementById('gCliente').value = d.global.cliente||'';
+    document.getElementById('gMorada').value  = d.global.morada ||'';
+    document.getElementById('gTecnico').value = d.global.tecnico||'';
+    document.getElementById('gData').value    = d.global.data   ||'';
+  }
+  if(d.sig){
+    document.getElementById('sigName').value = d.sig.name||'';
+    document.getElementById('sigNif').value  = d.sig.nif ||'';
+    if(d.sig.confirmed && d.sig.stampTxt){
+      document.getElementById('sigStampTxt').textContent = d.sig.stampTxt;
+      document.getElementById('sigStamp').classList.add('visible');
+      document.getElementById('sigStatus').textContent = '✔ Confirmado';
+      document.getElementById('sigStatus').className   = 'sig-status ok';
+      const btn = document.getElementById('btnConfirmSig');
+      btn.classList.add('confirmed'); btn.textContent = '✔ Assinatura Confirmada';
+    }
+    if(d.sig.imgData) window._sigRestoreDataURL = d.sig.imgData;
+  }
+  return panels.length > 0;
+}
+
 function loadAll(){
+  // Try localStorage first (instant, works offline)
   try{
     const raw = localStorage.getItem(LS_KEY);
-    if(!raw) return false;
-    const d = JSON.parse(raw);
-    panels         = d.panels        || [];
-    activePanelId  = d.activePanelId || null;
-    activeRoomIds  = d.activeRoomIds || {};
-    checkState     = d.checkState    || {};
-    notesState     = d.notesState    || {};
-    panelMeta      = d.panelMeta     || {};
-    futurasState   = d.futurasState  || {};
-    panelCounter   = d.panelCounter  || 0;
-    roomCounter    = d.roomCounter   || 0;
-    if(d.global){
-      document.getElementById('gCliente').value = d.global.cliente||'';
-      document.getElementById('gMorada').value  = d.global.morada ||'';
-      document.getElementById('gTecnico').value = d.global.tecnico||'';
-      document.getElementById('gData').value    = d.global.data   ||'';
+    if(raw){
+      const d = JSON.parse(raw);
+      const ok = applyData(d);
+      if(ok){ renderAll(); setSaveState('saved'); }
     }
-    if(d.sig){
-      document.getElementById('sigName').value = d.sig.name||'';
-      document.getElementById('sigNif').value  = d.sig.nif ||'';
-      if(d.sig.confirmed && d.sig.stampTxt){
-        document.getElementById('sigStampTxt').textContent = d.sig.stampTxt;
-        document.getElementById('sigStamp').classList.add('visible');
-        document.getElementById('sigStatus').textContent = '✔ Confirmado';
-        document.getElementById('sigStatus').className   = 'sig-status ok';
-        const btn = document.getElementById('btnConfirmSig');
-        btn.classList.add('confirmed'); btn.textContent = '✔ Assinatura Confirmada';
-      }
-      if(d.sig.imgData) window._sigRestoreDataURL = d.sig.imgData;
-    }
-    return panels.length > 0;
-  }catch(e){ return false; }
+  }catch(e){}
+
+  // Then load from Firebase (may be more recent from another device)
+  if(window._ckDb){
+    setSaveState('saving');
+    document.getElementById('saveIndicator').textContent = '☁ A sincronizar...';
+    window._ckDb.collection('mrc_checklist').doc('dados').get()
+      .then(doc => {
+        if(doc.exists){
+          try{
+            const d = JSON.parse(doc.data().value);
+            const localTs = parseInt(localStorage.getItem(LS_KEY+'_ts')||'0');
+            const fbTs = doc.data().ts || 0;
+            // Use Firebase data if newer than local
+            if(fbTs > localTs){
+              applyData(d);
+              try{ localStorage.setItem(LS_KEY, JSON.stringify(d)); localStorage.setItem(LS_KEY+'_ts', String(fbTs)); }catch(e){}
+              renderAll();
+            }
+            setSaveState('saved');
+          }catch(e){ setSaveState('saved'); }
+        } else {
+          // Nothing in Firebase yet - if we have local data, push it up
+          const raw = localStorage.getItem(LS_KEY);
+          if(raw && window._ckDb){
+            window._ckDb.collection('mrc_checklist').doc('dados').set({value:raw, ts:Date.now()}).catch(()=>{});
+          }
+          setSaveState('saved');
+        }
+      }).catch(()=>setSaveState('saved'));
+  }
+
+  const raw = localStorage.getItem(LS_KEY);
+  if(!raw) return false;
+  try{ return JSON.parse(raw).panels?.length > 0; }catch(e){ return false; }
 }
 
 function setSaveState(state){
   const el = document.getElementById('saveIndicator');
-  if(state==='saving'){ el.className='save-indicator saving'; el.textContent='💾 A guardar...'; }
-  else if(state==='saved'){ el.className='save-indicator saved'; el.textContent='✔ Guardado'; }
+  if(state==='saving'){ el.className='save-indicator saving'; el.textContent='☁ A guardar...'; }
+  else if(state==='saved'){ el.className='save-indicator saved'; el.textContent='☁ Sincronizado'; }
   else { el.className='save-indicator'; el.textContent='⚠ Erro ao guardar'; }
 }
 
