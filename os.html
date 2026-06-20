@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <style>
 :root{
   --bg:#0F1117;--sb:#141820;--card:#1A1F2E;--card2:#1E2436;
@@ -204,6 +205,8 @@ firebase.initializeApp({
   appId:"1:4766445522:web:ffd8567ff468e24810620b"
 });
 const db = firebase.firestore();
+// Login anónimo automático (necessário p/ as regras de segurança do Firestore)
+const _authReady = firebase.auth().signInAnonymously().catch(e=>console.warn('FB auth:',e));
 let _os = [], _clis = [], _mats = [], _editId = null;
 
 // ── Helpers ─────────────────────────────────────────────
@@ -228,6 +231,7 @@ function nextNum(){
 // ── Firebase Load ────────────────────────────────────────
 async function carregarDados(){
   try {
+    await _authReady;
     const [osDoc, cliDoc, matDoc] = await Promise.all([
       db.collection('mrc').doc('os').get(),
       db.collection('mrc').doc('cli').get(),
@@ -243,6 +247,7 @@ async function carregarDados(){
 }
 
 async function guardarFirebase(){
+  await _authReady;
   await db.collection('mrc').doc('os').set({ value: _os });
 }
 
@@ -506,6 +511,7 @@ carregarDados().then(() => {
     : '⚠ Sem materiais no stock';
 
   // Realtime sync
+  _authReady.then(() => {
   db.collection('mrc').doc('os').onSnapshot(doc => {
     if(doc.exists){
       _os = doc.data().value || [];
@@ -523,6 +529,7 @@ carregarDados().then(() => {
         ? '🔍 Pesquisar nos ' + _mats.length + ' materiais do stock...'
         : '⚠ Sem materiais no stock';
     }
+  });
   });
 });
 </script>

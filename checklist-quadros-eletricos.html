@@ -14,6 +14,7 @@
 <link rel="manifest" id="pwaManifest">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
 (function(){
   firebase.initializeApp({
@@ -25,6 +26,8 @@
     appId:"1:4766445522:web:ffd8567ff468e24810620b"
   });
   window._ckDb = firebase.firestore();
+  // Login anónimo automático (necessário p/ as regras de segurança do Firestore)
+  window._ckAuthReady = firebase.auth().signInAnonymously().catch(function(e){console.warn('FB auth:',e);});
 })();
 </script>
 <style>
@@ -391,11 +394,13 @@ function saveAll(){
     try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); localStorage.setItem(LS_KEY+'_ts', String(Date.now())); }catch(e){}
     // Save to Firebase
     if(window._ckDb){
+      window._ckAuthReady.then(function(){
       window._ckDb.collection('mrc_checklist').doc('dados').set({
         value: JSON.stringify(data),
         ts: Date.now()
       }).then(()=>setSaveState('saved'))
         .catch(()=>setSaveState('saved')); // saved locally at least
+      });
     } else {
       setSaveState('saved');
     }
@@ -478,6 +483,7 @@ function loadAll(){
   if(window._ckDb){
     setSaveState('saving');
     document.getElementById('saveIndicator').textContent = '☁ A sincronizar...';
+    window._ckAuthReady.then(function(){
     window._ckDb.collection('mrc_checklist').doc('dados').get()
       .then(doc => {
         if(doc.exists){
@@ -502,6 +508,7 @@ function loadAll(){
           setSaveState('saved');
         }
       }).catch(()=>setSaveState('saved'));
+    });
   }
 
   const raw = localStorage.getItem(LS_KEY);

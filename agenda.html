@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <style>
 :root{
   --bg:#0F1117;--card:#1A1F2E;--card2:#1E2436;
@@ -312,6 +313,8 @@ firebase.initializeApp({
   appId:"1:4766445522:web:ffd8567ff468e24810620b"
 });
 const db = firebase.firestore();
+// Login anónimo automático (necessário p/ as regras de segurança do Firestore)
+const _authReady = firebase.auth().signInAnonymously().catch(e=>console.warn('FB auth:',e));
 
 // ── State ────────────────────────────────────────────────
 let _evts = [], _clis = [], _editId = null;
@@ -398,7 +401,7 @@ function verificarLembretes() {
       alterado = true;
     }
   });
-  if (alterado) db.collection('mrc').doc('evt').set({value: _evts});
+  if (alterado) _authReady.then(()=>db.collection('mrc').doc('evt').set({value: _evts}));
 }
 
 function iniciarLembretes() {
@@ -411,6 +414,7 @@ function iniciarLembretes() {
 // ── Firebase ─────────────────────────────────────────────
 async function carregar() {
   try {
+    await _authReady;
     const [evtDoc, cliDoc] = await Promise.all([
       db.collection('mrc').doc('evt').get(),
       db.collection('mrc_dados').doc('m3_cli').get()
@@ -423,6 +427,7 @@ async function carregar() {
 }
 
 async function guardarFB() {
+  await _authReady;
   await db.collection('mrc').doc('evt').set({value: JSON.stringify(_evts), ts: Date.now()});
 }
 
@@ -667,11 +672,13 @@ carregar().then(() => {
   iniciarLembretes();
 
   // Realtime
+  _authReady.then(() => {
   db.collection('mrc').doc('evt').onSnapshot(doc => {
     if (doc.exists) { try{_evts = JSON.parse(doc.data().value||'[]');}catch(e){_evts=[];} render(); }
   });
   db.collection('mrc_dados').doc('m3_cli').onSnapshot(doc => {
     if (doc.exists) { try{_clis = JSON.parse(doc.data().value||'[]');}catch(e){_clis=[];} preencherClis(); }
+  });
   });
 });
 </script>

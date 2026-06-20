@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
 (function(){
   firebase.initializeApp({
@@ -22,6 +23,8 @@
   });
   var db=firebase.firestore();
   var col='mrc_dados';
+  // Login anónimo automático (necessário p/ as regras de segurança do Firestore)
+  var _authReady=firebase.auth().signInAnonymously().catch(function(e){console.warn('FB auth:',e);});
 
   // Hardcoded key mapping (Firestore key -> localStorage key)
   var KEY_MAP={
@@ -36,11 +39,14 @@
 
   // Save to Firestore using firebase key
   window._fbSave=function(fbKey,data){
-    db.collection(col).doc(fbKey).set({value:JSON.stringify(data),ts:Date.now()}).catch(function(e){console.warn('FB save:',e);});
+    _authReady.then(function(){
+      db.collection(col).doc(fbKey).set({value:JSON.stringify(data),ts:Date.now()}).catch(function(e){console.warn('FB save:',e);});
+    });
   };
 
   // Load all data from Firestore and put in cache + localStorage
   window._fbLoad=function(cb){
+    _authReady.then(function(){
     db.collection(col).get().then(function(snap){
       window._cache=window._cache||{};
       snap.forEach(function(doc){
@@ -65,11 +71,13 @@
       });
       if(cb)cb();
     }).catch(function(e){console.warn('FB load:',e);if(cb)cb();});
+    });
   };
 
   // Realtime listener
   window._fbRestoring=false;
   window._fbStartRealtime=function(){
+    _authReady.then(function(){
     db.collection(col).onSnapshot(function(snap){
       if(window._fbRestoring)return;
       window._cache=window._cache||{};
@@ -102,6 +110,7 @@
       if(changed&&typeof renderAll==='function')setTimeout(renderAll,100);
       if(changed&&typeof renderDef==='function')setTimeout(renderDef,150);
     },function(e){console.warn('FB realtime:',e);});
+    });
   };
 })();
 </script>

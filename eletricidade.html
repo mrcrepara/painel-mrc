@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Barlow:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <style>
 :root{
   --bg:#0A0C10;--s1:#111318;--s2:#181B22;--s3:#1E222C;
@@ -712,10 +713,13 @@ firebase.initializeApp({
   appId:"1:4766445522:web:ffd8567ff468e24810620b"
 });
 const _db = firebase.firestore();
+// Login anónimo automático (necessário p/ as regras de segurança do Firestore)
+const _authReady = firebase.auth().signInAnonymously().catch(e=>console.warn('FB auth:',e));
 let _clis = [];
 
 async function carregarClientes() {
   try {
+    await _authReady;
     const doc = await _db.collection('mrc_dados').doc('m3_cli').get();
     _clis = doc.exists ? JSON.parse(doc.data().value || '[]') : [];
     const sel = document.getElementById('cli_sel');
@@ -2043,6 +2047,7 @@ async function guardarOrcamento(){
 
   // Try Firestore
   try {
+    await _authReady;
     await _db.collection('eletro_orcamentos').doc(nome).set(dados);
     savedOk = true;
   } catch(e){ console.warn('Firestore error:', e.message); }
@@ -2068,6 +2073,7 @@ async function carregarOrcamento(){
 
   // Firestore
   try {
+    await _authReady;
     var snap = await _db.collection('eletro_orcamentos').orderBy('data','desc').get();
     snap.forEach(function(doc){
       todos.push(doc.data());
@@ -2155,7 +2161,7 @@ async function carregarOrcamento(){
     delBtn.onclick = (function(o, r){ return async function(e){
       e.stopPropagation();
       if(!confirm('Apagar: ' + o.nome + '?')) return;
-      try { await _db.collection('eletro_orcamentos').doc(o.nome).delete(); } catch(ex){}
+      try { await _authReady; await _db.collection('eletro_orcamentos').doc(o.nome).delete(); } catch(ex){}
       try {
         var l = JSON.parse(localStorage.getItem('eletro_orcamentos')||'[]');
         localStorage.setItem('eletro_orcamentos', JSON.stringify(l.filter(function(x){ return x.nome!==o.nome; })));
