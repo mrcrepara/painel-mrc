@@ -229,17 +229,18 @@ function nextNum(){
 }
 
 // ── Firebase Load ────────────────────────────────────────
+const COL = 'mrc_dados';
 async function carregarDados(){
   try {
     await _authReady;
     const [osDoc, cliDoc, matDoc] = await Promise.all([
-      db.collection('mrc').doc('os').get(),
-      db.collection('mrc').doc('cli').get(),
-      db.collection('mrc').doc('mat').get()
+      db.collection(COL).doc('m3_os').get(),
+      db.collection(COL).doc('m3_cli').get(),
+      db.collection(COL).doc('m3_mat').get()
     ]);
-    _os   = osDoc.exists  ? (osDoc.data().value  || []) : [];
-    _clis = cliDoc.exists ? (cliDoc.data().value || []) : [];
-    _mats = matDoc.exists ? (matDoc.data().value || []) : [];
+    _os   = osDoc.exists  ? (JSON.parse(osDoc.data().value  || '[]') || []) : [];
+    _clis = cliDoc.exists ? (JSON.parse(cliDoc.data().value || '[]') || []) : [];
+    _mats = matDoc.exists ? (JSON.parse(matDoc.data().value || '[]') || []) : [];
   } catch(e) {
     _os = []; _clis = []; _mats = [];
     console.warn('Firebase error:', e);
@@ -248,7 +249,7 @@ async function carregarDados(){
 
 async function guardarFirebase(){
   await _authReady;
-  await db.collection('mrc').doc('os').set({ value: _os });
+  await db.collection(COL).doc('m3_os').set({ value: JSON.stringify(_os), ts: Date.now() });
 }
 
 // ── Render ───────────────────────────────────────────────
@@ -512,18 +513,18 @@ carregarDados().then(() => {
 
   // Realtime sync
   _authReady.then(() => {
-  db.collection('mrc').doc('os').onSnapshot(doc => {
+  db.collection(COL).doc('m3_os').onSnapshot(doc => {
     if(doc.exists){
-      _os = doc.data().value || [];
+      try { _os = JSON.parse(doc.data().value || '[]') || []; } catch(e){ _os=[]; }
       render();
     }
   });
-  db.collection('mrc').doc('cli').onSnapshot(doc => {
-    if(doc.exists) _clis = doc.data().value || [];
+  db.collection(COL).doc('m3_cli').onSnapshot(doc => {
+    if(doc.exists){ try { _clis = JSON.parse(doc.data().value || '[]') || []; } catch(e){ _clis=[]; } }
   });
-  db.collection('mrc').doc('mat').onSnapshot(doc => {
+  db.collection(COL).doc('m3_mat').onSnapshot(doc => {
     if(doc.exists){
-      _mats = doc.data().value || [];
+      try { _mats = JSON.parse(doc.data().value || '[]') || []; } catch(e){ _mats=[]; }
       const ms = document.getElementById('matSearch');
       if(ms) ms.placeholder = _mats.length > 0
         ? '🔍 Pesquisar nos ' + _mats.length + ' materiais do stock...'

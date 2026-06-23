@@ -401,7 +401,7 @@ function verificarLembretes() {
       alterado = true;
     }
   });
-  if (alterado) _authReady.then(()=>db.collection('mrc').doc('evt').set({value: _evts}));
+  if (alterado) _authReady.then(()=>db.collection('mrc_dados').doc('m3_evt').set({value: JSON.stringify(_evts), ts: Date.now()}));
 }
 
 function iniciarLembretes() {
@@ -416,7 +416,7 @@ async function carregar() {
   try {
     await _authReady;
     const [evtDoc, cliDoc] = await Promise.all([
-      db.collection('mrc').doc('evt').get(),
+      db.collection('mrc_dados').doc('m3_evt').get(),
       db.collection('mrc_dados').doc('m3_cli').get()
     ]);
     _evts = evtDoc.exists ? JSON.parse(evtDoc.data().value || '[]') : [];
@@ -428,7 +428,7 @@ async function carregar() {
 
 async function guardarFB() {
   await _authReady;
-  await db.collection('mrc').doc('evt').set({value: JSON.stringify(_evts), ts: Date.now()});
+  await db.collection('mrc_dados').doc('m3_evt').set({value: JSON.stringify(_evts), ts: Date.now()});
 }
 
 // ── Render ───────────────────────────────────────────────
@@ -673,7 +673,7 @@ carregar().then(() => {
 
   // Realtime
   _authReady.then(() => {
-  db.collection('mrc').doc('evt').onSnapshot(doc => {
+  db.collection('mrc_dados').doc('m3_evt').onSnapshot(doc => {
     if (doc.exists) { try{_evts = JSON.parse(doc.data().value||'[]');}catch(e){_evts=[];} render(); }
   });
   db.collection('mrc_dados').doc('m3_cli').onSnapshot(doc => {
