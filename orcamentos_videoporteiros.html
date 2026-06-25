@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MRC — Orçamentos Videoporteiros</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyALX9QWi4o89zO0wBd3A3znkP_YD-bPwwA",
+  authDomain:"mrc-47d1f.firebaseapp.com",
+  projectId:"mrc-47d1f",
+  storageBucket:"mrc-47d1f.firebasestorage.app",
+  messagingSenderId:"4766445522",
+  appId:"1:4766445522:web:ffd8567ff468e24810620b"
+});
+var db = firebase.firestore();
+firebase.auth().signInAnonymously().catch(function(e){console.warn(e);});
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0F1117;--sb:#141820;--card:#1A1F2E;--card2:#1E2436;
+  --border:#252D3D;--text:#E8ECF4;--muted:#7B8DB0;
+  --blue:#2563EB;--green:#10B981;--red:#EF4444;
+  --amber:#F59E0B;--purple:#8B5CF6;--teal:#14B8A6;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px}
+
+/* TOPBAR */
+.topbar{background:var(--sb);border-bottom:1px solid var(--border);padding:0 22px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar h1{font-size:16px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px}
+.back-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:600;font-family:'Inter',sans-serif;transition:all .15s}
+.back-btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+
+/* LAYOUT */
+.content{padding:20px;max-width:1100px;margin:0 auto}
+.pg-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.pg-hdr h2{font-size:20px;font-weight:800;color:#fff}
+.pg-hdr p{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* TABS DE SECÇÃO */
+.sec-tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:20px;width:fit-content}
+.sec-tab{padding:7px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;border:none;background:transparent;font-family:'Inter',sans-serif}
+.sec-tab.on{background:var(--blue);color:#fff}
+
+/* SECÇÃO NOVO ORÇAMENTO */
+.orc-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:900px){.orc-grid{grid-template-columns:1fr}}
+
+.card{background:var(--card);border-radius:11px;border:1px solid var(--border);margin-bottom:16px}
+.card-hdr{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-hdr h3{font-size:13px;font-weight:700;color:#fff}
+.card-body{padding:14px 16px}
+
+/* FORM FIELDS */
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.fg input,.fg select,.fg textarea{width:100%;padding:8px 11px;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;transition:border .15s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--blue)}
+.fg textarea{resize:vertical;min-height:60px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* TIPO / MARCA TABS */
+.choice-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.ct{padding:5px 14px;font-size:12px;font-weight:600;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.ct:hover{border-color:var(--blue);color:var(--text)}
+.ct.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* INFO BOX */
+.info-box{font-size:12px;padding:8px 12px;border-radius:8px;border-left:3px solid var(--blue);background:rgba(37,99,235,.08);color:#93C5FD;margin-bottom:12px}
+.warn-box{font-size:12px;padding:8px 12px;border-radius:8px;border-left:3px solid var(--amber);background:rgba(245,158,11,.08);color:#FCD34D;margin-bottom:12px}
+
+/* KITS GRID */
+.kits-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;margin-bottom:12px}
+.kit-card{border:1px solid var(--border);border-radius:10px;padding:11px;cursor:pointer;background:var(--card2);transition:border-color .15s}
+.kit-card:hover{border-color:var(--blue)}
+.kit-card.sel{border:2px solid var(--blue);background:rgba(37,99,235,.07)}
+.kit-img{width:100%;height:100px;object-fit:contain;border-radius:7px;background:var(--bg);display:block;margin-bottom:8px}
+.kit-fb{width:100%;height:100px;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:7px;margin-bottom:8px;font-size:11px;font-weight:700;color:var(--blue);font-family:monospace}
+.kit-bdg{font-size:10px;padding:2px 7px;border-radius:5px;display:inline-block;margin-bottom:5px;font-weight:600}
+.bdg-eco{background:rgba(16,185,129,.15);color:#34D399}
+.bdg-std{background:rgba(37,99,235,.15);color:#60A5FA}
+.bdg-pro{background:rgba(139,92,246,.15);color:#A78BFA}
+.kit-nome{font-size:12px;font-weight:700;color:#fff;margin-bottom:2px}
+.kit-ref{font-size:10px;color:var(--muted);font-family:monospace;margin-bottom:4px}
+.kit-desc{font-size:11px;color:var(--muted);margin-bottom:7px;line-height:1.5}
+.kit-preco{font-size:14px;font-weight:700;color:#60A5FA}
+
+/* EXTRAS */
+.extra-row{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer}
+.extra-row:last-child{border-bottom:none}
+.extra-row input[type=checkbox]{width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:var(--blue)}
+.extra-preco{margin-left:auto;color:var(--muted);font-size:12px;font-family:monospace}
+
+/* RESUMO */
+.resumo-card{background:var(--card2);border-radius:10px;border:1px solid var(--border);padding:14px 16px;margin-bottom:12px}
+.res-linha{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid rgba(37,45,61,.6)}
+.res-linha:last-child{border-bottom:none}
+.res-total{display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding:10px 0 0;margin-top:4px;border-top:1px solid var(--border)}
+.res-iva{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* BOTÕES */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;color:#fff;transition:all .15s;white-space:nowrap}
+.btn:hover{filter:brightness(1.1)}
+.btn-blue{background:var(--blue)}
+.btn-green{background:var(--green)}
+.btn-red{background:var(--red)}
+.btn-amber{background:var(--amber)}
+.btn-ghost{background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--text)}
+.btn-ghost:hover{background:rgba(255,255,255,.12)}
+.btn-sm{padding:6px 11px;font-size:12px}
+.btn-block{width:100%;justify-content:center;margin-top:8px}
+
+/* LISTA DE ORÇAMENTOS GUARDADOS */
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{padding:9px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid rgba(37,45,61,.5);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+tbody td{padding:9px 12px;vertical-align:middle}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.bs{background:rgba(245,158,11,.15);color:#FCD34D}
+.ba{background:rgba(37,99,235,.15);color:#60A5FA}
+.bg2{background:rgba(16,185,129,.15);color:#34D399}
+.br2{background:rgba(239,68,68,.15);color:#F87171}
+
+/* MODAL */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
+.ov.open{display:flex}
+.modal{background:var(--card);border-radius:14px;width:100%;max-width:620px;border:1px solid var(--border);max-height:92vh;overflow-y:auto;animation:mi .18s ease}
+@keyframes mi{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.mhdr{padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:1;border-radius:14px 14px 0 0}
+.mhdr h3{font-size:14px;font-weight:700;color:#fff}
+.mclose{background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);padding:4px;border-radius:6px}
+.mbody{padding:16px 20px}
+.mfoot{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--card);border-radius:0 0 14px 14px}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:11px 15px;border-radius:9px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:tIn .3s ease;display:flex;align-items:center;gap:7px;color:#fff;pointer-events:none}
+.tg{background:#065F46}.ta{background:#78350F}.tr2{background:#7F1D1D}
+@keyframes tIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.empty{text-align:center;padding:40px;color:var(--muted)}
+.sbar{display:flex;gap:9px;margin-bottom:13px;flex-wrap:wrap}
+.sbar input,.sbar select{padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif}
+.sbar input{flex:1;min-width:180px}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:14px">
+    <button class="back-btn" onclick="history.back()">← Voltar</button>
+    <h1>📹 Orçamentos — Videoporteiros</h1>
+  </div>
+  <span style="font-size:11px;color:var(--muted)" id="tbDate"></span>
+</div>
+
+<div class="content">
+
+  <!-- TABS PRINCIPAIS -->
+  <div class="sec-tabs">
+    <button class="sec-tab on" onclick="setTab('novo',this)">➕ Novo Orçamento</button>
+    <button class="sec-tab" onclick="setTab('lista',this)">📋 Orçamentos Guardados</button>
+  </div>
+
+  <!-- ===== SECÇÃO: NOVO ORÇAMENTO ===== -->
+  <div id="tab-novo">
+    <div class="orc-grid">
+
+      <!-- COLUNA ESQUERDA: configurador -->
+      <div>
+
+        <!-- DADOS DO CLIENTE -->
+        <div class="card">
+          <div class="card-hdr"><h3>👤 Dados do Cliente</h3></div>
+          <div class="card-body">
+            <div class="frow">
+              <div class="fg"><label>Nº Orçamento</label><input id="orc-num" placeholder="ORC-2026-001"></div>
+              <div class="fg"><label>Data</label><input type="date" id="orc-data"></div>
+            </div>
+            <div class="frow">
+              <div class="fg"><label>Nome do Cliente</label><input id="orc-cliente" placeholder="Ex: João Silva"></div>
+              <div class="fg"><label>Contacto</label><input id="orc-contacto" placeholder="912 345 678"></div>
+            </div>
+            <div class="fg"><label>Morada</label><input id="orc-morada" placeholder="Ex: Rua das Flores nº5, Famalicão"></div>
+            <div class="fg"><label>Validade do Orçamento</label>
+              <select id="orc-validade">
+                <option value="15 dias">15 dias</option>
+                <option value="30 dias" selected>30 dias</option>
+                <option value="60 dias">60 dias</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIPO DE INSTALAÇÃO -->
+        <div class="card">
+          <div class="card-hdr"><h3>🏠 Tipo de Instalação</h3></div>
+          <div class="card-body">
+            <div class="choice-tabs" id="tipo-tabs"></div>
+            <div id="tipo-info-box"></div>
+          </div>
+        </div>
+
+        <!-- MARCA -->
+        <div class="card">
+          <div class="card-hdr"><h3>🏷 Marca</h3></div>
+          <div class="card-body">
+            <div class="choice-tabs" id="marca-tabs"></div>
+            <div id="marca-aviso-box"></div>
+          </div>
+        </div>
+
+        <!-- KIT -->
+        <div class="card">
+          <div class="card-hdr"><h3>📦 Kit</h3></div>
+          <div class="card-body">
+            <div class="kits-grid" id="kits-grid"></div>
+          </div>
+        </div>
+
+        <!-- EXTRAS -->
+        <div class="card">
+          <div class="card-hdr"><h3>🔧 Extras e Serviços</h3></div>
+          <div class="card-body" id="extras-list"></div>
+        </div>
+
+        <!-- NOTAS -->
+        <div class="card">
+          <div class="card-hdr"><h3>📝 Notas</h3></div>
+          <div class="card-body">
+            <div class="fg">
+              <label>Observações para o cliente</label>
+              <textarea id="orc-notas" placeholder="Ex: Cablagem incluída até 20m. Não inclui abertura de roços. Validade conforme indicado."></textarea>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- COLUNA DIREITA: resumo + ações -->
+      <div>
+        <div style="position:sticky;top:68px">
+
+          <!-- RESUMO -->
+          <div class="card">
+            <div class="card-hdr"><h3>💰 Resumo do Orçamento</h3></div>
+            <div class="card-body">
+              <div class="resumo-card" id="resumo-linhas">
+                <div class="empty" style="padding:20px">Selecione um kit</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding:8px 0 2px">
+                <span style="color:var(--muted)">Total c/ IVA 23%</span>
+                <span id="total-final" style="color:#60A5FA">—</span>
+              </div>
+              <div id="total-sem-iva" style="font-size:11px;color:var(--muted);margin-bottom:14px"></div>
+
+              <button class="btn btn-green btn-block" onclick="guardarOrcamento()">💾 Guardar Orçamento</button>
+              <button class="btn btn-blue btn-block" onclick="gerarTextoWhatsapp()">📱 Gerar Texto WhatsApp</button>
+              <button class="btn btn-ghost btn-block" onclick="gerarTextoPDF()">🖨 Gerar PDF / Imprimir</button>
+            </div>
+          </div>
+
+          <!-- ESTADO -->
+          <div class="card">
+            <div class="card-hdr"><h3>📊 Estado</h3></div>
+            <div class="card-body">
+              <div class="fg">
+                <label>Estado do Orçamento</label>
+                <select id="orc-estado">
+                  <option value="rascunho">📝 Rascunho</option>
+                  <option value="enviado">📤 Enviado ao Cliente</option>
+                  <option value="aceite">✅ Aceite</option>
+                  <option value="recusado">❌ Recusado</option>
+                  <option value="expirado">⏰ Expirado</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label>Ligado a OS (opcional)</label>
+                <input id="orc-os" placeholder="Nº da Ordem de Serviço">
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SECÇÃO: LISTA ===== -->
+  <div id="tab-lista" style="display:none">
+    <div class="card">
+      <div class="card-hdr">
+        <h3>📋 Orçamentos Guardados</h3>
+        <button class="btn btn-ghost btn-sm" onclick="carregarLista()">🔄 Atualizar</button>
+      </div>
+      <div class="card-body">
+        <div class="sbar">
+          <input type="text" id="lst-search" placeholder="Pesquisar cliente ou nº..." oninput="filtrarLista()">
+          <select id="lst-estado" onchange="filtrarLista()" style="min-width:160px">
+            <option value="">Todos os estados</option>
+            <option value="rascunho">Rascunho</option>
+            <option value="enviado">Enviado</option>
+            <option value="aceite">Aceite</option>
+            <option value="recusado">Recusado</option>
+            <option value="expirado">Expirado</option>
+          </select>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nº</th>
+                <th>Data</th>
+                <th>Cliente</th>
+                <th>Tipo</th>
+                <th>Kit</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-tbody">
+              <tr><td colspan="8" class="empty">A carregar...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- MODAL: VER ORÇAMENTO -->
+<div class="ov" id="mVer">
+  <div class="modal" style="max-width:680px">
+    <div class="mhdr"><h3 id="mVer-titulo">Orçamento</h3><button class="mclose" onclick="closeM('mVer')">✕</button></div>
+    <div class="mbody" id="mVer-body"></div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="closeM('mVer')">Fechar</button>
+      <button class="btn btn-blue btn-sm" onclick="imprimirOrcamento()">🖨 Imprimir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TEXTO WHATSAPP -->
+<div class="ov" id="mWhats">
+  <div class="modal">
+    <div class="mhdr"><h3>📱 Texto para WhatsApp</h3><button class="mclose" onclick="closeM('mWhats')">✕</button></div>
+    <div class="mbody">
+      <textarea id="whats-texto" style="width:100%;min-height:320px;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:monospace;line-height:1.6" readonly></textarea>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="closeM('mWhats')">Fechar</button>
+      <button class="btn btn-green" onclick="copiarTexto()">📋 Copiar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const DB = {
+  Unifamiliar: {
+    desc: '1 botoneira exterior (1 botão) + 1 monitor interior',
+    marcas: {
+      VIMAR: {
+        aviso: null,
+        kits: [
+          { ref:'K40930', nome:'Vimar Elvox K40930', desc:'Monitor 7" LCD TFT, mãos livres, teclado capacitivo, 2 fios', preco:189, bdg:'Básico 2 fios', bc:'bdg-eco', img:'https://www.vimar.com/content/dam/vimar/product-pages/K40930.jpg' },
+          { ref:'K42945', nome:'Vimar Elvox K42945 WiFi', desc:'Monitor 7" touch screen, WiFi, app smartphone, 2 fios', preco:265, bdg:'WiFi App', bc:'bdg-std', img:'https://www.vimar.com/content/dam/vimar/product-pages/K42945.jpg' },
+          { ref:'K42955', nome:'Vimar Elvox K42955 RFID+WiFi', desc:'Monitor 7" touch WiFi + leitor RFID, memória 100 imagens, ângulo 130°', preco:320, bdg:'WiFi + RFID', bc:'bdg-pro', img:'https://www.vimar.com/content/dam/vimar/product-pages/K42955.jpg' },
+        ]
+      },
+      FERMAX: {
+        aviso: null,
+        kits: [
+          { ref:'VEO-XS 9449', nome:'Fermax VEO-XS DUOX PLUS', desc:'Monitor 4.3" colorido, sistema 2 fios DUOX PLUS', preco:175, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
+          { ref:'CITY 9471', nome:'Fermax CITY VEO-XL WiFi', desc:'Monitor 7" touch WiFi, app Blue, câmara 120°, IP54', preco:289, bdg:'WiFi App', bc:'bdg-std', img:'' },
+          { ref:'CITY 9479', nome:'Fermax CITY VEO-XL WiFi RFID', desc:'Monitor 7" Full HD WiFi + RFID, gravação de chamadas', preco:349, bdg:'WiFi + RFID', bc:'bdg-pro', img:'' },
+        ]
+      },
+      EZVIZ: {
+        aviso: null,
+        kits: [
+          { ref:'CS-HP7-R100', nome:'EZVIZ HP7', desc:'Monitor tátil 7" (17,78cm), câmara 2K, WiFi 2.4/5GHz, leitor RFID, visão noturna 5m, 2 fios', preco:219, bdg:'WiFi + RFID', bc:'bdg-std', img:'https://m.media-amazon.com/images/I/61nFTMiTXAL._AC_SL1500_.jpg' },
+        ]
+      },
+      TMZON: {
+        aviso: null,
+        kits: [
+          { ref:'TMZON-4.3"', nome:'TMZON 4.3" Basic', desc:'Ecrã 4.3" colorido, câmara noturna, 2 fios', preco:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
+          { ref:'TMZON-7"W', nome:'TMZON 7" WiFi', desc:'Ecrã 7" touch, WiFi, app, detecção de movimento', preco:0, bdg:'WiFi App', bc:'bdg-std', img:'' },
+        ]
+      },
+    }
+  },
+  Bifamiliar: {
+    desc: '1 botoneira exterior (2 botões) + 2 monitores interiores independentes',
+    marcas: {
+      VIMAR: {
+        aviso: null,
+        kits: [
+          { ref:'K40931', nome:'Vimar Elvox K40931', desc:'Botoneira alumínio 2 botões + 2× monitor 7" LCD TFT capacitivo, 2 fios', preco:349, bdg:'Básico 2 fios', bc:'bdg-eco', img:'https://www.vimar.com/content/dam/vimar/product-pages/K40931.jpg' },
+          { ref:'K42956', nome:'Vimar Elvox K42956 WiFi', desc:'Botoneira 2 botões + 2× monitor 7" touch WiFi, app smartphone', preco:520, bdg:'WiFi App', bc:'bdg-std', img:'https://www.vimar.com/content/dam/vimar/product-pages/K42956.jpg' },
+          { ref:'K42956+RFID', nome:'Vimar Elvox K42956 WiFi+RFID', desc:'Botoneira 2 botões RFID + 2× monitor 7" touch WiFi, memória chamadas', preco:620, bdg:'WiFi + RFID', bc:'bdg-pro', img:'' },
+        ]
+      },
+      FERMAX: {
+        aviso: null,
+        kits: [
+          { ref:'VEO-XS Bif.', nome:'Fermax VEO-XS Bifamiliar', desc:'Botoneira 2 botões + 2× monitor 4.3" DUOX PLUS, 2 fios', preco:320, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
+          { ref:'CITY Bif. WiFi', nome:'Fermax CITY Bifamiliar WiFi', desc:'Botoneira 2 botões + 2× monitor 7" WiFi app Blue, DUOX PLUS', preco:549, bdg:'WiFi App', bc:'bdg-std', img:'' },
+        ]
+      },
+      EZVIZ: {
+        aviso: '⚠️ O EZVIZ HP7 não suporta instalação bifamiliar (duas habitações independentes). A alternativa é instalar 2 kits separados — cada habitação fica com a sua botoneira e monitor próprios.',
+        kits: [
+          { ref:'2× CS-HP7-R100', nome:'2× EZVIZ HP7 (kits independentes)', desc:'Cada habitação com a sua botoneira exterior e monitor 7" WiFi — solução independente', preco:438, bdg:'2 kits independentes', bc:'bdg-std', img:'https://m.media-amazon.com/images/I/61nFTMiTXAL._AC_SL1500_.jpg' },
+        ]
+      },
+      TMZON: {
+        aviso: null,
+        kits: [
+          { ref:'TMZON-BIF2', nome:'TMZON Bifamiliar 7"', desc:'Botoneira 2 botões + 2× monitor 7" touch, 2 fios', preco:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
+          { ref:'TMZON-BIF2W', nome:'TMZON Bifamiliar 7" WiFi', desc:'Botoneira 2 botões + 2× monitor 7" WiFi, app', preco:0, bdg:'WiFi App', bc:'bdg-std', img:'' },
+        ]
+      },
+    }
+  }
+};
+
+const EXTRAS = [
+  { n:'Mão de obra — instalação', p:85 },
+  { n:'Cablagem (até 20m)', p:35 },
+  { n:'Cablagem (20 a 50m)', p:65 },
+  { n:'Fonte de alimentação exterior', p:30 },
+  { n:'Relé para abertura de porta elétrica', p:28 },
+  { n:'Amplificador de sinal 2 fios', p:45 },
+  { n:'Monitor adicional (sala / quarto)', p:95 },
+];
+
+// ─── ESTADO ──────────────────────────────────────────────────────────────────
+var tipo = 'Unifamiliar';
+var marca = 'VIMAR';
+var kitSel = null;
+var listaOrc = [];
+var orcAtualId = null;
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function(){
+  var hoje = new Date();
+  document.getElementById('tbDate').textContent = hoje.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('orc-data').value = hoje.toISOString().split('T')[0];
+  document.getElementById('orc-num').value = 'ORC-' + hoje.getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
+  renderTipo();
+  renderMarca();
+  renderKits();
+  renderExtras();
+  calc();
+});
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+function setTab(tab, btn) {
+  document.getElementById('tab-novo').style.display = tab==='novo' ? 'block' : 'none';
+  document.getElementById('tab-lista').style.display = tab==='lista' ? 'block' : 'none';
+  document.querySelectorAll('.sec-tab').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  if(tab==='lista') carregarLista();
+}
+
+// ─── RENDER TIPO ─────────────────────────────────────────────────────────────
+function renderTipo() {
+  var t = document.getElementById('tipo-tabs');
+  t.innerHTML = '';
+  Object.keys(DB).forEach(function(tp){
+    var b = document.createElement('button');
+    b.className = 'ct' + (tp===tipo?' on':'');
+    b.textContent = tp==='Unifamiliar' ? '🏠 Unifamiliar' : '🏘 Bifamiliar';
+    b.onclick = function(){ tipo=tp; marca='VIMAR'; kitSel=null; renderTipo(); renderMarca(); renderKits(); calc(); };
+    t.appendChild(b);
+  });
+  document.getElementById('tipo-info-box').innerHTML =
+    '<div class="info-box">📦 ' + DB[tipo].desc + '</div>';
+}
+
+// ─── RENDER MARCA ────────────────────────────────────────────────────────────
+function renderMarca() {
+  var t = document.getElementById('marca-tabs');
+  t.innerHTML = '';
+  Object.keys(DB[tipo].marcas).forEach(function(m){
+    var b = document.createElement('button');
+    b.className = 'ct' + (m===marca?' on':'');
+    b.textContent = m;
+    b.onclick = function(){ marca=m; kitSel=null; renderMarca(); renderKits(); calc(); };
+    t.appendChild(b);
+  });
+  var av = DB[tipo].marcas[marca].aviso;
+  document.getElementById('marca-aviso-box').innerHTML = av
+    ? '<div class="warn-box">'+av+'</div>' : '';
+}
+
+// ─── RENDER KITS ─────────────────────────────────────────────────────────────
+function renderKits() {
+  var g = document.getElementById('kits-grid');
+  g.innerHTML = '';
+  DB[tipo].marcas[marca].kits.forEach(function(k){
+    var c = document.createElement('div');
+    c.className = 'kit-card' + (kitSel&&kitSel.ref===k.ref?' sel':'');
+    var imgEl = k.img
+      ? '<img class="kit-img" src="'+k.img+'" alt="'+k.nome+'" onerror="this.outerHTML=\'<div class=kit-fb>'+k.ref+'</div>\'">'
+      : '<div class="kit-fb">'+k.ref+'</div>';
+    var precoTxt = k.preco > 0 ? k.preco.toFixed(2)+' €' : '<span style="color:var(--amber)">Definir preço</span>';
+    c.innerHTML = imgEl
+      + '<span class="kit-bdg '+k.bc+'">'+k.bdg+'</span>'
+      + '<div class="kit-nome">'+k.nome+'</div>'
+      + '<div class="kit-ref">Ref: '+k.ref+'</div>'
+      + '<div class="kit-desc">'+k.desc+'</div>'
+      + '<div class="kit-preco">'+precoTxt+'</div>';
+    if(k.preco === 0) {
+      c.innerHTML += '<input type="number" class="tmzon-preco" placeholder="Preço €" step="0.01" min="0" '
+        + 'style="width:100%;margin-top:6px;padding:6px 8px;background:var(--bg);border:1px solid var(--amber);border-radius:6px;color:var(--text);font-size:12px;font-family:Inter,sans-serif" '
+        + 'onclick="event.stopPropagation()" oninput="updateTmzonPreco(this,\''+k.ref+'\')">';
+    }
+    c.onclick = function(){
+      kitSel = k;
+      document.querySelectorAll('.kit-card').forEach(function(x){ x.classList.remove('sel'); });
+      c.classList.add('sel');
+      calc();
+    };
+    g.appendChild(c);
+  });
+}
+
+function updateTmzonPreco(input, ref) {
+  var val = parseFloat(input.value) || 0;
+  DB[tipo].marcas[marca].kits.forEach(function(k){ if(k.ref===ref) k.preco=val; });
+  if(kitSel && kitSel.ref===ref) { kitSel.preco=val; calc(); }
+}
+
+// ─── RENDER EXTRAS ───────────────────────────────────────────────────────────
+function renderExtras() {
+  var l = document.getElementById('extras-list');
+  l.innerHTML = '';
+  EXTRAS.forEach(function(e){
+    var r = document.createElement('label');
+    r.className = 'extra-row';
+    r.innerHTML = '<input type="checkbox" data-p="'+e.p+'" data-n="'+e.n+'">'
+      + '<span style="flex:1">'+e.n+'</span>'
+      + '<span class="extra-preco">'+e.p.toFixed(2)+' €</span>';
+    r.querySelector('input').addEventListener('change', calc);
+    l.appendChild(r);
+  });
+}
+
+// ─── CÁLCULO ─────────────────────────────────────────────────────────────────
+function calc() {
+  var tot = 0, linhas = [];
+  if(kitSel && kitSel.preco > 0){
+    tot += kitSel.preco;
+    linhas.push({ n: kitSel.nome + ' ('+kitSel.ref+')', v: kitSel.preco });
+  } else if(kitSel && kitSel.preco === 0){
+    linhas.push({ n: kitSel.nome + ' ('+kitSel.ref+')', v: null });
+  }
+  document.querySelectorAll('#extras-list input:checked').forEach(function(cb){
+    var p = parseFloat(cb.dataset.p);
+    tot += p;
+    linhas.push({ n: cb.dataset.n, v: p });
+  });
+  var div = document.getElementById('resumo-linhas');
+  if(!linhas.length){
+    div.innerHTML = '<div class="empty" style="padding:20px">Selecione um kit</div>';
+    document.getElementById('total-final').textContent = '—';
+    document.getElementById('total-sem-iva').textContent = '';
+    return;
+  }
+  div.innerHTML = linhas.map(function(l){
+    return '<div class="res-linha"><span>'+l.n+'</span><span style="color:#60A5FA">'+(l.v!==null ? l.v.toFixed(2)+' €' : '<em style="color:var(--amber)">a definir</em>')+'</span></div>';
+  }).join('');
+  var comIva = tot * 1.23;
+  document.getElementById('total-final').textContent = comIva.toFixed(2) + ' €';
+  document.getElementById('total-sem-iva').textContent = 'Subtotal s/ IVA: ' + tot.toFixed(2) + ' €';
+}
+
+// ─── GUARDAR ─────────────────────────────────────────────────────────────────
+function guardarOrcamento() {
+  var num = document.getElementById('orc-num').value.trim();
+  var cliente = document.getElementById('orc-cliente').value.trim();
+  if(!num || !cliente) { toast('Preenche o nº de orçamento e o nome do cliente', 'a'); return; }
+  if(!kitSel) { toast('Seleciona um kit antes de guardar', 'a'); return; }
+
+  var extras = [];
+  document.querySelectorAll('#extras-list input:checked').forEach(function(cb){
+    extras.push({ n: cb.dataset.n, p: parseFloat(cb.dataset.p) });
+  });
+
+  var totalSemIva = (kitSel.preco || 0) + extras.reduce(function(s,e){ return s+e.p; }, 0);
+  var orc = {
+    id: orcAtualId || Date.now().toString(),
+    num: num,
+    data: document.getElementById('orc-data').value,
+    cliente: cliente,
+    contacto: document.getElementById('orc-contacto').value,
+    morada: document.getElementById('orc-morada').value,
+    validade: document.getElementById('orc-validade').value,
+    tipo: tipo,
+    marca: marca,
+    kit: { ref: kitSel.ref, nome: kitSel.nome, preco: kitSel.preco },
+    extras: extras,
+    totalSemIva: totalSemIva,
+    totalComIva: totalSemIva * 1.23,
+    estado: document.getElementById('orc-estado').value,
+    os: document.getElementById('orc-os').value,
+    notas: document.getElementById('orc-notas').value,
+    ts: Date.now()
+  };
+
+  // Carregar lista existente e adicionar/actualizar
+  firebase.auth().currentUser
+    ? salvarNoFirebase(orc)
+    : firebase.auth().signInAnonymously().then(function(){ salvarNoFirebase(orc); });
+}
+
+function salvarNoFirebase(orc) {
+  db.collection('mrc_dados').doc('m3_orc_vp').get().then(function(doc){
+    var lista = [];
+    if(doc.exists){ try{ lista = JSON.parse(doc.data().value||'[]'); }catch(e){} }
+    var idx = lista.findIndex(function(o){ return o.id===orc.id; });
+    if(idx>=0) lista[idx]=orc; else lista.unshift(orc);
+    return db.collection('mrc_dados').doc('m3_orc_vp').set({ value: JSON.stringify(lista), ts: Date.now() });
+  }).then(function(){
+    toast('✅ Orçamento guardado no Firebase', 'g');
+    orcAtualId = orc.id;
+  }).catch(function(e){ toast('Erro ao guardar: '+e.message, 'r'); });
+}
+
+// ─── LISTA ───────────────────────────────────────────────────────────────────
+function carregarLista() {
+  document.getElementById('lista-tbody').innerHTML = '<tr><td colspan="8" class="empty">A carregar...</td></tr>';
+  db.collection('mrc_dados').doc('m3_orc_vp').get().then(function(doc){
+    listaOrc = [];
+    if(doc.exists){ try{ listaOrc = JSON.parse(doc.data().value||'[]'); }catch(e){} }
+    filtrarLista();
+  }).catch(function(){ filtrarLista(); });
+}
+
+function filtrarLista() {
+  var q = (document.getElementById('lst-search').value||'').toLowerCase();
+  var est = document.getElementById('lst-estado').value;
+  var filtrada = listaOrc.filter(function(o){
+    var matchQ = !q || o.cliente.toLowerCase().includes(q) || (o.num||'').toLowerCase().includes(q);
+    var matchE = !est || o.estado===est;
+    return matchQ && matchE;
+  });
+  renderLista(filtrada);
+}
+
+var ESTADOS = {
+  rascunho: { txt:'Rascunho', cls:'bs' },
+  enviado:  { txt:'Enviado',  cls:'ba' },
+  aceite:   { txt:'Aceite',   cls:'bg2' },
+  recusado: { txt:'Recusado', cls:'br2' },
+  expirado: { txt:'Expirado', cls:'bs' },
+};
+
+function renderLista(lista) {
+  var tbody = document.getElementById('lista-tbody');
+  if(!lista.length){ tbody.innerHTML='<tr><td colspan="8" class="empty">Nenhum orçamento encontrado</td></tr>'; return; }
+  tbody.innerHTML = lista.map(function(o){
+    var est = ESTADOS[o.estado] || { txt:o.estado, cls:'bs' };
+    return '<tr>'
+      + '<td style="font-family:monospace;color:#60A5FA">'+(o.num||'—')+'</td>'
+      + '<td style="color:var(--muted)">'+(o.data||'—')+'</td>'
+      + '<td style="font-weight:600">'+(o.cliente||'—')+'</td>'
+      + '<td>'+(o.tipo||'—')+'</td>'
+      + '<td style="font-size:11px;color:var(--muted)">'+(o.kit?o.kit.ref:'—')+'</td>'
+      + '<td style="font-family:monospace;color:#60A5FA">'+(o.totalComIva?o.totalComIva.toFixed(2)+' €':'—')+'</td>'
+      + '<td><span class="badge '+est.cls+'">'+est.txt+'</span></td>'
+      + '<td><div style="display:flex;gap:5px">'
+          + '<button class="btn btn-ghost btn-sm" onclick="verOrcamento(\''+o.id+'\')">👁</button>'
+          + '<button class="btn btn-blue btn-sm" onclick="editarOrcamento(\''+o.id+'\')">✏</button>'
+          + '<button class="btn btn-red btn-sm" onclick="apagarOrcamento(\''+o.id+'\')">🗑</button>'
+        + '</div></td>'
+      + '</tr>';
+  }).join('');
+}
+
+function verOrcamento(id) {
+  var o = listaOrc.find(function(x){ return x.id===id; });
+  if(!o) return;
+  var extras = (o.extras||[]).map(function(e){ return '<tr><td>'+e.n+'</td><td style="text-align:right;font-family:monospace">'+e.p.toFixed(2)+' €</td></tr>'; }).join('');
+  document.getElementById('mVer-titulo').textContent = 'Orçamento '+o.num+' — '+o.cliente;
+  document.getElementById('mVer-body').innerHTML =
+    '<div style="background:var(--card2);border-radius:8px;padding:12px 14px;margin-bottom:14px">'
+    + '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Dados do Cliente</div>'
+    + '<div style="font-weight:700;font-size:15px;color:#fff">'+o.cliente+'</div>'
+    + '<div style="font-size:12px;color:var(--muted);margin-top:2px">'+[o.contacto,o.morada].filter(Boolean).join(' · ')+'</div>'
+    + '</div>'
+    + '<table style="width:100%;font-size:13px;margin-bottom:14px">'
+    + '<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;color:var(--muted)">Tipo</td><td style="text-align:right">'+o.tipo+'</td></tr>'
+    + '<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;color:var(--muted)">Marca</td><td style="text-align:right">'+o.marca+'</td></tr>'
+    + '<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;color:var(--muted)">Kit</td><td style="text-align:right;font-family:monospace">'+o.kit.ref+'</td></tr>'
+    + '<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0;color:var(--muted)">Kit preço</td><td style="text-align:right">'+o.kit.preco.toFixed(2)+' €</td></tr>'
+    + extras
+    + '<tr><td style="padding:10px 0 4px;font-weight:700;font-size:14px">Total c/ IVA 23%</td><td style="text-align:right;font-weight:700;font-size:14px;color:#60A5FA">'+o.totalComIva.toFixed(2)+' €</td></tr>'
+    + '</table>'
+    + (o.notas ? '<div style="font-size:12px;color:var(--muted);padding:10px;background:var(--card2);border-radius:7px">'+o.notas+'</div>' : '');
+  document.getElementById('mVer').classList.add('open');
+}
+
+var orcParaImprimir = null;
+function imprimirOrcamento() { window.print(); }
+
+function editarOrcamento(id) {
+  var o = listaOrc.find(function(x){ return x.id===id; });
+  if(!o) return;
+  closeM('mVer');
+  setTab('novo', document.querySelector('.sec-tab'));
+  document.querySelector('.sec-tab').classList.add('on');
+  orcAtualId = o.id;
+  document.getElementById('orc-num').value = o.num||'';
+  document.getElementById('orc-data').value = o.data||'';
+  document.getElementById('orc-cliente').value = o.cliente||'';
+  document.getElementById('orc-contacto').value = o.contacto||'';
+  document.getElementById('orc-morada').value = o.morada||'';
+  document.getElementById('orc-notas').value = o.notas||'';
+  document.getElementById('orc-os').value = o.os||'';
+  document.getElementById('orc-estado').value = o.estado||'rascunho';
+  tipo = o.tipo||'Unifamiliar';
+  marca = o.marca||'VIMAR';
+  renderTipo(); renderMarca(); renderKits();
+  // Selecionar kit
+  if(o.kit){
+    DB[tipo].marcas[marca].kits.forEach(function(k){
+      if(k.ref===o.kit.ref){ kitSel=k; if(o.kit.preco) k.preco=o.kit.preco; }
+    });
+    document.querySelectorAll('.kit-card').forEach(function(c,i){
+      if(DB[tipo].marcas[marca].kits[i] && DB[tipo].marcas[marca].kits[i].ref===o.kit.ref) c.classList.add('sel');
+    });
+  }
+  // Restaurar extras
+  renderExtras();
+  if(o.extras){
+    document.querySelectorAll('#extras-list input').forEach(function(cb){
+      if(o.extras.find(function(e){ return e.n===cb.dataset.n; })) cb.checked=true;
+    });
+  }
+  calc();
+  toast('A editar orçamento '+o.num, 'b');
+}
+
+function apagarOrcamento(id) {
+  if(!confirm('Apagar este orçamento?')) return;
+  listaOrc = listaOrc.filter(function(o){ return o.id!==id; });
+  db.collection('mrc_dados').doc('m3_orc_vp').set({ value: JSON.stringify(listaOrc), ts: Date.now() })
+    .then(function(){ filtrarLista(); toast('Orçamento apagado', 'r'); })
+    .catch(function(e){ toast('Erro: '+e.message, 'r'); });
+}
+
+// ─── GERAR WHATSAPP ──────────────────────────────────────────────────────────
+function gerarTextoWhatsapp() {
+  if(!kitSel){ toast('Seleciona um kit primeiro', 'a'); return; }
+  var cliente = document.getElementById('orc-cliente').value || '(cliente)';
+  var num = document.getElementById('orc-num').value || '';
+  var data = document.getElementById('orc-data').value || new Date().toLocaleDateString('pt-PT');
+  var validade = document.getElementById('orc-validade').value;
+  var notas = document.getElementById('orc-notas').value;
+
+  var extras = [];
+  document.querySelectorAll('#extras-list input:checked').forEach(function(cb){
+    extras.push(cb.dataset.n + ' — ' + parseFloat(cb.dataset.p).toFixed(2) + ' €');
+  });
+
+  var totalSemIva = (kitSel.preco||0) + (extras.length ? document.querySelectorAll('#extras-list input:checked').length * 0 : 0);
+  // recalcular total
+  var tot = kitSel.preco || 0;
+  document.querySelectorAll('#extras-list input:checked').forEach(function(cb){ tot += parseFloat(cb.dataset.p); });
+
+  var txt = '📹 *ORÇAMENTO MRC — Videoporteiro*\n'
+    + '━━━━━━━━━━━━━━━━━━━━\n'
+    + (num ? '📋 Nº: *'+num+'*\n' : '')
+    + '📅 Data: ' + new Date(data+'T12:00').toLocaleDateString('pt-PT') + '\n'
+    + '👤 Cliente: *' + cliente + '*\n'
+    + (document.getElementById('orc-morada').value ? '📍 ' + document.getElementById('orc-morada').value + '\n' : '')
+    + '━━━━━━━━━━━━━━━━━━━━\n'
+    + '🏠 *Tipo:* ' + tipo + '\n'
+    + '🏷 *Marca:* ' + marca + '\n'
+    + '📦 *Kit:* ' + kitSel.nome + '\n'
+    + '    Ref: ' + kitSel.ref + '\n'
+    + '    ' + kitSel.desc + '\n'
+    + '    Preço: ' + (kitSel.preco||0).toFixed(2) + ' €\n'
+    + (extras.length ? '━━━━━━━━━━━━━━━━━━━━\n➕ *Extras:*\n' + extras.map(function(e){ return '  • '+e; }).join('\n') + '\n' : '')
+    + '━━━━━━━━━━━━━━━━━━━━\n'
+    + '💰 Subtotal (s/ IVA): ' + tot.toFixed(2) + ' €\n'
+    + '💳 *Total c/ IVA 23%: ' + (tot*1.23).toFixed(2) + ' €*\n'
+    + '━━━━━━━━━━━━━━━━━━━━\n'
+    + '⏳ Validade: ' + validade + '\n'
+    + (notas ? '📝 ' + notas + '\n' : '')
+    + '━━━━━━━━━━━━━━━━━━━━\n'
+    + '🔧 *MRC Reparação de Equipamentos Elétricos*\n'
+    + '📍 Fradelos, Vila Nova de Famalicão';
+
+  document.getElementById('whats-texto').value = txt;
+  document.getElementById('mWhats').classList.add('open');
+}
+
+function copiarTexto() {
+  var ta = document.getElementById('whats-texto');
+  ta.select();
+  document.execCommand('copy');
+  toast('✅ Texto copiado!', 'g');
+}
+
+// ─── PDF ─────────────────────────────────────────────────────────────────────
+function gerarTextoPDF() {
+  if(!kitSel){ toast('Seleciona um kit primeiro', 'a'); return; }
+  window.print();
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function closeM(id){ document.getElementById(id).classList.remove('open'); }
+
+function toast(msg, tipo) {
+  var el = document.createElement('div');
+  el.className = 'toast ' + (tipo==='g'?'tg':tipo==='r'?'tr2':'ta');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 3500);
+}
+</script>
+
+<!-- PRINT STYLES -->
+<style>
+@media print {
+  body { background: #fff; color: #000; font-size: 12pt; }
+  .topbar, .sec-tabs, .back-btn, .btn, #tab-lista, #extras-list + *, .card-hdr button { display: none !important; }
+  .card { border: 1px solid #ccc; background: #fff; }
+  .card-hdr h3 { color: #000; }
+  .kit-card { border: 1px solid #aaa; background: #f9f9f9; }
+  .content { padding: 10px; max-width: 100%; }
+}
+</style>
+
+</body>
+</html>
