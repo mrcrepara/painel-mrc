@@ -837,12 +837,31 @@ function toast(msg, tipo) {
 <!-- PRINT STYLES -->
 <style>
 @media print {
-  body { background: #fff; color: #000; font-size: 12pt; }
-  .topbar, .sec-tabs, .back-btn, .btn, #tab-lista, #extras-list + *, .card-hdr button { display: none !important; }
-  .card { border: 1px solid #ccc; background: #fff; }
-  .card-hdr h3 { color: #000; }
-  .kit-card { border: 1px solid #aaa; background: #f9f9f9; }
-  .content { padding: 10px; max-width: 100%; }
+  :root{--bg:#fff;--card:#fff;--card2:#f5f5f5;--border:#ccc;--text:#000;--muted:#555;--blue:#1a4db1}
+  body{background:#fff;color:#000;font-size:11pt}
+  .topbar,.sec-tabs,.back-btn,#tab-lista,.card-hdr button,
+  .choice-tabs,#tipo-info-box,#marca-aviso-box,.kits-grid,
+  #extras-list{display:none!important}
+  .orc-grid > div:last-child .btn{display:none!important}
+  .orc-grid{display:block!important}
+  .orc-grid > div:last-child{display:block!important}
+  .orc-grid > div:last-child > div{position:static!important}
+  .orc-grid > div:last-child > div > .card:first-child{display:block!important}
+  .orc-grid > div:last-child > div > .card:last-child{display:none!important}
+  .card{border:1px solid #ccc!important;background:#fff!important;margin-bottom:10px;break-inside:avoid}
+  .card-hdr{background:#f0f0f0!important}
+  .card-hdr h3{color:#000!important}
+  .resumo-card{background:#f5f5f5!important;border:1px solid #ccc!important}
+  .res-linha span{color:#000!important}
+  #total-final{color:#1a4db1!important;font-weight:800}
+  #total-sem-iva{color:#555!important}
+  .fg input,.fg textarea{background:#fff!important;color:#000!important;border:1px solid #ccc!important}
+  .content::before{
+    content:'MRC Reparação de Equipamentos Elétricos  ·  Fradelos, Vila Nova de Famalicão';
+    display:block;font-size:10pt;color:#555;
+    border-bottom:2px solid #1a4db1;padding-bottom:6px;margin-bottom:14px
+  }
+  .content{padding:10px;max-width:100%}
 }
 </style>
 
