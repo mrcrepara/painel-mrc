@@ -167,6 +167,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
   <div class="sec-tabs">
     <button class="sec-tab on" onclick="setTab('novo',this)">➕ Novo Orçamento</button>
     <button class="sec-tab" onclick="setTab('lista',this)">📋 Orçamentos Guardados</button>
+    <button class="sec-tab" onclick="setTab('precos',this)">⚙️ Gerir Preços</button>
   </div>
 
   <!-- ===== SECÇÃO: NOVO ORÇAMENTO ===== -->
@@ -331,6 +332,30 @@ tbody td{padding:9px 12px;vertical-align:middle}
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== SECÇÃO: GERIR PREÇOS ===== -->
+  <div id="tab-precos" style="display:none">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-hdr">
+        <h3>📦 Preços dos Kits</h3>
+        <button class="btn btn-green btn-sm" onclick="guardarPrecos()">💾 Guardar Preços</button>
+      </div>
+      <div class="card-body">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Edita os preços de venda ao cliente (com IVA ou sem IVA, como preferires — o orçamento aplica IVA por cima). Guardado automaticamente no Firebase.</div>
+        <div id="precos-kits-tabela"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <h3>🔧 Preços dos Extras e Serviços</h3>
+        <button class="btn btn-green btn-sm" onclick="guardarPrecos()">💾 Guardar Preços</button>
+      </div>
+      <div class="card-body">
+        <div id="precos-extras-tabela"></div>
       </div>
     </div>
   </div>
@@ -864,6 +889,149 @@ function toast(msg, tipo) {
   .content{padding:10px;max-width:100%}
 }
 </style>
+
+
+<script>
+// ─── GERIR PREÇOS ─────────────────────────────────────────────────────────────
+
+function renderPrecosTabela() {
+  // Kits
+  var html = '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr>'
+    + '<th style="text-align:left;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Tipo</th>'
+    + '<th style="text-align:left;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Marca</th>'
+    + '<th style="text-align:left;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Ref / Nome</th>'
+    + '<th style="text-align:right;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Preço €</th>'
+    + '</tr></thead><tbody>';
+
+  Object.keys(DB).forEach(function(tp) {
+    Object.keys(DB[tp].marcas).forEach(function(mk) {
+      DB[tp].marcas[mk].kits.forEach(function(k) {
+        html += '<tr style="border-bottom:1px solid rgba(37,45,61,.4)">'
+          + '<td style="padding:7px 10px;color:var(--muted);font-size:12px">' + tp + '</td>'
+          + '<td style="padding:7px 10px;font-size:12px;font-weight:600">' + mk + '</td>'
+          + '<td style="padding:7px 10px;font-size:12px">' + k.nome + '<br><span style="font-size:10px;color:var(--muted);font-family:monospace">' + k.ref + '</span></td>'
+          + '<td style="padding:7px 10px;text-align:right">'
+          + '<input type="number" step="0.01" min="0" data-tipo="' + tp + '" data-marca="' + mk + '" data-ref="' + k.ref + '" '
+          + 'value="' + k.preco + '" '
+          + 'style="width:90px;padding:5px 8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:Inter,sans-serif;text-align:right" '
+          + 'class="preco-kit-input">'
+          + '</td></tr>';
+      });
+    });
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('precos-kits-tabela').innerHTML = html;
+
+  // Extras
+  var htmlE = '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr>'
+    + '<th style="text-align:left;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Serviço / Extra</th>'
+    + '<th style="text-align:right;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Preço €</th>'
+    + '</tr></thead><tbody>';
+
+  EXTRAS.forEach(function(e, i) {
+    htmlE += '<tr style="border-bottom:1px solid rgba(37,45,61,.4)">'
+      + '<td style="padding:7px 10px;font-size:13px">' + e.n + '</td>'
+      + '<td style="padding:7px 10px;text-align:right">'
+      + '<input type="number" step="0.01" min="0" data-idx="' + i + '" value="' + e.p + '" '
+      + 'style="width:90px;padding:5px 8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:Inter,sans-serif;text-align:right" '
+      + 'class="preco-extra-input">'
+      + '</td></tr>';
+  });
+
+  htmlE += '</tbody></table>';
+  document.getElementById('precos-extras-tabela').innerHTML = htmlE;
+}
+
+function guardarPrecos() {
+  // Ler inputs dos kits
+  document.querySelectorAll('.preco-kit-input').forEach(function(inp) {
+    var tp = inp.dataset.tipo;
+    var mk = inp.dataset.marca;
+    var ref = inp.dataset.ref;
+    var val = parseFloat(inp.value) || 0;
+    DB[tp].marcas[mk].kits.forEach(function(k) {
+      if(k.ref === ref) k.preco = val;
+    });
+  });
+
+  // Ler inputs dos extras
+  document.querySelectorAll('.preco-extra-input').forEach(function(inp) {
+    var idx = parseInt(inp.dataset.idx);
+    EXTRAS[idx].p = parseFloat(inp.value) || 0;
+  });
+
+  // Construir objeto para guardar
+  var precosGuardar = { kits: {}, extras: [] };
+  Object.keys(DB).forEach(function(tp) {
+    precosGuardar.kits[tp] = {};
+    Object.keys(DB[tp].marcas).forEach(function(mk) {
+      precosGuardar.kits[tp][mk] = {};
+      DB[tp].marcas[mk].kits.forEach(function(k) {
+        precosGuardar.kits[tp][mk][k.ref] = k.preco;
+      });
+    });
+  });
+  precosGuardar.extras = EXTRAS.map(function(e) { return { n: e.n, p: e.p }; });
+
+  db.collection('mrc_dados').doc('m3_vp_precos').set({
+    value: JSON.stringify(precosGuardar),
+    ts: Date.now()
+  }).then(function() {
+    toast('✅ Preços guardados!', 'g');
+    renderExtras(); // atualizar lista de extras no formulário
+    if(kitSel) calc(); // recalcular se já há kit selecionado
+  }).catch(function(e) { toast('Erro: ' + e.message, 'r'); });
+}
+
+function carregarPrecos() {
+  db.collection('mrc_dados').doc('m3_vp_precos').get().then(function(doc) {
+    if(!doc.exists) return;
+    try {
+      var p = JSON.parse(doc.data().value || '{}');
+      // Aplicar preços dos kits
+      if(p.kits) {
+        Object.keys(p.kits).forEach(function(tp) {
+          if(!DB[tp]) return;
+          Object.keys(p.kits[tp]).forEach(function(mk) {
+            if(!DB[tp].marcas[mk]) return;
+            DB[tp].marcas[mk].kits.forEach(function(k) {
+              if(p.kits[tp][mk][k.ref] !== undefined) k.preco = p.kits[tp][mk][k.ref];
+            });
+          });
+        });
+      }
+      // Aplicar preços dos extras
+      if(p.extras) {
+        p.extras.forEach(function(pe) {
+          EXTRAS.forEach(function(e) {
+            if(e.n === pe.n) e.p = pe.p;
+          });
+        });
+      }
+      renderExtras();
+      renderKits();
+    } catch(e) { console.warn('Erro ao carregar preços:', e); }
+  });
+}
+
+// Carregar preços guardados ao iniciar
+document.addEventListener('DOMContentLoaded', function() {
+  firebase.auth().onAuthStateChanged(function(user) {
+    if(user) carregarPrecos();
+  });
+});
+
+// Sobrepor setTab para renderizar tabela de preços quando necessário
+var _setTabOriginal = setTab;
+setTab = function(tab, btn) {
+  _setTabOriginal(tab, btn);
+  document.getElementById('tab-precos').style.display = tab === 'precos' ? 'block' : 'none';
+  if(tab === 'precos') renderPrecosTabela();
+};
+</script>
 
 </body>
 </html>
