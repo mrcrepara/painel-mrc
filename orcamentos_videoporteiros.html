@@ -256,8 +256,13 @@ tbody td{padding:9px 12px;vertical-align:middle}
               <div class="resumo-card" id="resumo-linhas">
                 <div class="empty" style="padding:20px">Selecione um kit</div>
               </div>
-              <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding:8px 0 2px">
-                <span style="color:var(--muted)">Total c/ IVA 23%</span>
+              <!-- Toggle IVA -->
+              <div style="display:flex;gap:6px;margin-bottom:10px;margin-top:8px">
+                <button id="btn-iva-s" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center" onclick="setIva(false)">S/ IVA</button>
+                <button id="btn-iva-c" class="btn btn-blue btn-sm" style="flex:1;justify-content:center" onclick="setIva(true)">C/ IVA 23%</button>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding:4px 0 2px">
+                <span id="total-label" style="color:var(--muted)">Total c/ IVA 23%</span>
                 <span id="total-final" style="color:#60A5FA">—</span>
               </div>
               <div id="total-sem-iva" style="font-size:11px;color:var(--muted);margin-bottom:14px"></div>
@@ -423,6 +428,14 @@ const DB = {
           { ref:'TMZON-7"W', nome:'TMZON 7" WiFi', desc:'Ecrã 7" touch, WiFi, app, detecção de movimento', preco:0, bdg:'WiFi App', bc:'bdg-std', img:'' },
         ]
       },
+      GOLMAR: {
+        aviso: null,
+        kits: [
+          { ref:'VESTA7', nome:'Golmar VESTA7', desc:'Monitor mãos-livres 7" LCD, botoneira NEXA 1 botão, 2 fios', preco:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
+          { ref:'SOUL-ART-7', nome:'Golmar Soul Art 7"', desc:'Monitor 7" touch screen, botoneira Soul, 2 fios, design moderno', preco:0, bdg:'Touch 2 fios', bc:'bdg-std', img:'' },
+          { ref:'G12205116', nome:'Golmar Soul Art 7" c/ chaves', desc:'Monitor 7" touch + botoneira c/ 7 chaves de acesso RFID, 2 fios', preco:0, bdg:'Touch + RFID', bc:'bdg-pro', img:'' },
+        ]
+      },
     }
   },
   Bifamiliar: {
@@ -454,6 +467,13 @@ const DB = {
         kits: [
           { ref:'TMZON-BIF2', nome:'TMZON Bifamiliar 7"', desc:'Botoneira 2 botões + 2× monitor 7" touch, 2 fios', preco:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
           { ref:'TMZON-BIF2W', nome:'TMZON Bifamiliar 7" WiFi', desc:'Botoneira 2 botões + 2× monitor 7" WiFi, app', preco:0, bdg:'WiFi App', bc:'bdg-std', img:'' },
+        ]
+      },
+      GOLMAR: {
+        aviso: null,
+        kits: [
+          { ref:'KAE506', nome:'Golmar KAE506 Bifamiliar', desc:'Botoneira Extra 2 botões + 2× monitor 4.3" mãos-livres, 2 fios', preco:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
+          { ref:'GB2-NEXA', nome:'Golmar GB2 NEXA Bifamiliar', desc:'Botoneira NEXA modular 2 botões + 2× monitor 7" LCD mãos-livres, 2 fios', preco:0, bdg:'Monitor 7" 2 fios', bc:'bdg-std', img:'' },
         ]
       },
     }
@@ -584,6 +604,21 @@ function renderExtras() {
 }
 
 // ─── CÁLCULO ─────────────────────────────────────────────────────────────────
+var mostrarComIva = true;
+
+function setIva(comIva) {
+  mostrarComIva = comIva;
+  var btnC = document.getElementById('btn-iva-c');
+  var btnS = document.getElementById('btn-iva-s');
+  if(btnC && btnS) {
+    btnC.className = comIva ? 'btn btn-blue btn-sm' : 'btn btn-ghost btn-sm';
+    btnS.className = comIva ? 'btn btn-ghost btn-sm' : 'btn btn-blue btn-sm';
+    btnC.style.flex='1'; btnC.style.justifyContent='center';
+    btnS.style.flex='1'; btnS.style.justifyContent='center';
+  }
+  calc();
+}
+
 function calc() {
   var tot = 0, linhas = [];
   if(kitSel && kitSel.preco > 0){
@@ -602,14 +637,21 @@ function calc() {
     div.innerHTML = '<div class="empty" style="padding:20px">Selecione um kit</div>';
     document.getElementById('total-final').textContent = '—';
     document.getElementById('total-sem-iva').textContent = '';
+    if(document.getElementById('total-label')) document.getElementById('total-label').textContent = mostrarComIva ? 'Total c/ IVA 23%' : 'Total s/ IVA';
     return;
   }
-  div.innerHTML = linhas.map(function(l){
-    return '<div class="res-linha"><span>'+l.n+'</span><span style="color:#60A5FA">'+(l.v!==null ? l.v.toFixed(2)+' €' : '<em style="color:var(--amber)">a definir</em>')+'</span></div>';
-  }).join('');
   var comIva = tot * 1.23;
-  document.getElementById('total-final').textContent = comIva.toFixed(2) + ' €';
-  document.getElementById('total-sem-iva').textContent = 'Subtotal s/ IVA: ' + tot.toFixed(2) + ' €';
+  var totalMostrar = mostrarComIva ? comIva : tot;
+  var totalOutro   = mostrarComIva ? tot : comIva;
+  var labelPrinc   = mostrarComIva ? 'Total c/ IVA 23%' : 'Total s/ IVA';
+  var labelSecund  = mostrarComIva ? 'Valor s/ IVA: ' : 'Valor c/ IVA 23%: ';
+  div.innerHTML = linhas.map(function(l){
+    var val = l.v !== null ? l.v.toFixed(2)+' €' : '<em style="color:var(--amber)">a definir</em>';
+    return '<div class="res-linha"><span>'+l.n+'</span><span style="color:#60A5FA">'+val+'</span></div>';
+  }).join('');
+  if(document.getElementById('total-label')) document.getElementById('total-label').textContent = labelPrinc;
+  document.getElementById('total-final').textContent = totalMostrar.toFixed(2) + ' €';
+  document.getElementById('total-sem-iva').textContent = labelSecund + totalOutro.toFixed(2) + ' €';
 }
 
 // ─── GUARDAR ─────────────────────────────────────────────────────────────────
@@ -822,6 +864,7 @@ function gerarTextoWhatsapp() {
     + (extras.length ? '━━━━━━━━━━━━━━━━━━━━\n➕ *Extras:*\n' + extras.map(function(e){ return '  • '+e; }).join('\n') + '\n' : '')
     + '━━━━━━━━━━━━━━━━━━━━\n'
     + '💰 Subtotal (s/ IVA): ' + tot.toFixed(2) + ' €\n'
+    + '💰 Subtotal s/ IVA: ' + tot.toFixed(2) + ' €\n'
     + '💳 *Total c/ IVA 23%: ' + (tot*1.23).toFixed(2) + ' €*\n'
     + '━━━━━━━━━━━━━━━━━━━━\n'
     + '⏳ Validade: ' + validade + '\n'
