@@ -256,13 +256,8 @@ tbody td{padding:9px 12px;vertical-align:middle}
               <div class="resumo-card" id="resumo-linhas">
                 <div class="empty" style="padding:20px">Selecione um kit</div>
               </div>
-              <!-- Toggle IVA -->
-              <div style="display:flex;gap:6px;margin-bottom:10px;margin-top:8px">
-                <button id="btn-iva-s" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center" onclick="setIva(false)">S/ IVA</button>
-                <button id="btn-iva-c" class="btn btn-blue btn-sm" style="flex:1;justify-content:center" onclick="setIva(true)">C/ IVA 23%</button>
-              </div>
-              <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding:4px 0 2px">
-                <span id="total-label" style="color:var(--muted)">Total c/ IVA 23%</span>
+              <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding:8px 0 2px">
+                <span style="color:var(--muted)">Total c/ IVA 23%</span>
                 <span id="total-final" style="color:#60A5FA">—</span>
               </div>
               <div id="total-sem-iva" style="font-size:11px;color:var(--muted);margin-bottom:14px"></div>
@@ -428,14 +423,6 @@ const DB = {
           { ref:'TMZON-7"W', nome:'TMZON 7" WiFi', desc:'Ecrã 7" touch, WiFi, app, detecção de movimento', preco:0, bdg:'WiFi App', bc:'bdg-std', img:'' },
         ]
       },
-      GOLMAR: {
-        aviso: null,
-        kits: [
-          { ref:'VESTA7', nome:'Golmar VESTA7', desc:'Monitor mãos-livres 7" LCD, botoneira NEXA 1 botão, 2 fios', preco:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
-          { ref:'SOUL-ART-7', nome:'Golmar Soul Art 7"', desc:'Monitor 7" touch screen, botoneira Soul, 2 fios, design moderno', preco:0, bdg:'Touch 2 fios', bc:'bdg-std', img:'' },
-          { ref:'G12205116', nome:'Golmar Soul Art 7" c/ chaves', desc:'Monitor 7" touch + botoneira c/ 7 chaves de acesso RFID, 2 fios', preco:0, bdg:'Touch + RFID', bc:'bdg-pro', img:'' },
-        ]
-      },
     }
   },
   Bifamiliar: {
@@ -467,13 +454,6 @@ const DB = {
         kits: [
           { ref:'TMZON-BIF2', nome:'TMZON Bifamiliar 7"', desc:'Botoneira 2 botões + 2× monitor 7" touch, 2 fios', preco:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
           { ref:'TMZON-BIF2W', nome:'TMZON Bifamiliar 7" WiFi', desc:'Botoneira 2 botões + 2× monitor 7" WiFi, app', preco:0, bdg:'WiFi App', bc:'bdg-std', img:'' },
-        ]
-      },
-      GOLMAR: {
-        aviso: null,
-        kits: [
-          { ref:'KAE506', nome:'Golmar KAE506 Bifamiliar', desc:'Botoneira Extra 2 botões + 2× monitor 4.3" mãos-livres, 2 fios', preco:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
-          { ref:'GB2-NEXA', nome:'Golmar GB2 NEXA Bifamiliar', desc:'Botoneira NEXA modular 2 botões + 2× monitor 7" LCD mãos-livres, 2 fios', preco:0, bdg:'Monitor 7" 2 fios', bc:'bdg-std', img:'' },
         ]
       },
     }
@@ -604,21 +584,6 @@ function renderExtras() {
 }
 
 // ─── CÁLCULO ─────────────────────────────────────────────────────────────────
-var mostrarComIva = true;
-
-function setIva(comIva) {
-  mostrarComIva = comIva;
-  var btnC = document.getElementById('btn-iva-c');
-  var btnS = document.getElementById('btn-iva-s');
-  if(btnC && btnS) {
-    btnC.className = comIva ? 'btn btn-blue btn-sm' : 'btn btn-ghost btn-sm';
-    btnS.className = comIva ? 'btn btn-ghost btn-sm' : 'btn btn-blue btn-sm';
-    btnC.style.flex='1'; btnC.style.justifyContent='center';
-    btnS.style.flex='1'; btnS.style.justifyContent='center';
-  }
-  calc();
-}
-
 function calc() {
   var tot = 0, linhas = [];
   if(kitSel && kitSel.preco > 0){
@@ -637,21 +602,14 @@ function calc() {
     div.innerHTML = '<div class="empty" style="padding:20px">Selecione um kit</div>';
     document.getElementById('total-final').textContent = '—';
     document.getElementById('total-sem-iva').textContent = '';
-    if(document.getElementById('total-label')) document.getElementById('total-label').textContent = mostrarComIva ? 'Total c/ IVA 23%' : 'Total s/ IVA';
     return;
   }
-  var comIva = tot * 1.23;
-  var totalMostrar = mostrarComIva ? comIva : tot;
-  var totalOutro   = mostrarComIva ? tot : comIva;
-  var labelPrinc   = mostrarComIva ? 'Total c/ IVA 23%' : 'Total s/ IVA';
-  var labelSecund  = mostrarComIva ? 'Valor s/ IVA: ' : 'Valor c/ IVA 23%: ';
   div.innerHTML = linhas.map(function(l){
-    var val = l.v !== null ? l.v.toFixed(2)+' €' : '<em style="color:var(--amber)">a definir</em>';
-    return '<div class="res-linha"><span>'+l.n+'</span><span style="color:#60A5FA">'+val+'</span></div>';
+    return '<div class="res-linha"><span>'+l.n+'</span><span style="color:#60A5FA">'+(l.v!==null ? l.v.toFixed(2)+' €' : '<em style="color:var(--amber)">a definir</em>')+'</span></div>';
   }).join('');
-  if(document.getElementById('total-label')) document.getElementById('total-label').textContent = labelPrinc;
-  document.getElementById('total-final').textContent = totalMostrar.toFixed(2) + ' €';
-  document.getElementById('total-sem-iva').textContent = labelSecund + totalOutro.toFixed(2) + ' €';
+  var comIva = tot * 1.23;
+  document.getElementById('total-final').textContent = comIva.toFixed(2) + ' €';
+  document.getElementById('total-sem-iva').textContent = 'Subtotal s/ IVA: ' + tot.toFixed(2) + ' €';
 }
 
 // ─── GUARDAR ─────────────────────────────────────────────────────────────────
@@ -864,7 +822,6 @@ function gerarTextoWhatsapp() {
     + (extras.length ? '━━━━━━━━━━━━━━━━━━━━\n➕ *Extras:*\n' + extras.map(function(e){ return '  • '+e; }).join('\n') + '\n' : '')
     + '━━━━━━━━━━━━━━━━━━━━\n'
     + '💰 Subtotal (s/ IVA): ' + tot.toFixed(2) + ' €\n'
-    + '💰 Subtotal s/ IVA: ' + tot.toFixed(2) + ' €\n'
     + '💳 *Total c/ IVA 23%: ' + (tot*1.23).toFixed(2) + ' €*\n'
     + '━━━━━━━━━━━━━━━━━━━━\n'
     + '⏳ Validade: ' + validade + '\n'
@@ -887,7 +844,71 @@ function copiarTexto() {
 // ─── PDF ─────────────────────────────────────────────────────────────────────
 function gerarTextoPDF() {
   if(!kitSel){ toast('Seleciona um kit primeiro', 'a'); return; }
-  window.print();
+  
+  var num = document.getElementById('orc-num').value || '';
+  var data = document.getElementById('orc-data').value || '';
+  var dataFmt = data ? new Date(data+'T12:00').toLocaleDateString('pt-PT') : new Date().toLocaleDateString('pt-PT');
+  var cliente = document.getElementById('orc-cliente').value || '—';
+  var contacto = document.getElementById('orc-contacto').value || '—';
+  var morada = document.getElementById('orc-morada').value || '—';
+  var validade = document.getElementById('orc-validade').value || '30 dias';
+  var notas = document.getElementById('orc-notas').value || '';
+  var estado = document.getElementById('orc-estado').value || '';
+
+  // Calcular totais
+  var tot = kitSel.preco || 0;
+  var extrasLinhas = [];
+  document.querySelectorAll('#extras-list input:checked').forEach(function(cb){
+    var p = parseFloat(cb.dataset.p);
+    tot += p;
+    extrasLinhas.push({ n: cb.dataset.n, p: p });
+  });
+  var comIva = tot * 1.23;
+
+  // Extras HTML
+  var extrasHtml = extrasLinhas.map(function(e){
+    return '<div class="p-row"><span class="p-row-label">'+e.n+'</span><span class="p-row-value">'+e.p.toFixed(2)+' €</span></div>';
+  }).join('');
+
+  var html = '<div class="p-header">'
+    + '<div><div class="p-empresa">MRC Reparação de Equipamentos Elétricos</div>'
+    + '<div class="p-empresa-sub">Fradelos, Vila Nova de Famalicão · NIF: (MEI)</div></div>'
+    + '<div class="p-num"><span style="font-size:9pt;color:#777">ORÇAMENTO</span><strong>'+(num||'—')+'</strong><span style="font-size:9pt;color:#777">'+dataFmt+'</span></div>'
+    + '</div>'
+
+    + '<div class="p-section">'
+    + '<div class="p-section-title">👤 Dados do Cliente</div>'
+    + '<div class="p-row"><span class="p-row-label">Nome</span><span class="p-row-value">'+cliente+'</span></div>'
+    + '<div class="p-row"><span class="p-row-label">Contacto</span><span class="p-row-value">'+contacto+'</span></div>'
+    + '<div class="p-row"><span class="p-row-label">Morada</span><span class="p-row-value">'+morada+'</span></div>'
+    + '</div>'
+
+    + '<div class="p-section">'
+    + '<div class="p-section-title">📦 Equipamento Selecionado</div>'
+    + '<div class="p-row"><span class="p-row-label">Tipo de Instalação</span><span class="p-row-value">'+tipo+'</span></div>'
+    + '<div class="p-row"><span class="p-row-label">Marca</span><span class="p-row-value">'+marca+'</span></div>'
+    + '<div class="p-kit-box">'
+    + '<div class="p-kit-nome">'+kitSel.nome+'</div>'
+    + '<div class="p-kit-ref">Ref: '+kitSel.ref+'</div>'
+    + '<div class="p-kit-desc">'+kitSel.desc+'</div>'
+    + '</div>'
+    + '</div>'
+
+    + '<div class="p-total-section">'
+    + '<div class="p-total-row"><span>'+kitSel.nome+' ('+kitSel.ref+')</span><span>'+kitSel.preco.toFixed(2)+' €</span></div>'
+    + extrasHtml.replace(/p-row/g,'p-total-row').replace(/p-row-label/g,'').replace(/p-row-value/g,'')
+    + '<div class="p-total-row" style="border-top:1px solid #ccc"><span>Subtotal s/ IVA</span><span>'+tot.toFixed(2)+' €</span></div>'
+    + '<div class="p-total-row"><span>IVA 23%</span><span>'+(tot*0.23).toFixed(2)+' €</span></div>'
+    + '<div class="p-total-final"><span>TOTAL C/ IVA</span><span>'+comIva.toFixed(2)+' €</span></div>'
+    + '</div>'
+
+    + (notas ? '<div class="p-notas"><strong>Notas:</strong> '+notas+'</div>' : '')
+    + '<div class="p-validade">⏳ Validade do orçamento: '+validade+' a partir de '+dataFmt+'</div>'
+
+    + '<div class="p-footer">MRC Reparação de Equipamentos Elétricos · Fradelos, Vila Nova de Famalicão · Este documento não tem valor de fatura.</div>';
+
+  document.getElementById('print-orc').innerHTML = html;
+  setTimeout(function(){ window.print(); }, 100);
 }
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────
@@ -904,35 +925,44 @@ function toast(msg, tipo) {
 
 <!-- PRINT STYLES -->
 <style>
+/* Esconder div de impressão no ecrã */
+#print-orc { display: none; }
+
 @media print {
-  :root{--bg:#fff;--card:#fff;--card2:#f5f5f5;--border:#ccc;--text:#000;--muted:#555;--blue:#1a4db1}
-  body{background:#fff;color:#000;font-size:11pt}
-  .topbar,.sec-tabs,.back-btn,#tab-lista,.card-hdr button,
-  .choice-tabs,#tipo-info-box,#marca-aviso-box,.kits-grid,
-  #extras-list{display:none!important}
-  .orc-grid > div:last-child .btn{display:none!important}
-  .orc-grid{display:block!important}
-  .orc-grid > div:last-child{display:block!important}
-  .orc-grid > div:last-child > div{position:static!important}
-  .orc-grid > div:last-child > div > .card:first-child{display:block!important}
-  .orc-grid > div:last-child > div > .card:last-child{display:none!important}
-  .card{border:1px solid #ccc!important;background:#fff!important;margin-bottom:10px;break-inside:avoid}
-  .card-hdr{background:#f0f0f0!important}
-  .card-hdr h3{color:#000!important}
-  .resumo-card{background:#f5f5f5!important;border:1px solid #ccc!important}
-  .res-linha span{color:#000!important}
-  #total-final{color:#1a4db1!important;font-weight:800}
-  #total-sem-iva{color:#555!important}
-  .fg input,.fg textarea{background:#fff!important;color:#000!important;border:1px solid #ccc!important}
-  .content::before{
-    content:'MRC Reparação de Equipamentos Elétricos  ·  Fradelos, Vila Nova de Famalicão';
-    display:block;font-size:10pt;color:#555;
-    border-bottom:2px solid #1a4db1;padding-bottom:6px;margin-bottom:14px
-  }
-  .content{padding:10px;max-width:100%}
+  /* Esconder tudo excepto o div de impressão */
+  body > *:not(#print-orc) { display: none !important; }
+  #print-orc { display: block !important; font-family: Inter, Arial, sans-serif; font-size: 11pt; color: #000; padding: 20px; }
+  
+  /* Estilos do documento impresso */
+  .p-header { border-bottom: 2px solid #1a4db1; padding-bottom: 10px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .p-empresa { font-size: 13pt; font-weight: 800; color: #1a4db1; }
+  .p-empresa-sub { font-size: 9pt; color: #555; margin-top: 2px; }
+  .p-num { text-align: right; font-size: 10pt; color: #555; }
+  .p-num strong { font-size: 14pt; color: #000; display: block; }
+  .p-section { margin-bottom: 14px; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; break-inside: avoid; }
+  .p-section-title { background: #f0f0f0; padding: 6px 12px; font-size: 10pt; font-weight: 700; color: #333; border-bottom: 1px solid #ccc; }
+  .p-row { display: flex; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid #eee; font-size: 10pt; }
+  .p-row:last-child { border-bottom: none; }
+  .p-row-label { color: #555; }
+  .p-row-value { font-weight: 500; }
+  .p-kit-box { padding: 10px 12px; background: #f8f8f8; }
+  .p-kit-nome { font-size: 12pt; font-weight: 700; margin-bottom: 2px; }
+  .p-kit-ref { font-size: 9pt; color: #777; font-family: monospace; margin-bottom: 4px; }
+  .p-kit-desc { font-size: 10pt; color: #444; }
+  .p-total-section { border: 2px solid #1a4db1; border-radius: 6px; overflow: hidden; margin-top: 14px; break-inside: avoid; }
+  .p-total-row { display: flex; justify-content: space-between; padding: 7px 14px; border-bottom: 1px solid #ddd; font-size: 11pt; }
+  .p-total-row:last-child { border-bottom: none; }
+  .p-total-final { background: #1a4db1; color: #fff; font-size: 14pt; font-weight: 800; display: flex; justify-content: space-between; padding: 10px 14px; }
+  .p-notas { margin-top: 14px; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 10pt; color: #444; break-inside: avoid; }
+  .p-footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 9pt; color: #777; text-align: center; }
+  .p-validade { margin-top: 10px; font-size: 10pt; color: #555; font-style: italic; }
 }
 </style>
 
+
+
+<!-- DIV DE IMPRESSÃO -->
+<div id="print-orc"></div>
 
 <script>
 // ─── GERIR PREÇOS ─────────────────────────────────────────────────────────────
