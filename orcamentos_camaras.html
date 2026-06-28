@@ -22,12 +22,7 @@ firebase.auth().signInAnonymously().catch(function(e){console.warn(e);});
 </script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0F1117;--sb:#141820;--card:#1A1F2E;--card2:#1E2436;
-  --border:#252D3D;--text:#E8ECF4;--muted:#7B8DB0;
-  --blue:#2563EB;--green:#10B981;--red:#EF4444;
-  --amber:#F59E0B;--purple:#8B5CF6;--teal:#14B8A6;
-}
+:root{--bg:#0F1117;--sb:#141820;--card:#1A1F2E;--card2:#1E2436;--border:#252D3D;--text:#E8ECF4;--muted:#7B8DB0;--blue:#2563EB;--green:#10B981;--red:#EF4444;--amber:#F59E0B;--purple:#8B5CF6;--teal:#14B8A6;}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px}
 .topbar{background:var(--sb);border-bottom:1px solid var(--border);padding:0 22px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .topbar h1{font-size:16px;font-weight:800;color:#fff}
@@ -40,51 +35,57 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .orc-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 @media(max-width:900px){.orc-grid{grid-template-columns:1fr}}
 .card{background:var(--card);border-radius:11px;border:1px solid var(--border);margin-bottom:16px}
-.card-hdr{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-hdr{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .card-hdr h3{font-size:13px;font-weight:700;color:#fff}
 .card-body{padding:14px 16px}
+.card-disabled{opacity:.45;pointer-events:none}
 .fg{margin-bottom:12px}
 .fg label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
 .fg input,.fg select,.fg textarea{width:100%;padding:8px 11px;background:var(--card2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;transition:border .15s}
 .fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--blue)}
 .fg textarea{resize:vertical;min-height:60px}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .ct{padding:5px 14px;font-size:12px;font-weight:600;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
 .ct:hover{border-color:var(--blue);color:var(--text)}
 .ct.on{background:var(--blue);color:#fff;border-color:var(--blue)}
-.choice-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.info-box{font-size:12px;padding:8px 12px;border-radius:8px;border-left:3px solid var(--blue);background:rgba(37,99,235,.08);color:#93C5FD;margin-bottom:12px}
-.warn-box{font-size:12px;padding:8px 12px;border-radius:8px;border-left:3px solid var(--amber);background:rgba(245,158,11,.08);color:#FCD34D;margin-bottom:12px}
-.kits-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;margin-bottom:12px}
-.kit-card{border:1px solid var(--border);border-radius:10px;padding:11px;cursor:pointer;background:var(--card2);transition:border-color .15s}
-.kit-card:hover{border-color:var(--blue)}
-.kit-card.sel{border:2px solid var(--blue);background:rgba(37,99,235,.07)}
-.kit-fb{width:100%;height:90px;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:7px;margin-bottom:8px;font-size:11px;font-weight:700;color:var(--blue);font-family:monospace;text-align:center;padding:6px}
-.kit-bdg{font-size:10px;padding:2px 7px;border-radius:5px;display:inline-block;margin-bottom:5px;font-weight:600}
-.bdg-eco{background:rgba(16,185,129,.15);color:#34D399}
-.bdg-std{background:rgba(37,99,235,.15);color:#60A5FA}
-.bdg-pro{background:rgba(139,92,246,.15);color:#A78BFA}
-.bdg-top{background:rgba(245,158,11,.15);color:#FCD34D}
-.kit-nome{font-size:12px;font-weight:700;color:#fff;margin-bottom:2px}
-.kit-ref{font-size:10px;color:var(--muted);font-family:monospace;margin-bottom:4px}
-.kit-desc{font-size:11px;color:var(--muted);margin-bottom:7px;line-height:1.5}
-.kit-preco{font-size:14px;font-weight:700;color:#60A5FA}
-.extra-row{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer}
-.extra-row:last-child{border-bottom:none}
-.extra-row input[type=checkbox]{width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:var(--blue)}
-.extra-preco{margin-left:auto;color:var(--muted);font-size:12px;font-family:monospace}
-.resumo-card{background:var(--card2);border-radius:10px;border:1px solid var(--border);padding:14px 16px;margin-bottom:12px}
+.choice-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0}
+.info-box{font-size:12px;padding:8px 12px;border-radius:8px;border-left:3px solid var(--blue);background:rgba(37,99,235,.08);color:#93C5FD;margin-top:10px}
+.toggle-row{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+.toggle-sw{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle-sw input{opacity:0;width:0;height:0}
+.toggle-sl{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:22px;transition:.2s}
+.toggle-sl:before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle-sw input:checked+.toggle-sl{background:var(--green)}
+.toggle-sw input:checked+.toggle-sl:before{transform:translateX(18px)}
+/* Componente row */
+.comp-row{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.comp-row:last-child{border-bottom:none}
+.comp-info{min-width:0}
+.comp-nome{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.comp-ref{font-size:10px;color:var(--muted);font-family:monospace}
+.comp-desc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4}
+.comp-preco-unit{font-size:12px;color:var(--muted);white-space:nowrap}
+.qty-ctrl{display:flex;align-items:center;gap:6px}
+.qty-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:var(--card2);color:var(--text);cursor:pointer;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.qty-btn:hover{background:var(--blue);border-color:var(--blue)}
+.qty-val{width:32px;text-align:center;font-size:14px;font-weight:700;color:#fff}
+.comp-total{font-size:14px;font-weight:700;color:#60A5FA;white-space:nowrap;min-width:70px;text-align:right}
+/* Marca tabs pequenas */
+.marca-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:4px 12px;font-size:12px;font-weight:600;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.chip:hover{border-color:var(--blue);color:var(--text)}
+.chip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+/* Resumo */
 .res-linha{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid rgba(37,45,61,.6)}
 .res-linha:last-child{border-bottom:none}
+.resumo-card{background:var(--card2);border-radius:10px;border:1px solid var(--border);padding:14px 16px;margin-bottom:12px}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;color:#fff;transition:all .15s;white-space:nowrap}
 .btn:hover{filter:brightness(1.1)}
-.btn-blue{background:var(--blue)}
-.btn-green{background:var(--green)}
-.btn-red{background:var(--red)}
+.btn-blue{background:var(--blue)}.btn-green{background:var(--green)}.btn-red{background:var(--red)}
 .btn-ghost{background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--text)}
 .btn-ghost:hover{background:rgba(255,255,255,.12)}
-.btn-sm{padding:6px 11px;font-size:12px}
-.btn-block{width:100%;justify-content:center;margin-top:8px}
+.btn-sm{padding:6px 11px;font-size:12px}.btn-block{width:100%;justify-content:center;margin-top:8px}
 table{width:100%;border-collapse:collapse;font-size:12px}
 thead th{padding:9px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
 tbody tr{border-bottom:1px solid rgba(37,45,61,.5);transition:background .1s}
@@ -92,10 +93,8 @@ tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:rgba(255,255,255,.03)}
 tbody td{padding:9px 12px;vertical-align:middle}
 .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600}
-.bs{background:rgba(245,158,11,.15);color:#FCD34D}
-.ba{background:rgba(37,99,235,.15);color:#60A5FA}
-.bg2{background:rgba(16,185,129,.15);color:#34D399}
-.br2{background:rgba(239,68,68,.15);color:#F87171}
+.bs{background:rgba(245,158,11,.15);color:#FCD34D}.ba{background:rgba(37,99,235,.15);color:#60A5FA}
+.bg2{background:rgba(16,185,129,.15);color:#34D399}.br2{background:rgba(239,68,68,.15);color:#F87171}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
 .ov.open{display:flex}
 .modal{background:var(--card);border-radius:14px;width:100%;max-width:620px;border:1px solid var(--border);max-height:92vh;overflow-y:auto;animation:mi .18s ease}
@@ -103,8 +102,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 .mhdr{padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:1;border-radius:14px 14px 0 0}
 .mhdr h3{font-size:14px;font-weight:700;color:#fff}
 .mclose{background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);padding:4px;border-radius:6px}
-.mbody{padding:16px 20px}
-.mfoot{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--card);border-radius:0 0 14px 14px}
+.mbody{padding:16px 20px}.mfoot{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--card);border-radius:0 0 14px 14px}
 .toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:11px 15px;border-radius:9px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:tIn .3s ease;display:flex;align-items:center;gap:7px;color:#fff;pointer-events:none}
 .tg{background:#065F46}.ta{background:#78350F}.tr2{background:#7F1D1D}
 @keyframes tIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -113,6 +111,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 .sbar input,.sbar select{padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif}
 .sbar input{flex:1;min-width:180px}
 #print-orc{display:none}
+.preco-input{width:90px;padding:5px 8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:Inter,sans-serif;text-align:right}
 </style>
 </head>
 <body>
@@ -135,8 +134,8 @@ tbody td{padding:9px 12px;vertical-align:middle}
   <!-- NOVO ORÇAMENTO -->
   <div id="tab-novo">
     <div class="orc-grid">
-
       <div>
+
         <!-- DADOS CLIENTE -->
         <div class="card">
           <div class="card-hdr"><h3>👤 Dados do Cliente</h3></div>
@@ -149,7 +148,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
               <div class="fg"><label>Nome do Cliente</label><input id="orc-cliente" placeholder="Ex: João Silva"></div>
               <div class="fg"><label>Contacto</label><input id="orc-contacto" placeholder="912 345 678"></div>
             </div>
-            <div class="fg"><label>Morada / Local de Instalação</label><input id="orc-morada" placeholder="Ex: Rua das Flores nº5, Famalicão"></div>
+            <div class="fg"><label>Morada / Local de Instalação</label><input id="orc-morada" placeholder="Ex: Armazém, Rua das Flores nº5, Famalicão"></div>
             <div class="fg"><label>Validade do Orçamento</label>
               <select id="orc-validade">
                 <option value="15 dias">15 dias</option>
@@ -160,29 +159,67 @@ tbody td{padding:9px 12px;vertical-align:middle}
           </div>
         </div>
 
-        <!-- TIPO DE SISTEMA -->
-        <div class="card">
-          <div class="card-hdr"><h3>🎥 Tipo de Sistema</h3></div>
-          <div class="card-body">
-            <div class="choice-tabs" id="tipo-tabs"></div>
-            <div id="tipo-info-box"></div>
-          </div>
-        </div>
-
         <!-- MARCA -->
         <div class="card">
           <div class="card-hdr"><h3>🏷 Marca</h3></div>
           <div class="card-body">
-            <div class="choice-tabs" id="marca-tabs"></div>
+            <div class="marca-chips" id="marca-tabs"></div>
           </div>
         </div>
 
-        <!-- KIT -->
-        <div class="card">
-          <div class="card-hdr"><h3>📦 Kit / Sistema</h3></div>
-          <div class="card-body">
-            <div id="marca-aviso-box"></div>
-            <div class="kits-grid" id="kits-grid"></div>
+        <!-- NVR/GRAVADOR -->
+        <div class="card" id="card-nvr">
+          <div class="card-hdr">
+            <h3>🖥 Gravador NVR</h3>
+            <label class="toggle-row">
+              <span style="font-size:12px;color:var(--muted)">Incluir no orçamento</span>
+              <div class="toggle-sw"><input type="checkbox" id="nvr-toggle" checked onchange="toggleSecao('nvr')"><span class="toggle-sl"></span></div>
+            </label>
+          </div>
+          <div class="card-body" id="nvr-body">
+            <div id="nvr-lista"></div>
+          </div>
+        </div>
+
+        <!-- CÂMARAS DOME -->
+        <div class="card" id="card-dome">
+          <div class="card-hdr">
+            <h3>🔵 Câmaras Dome (exterior)</h3>
+            <label class="toggle-row">
+              <span style="font-size:12px;color:var(--muted)">Incluir</span>
+              <div class="toggle-sw"><input type="checkbox" id="dome-toggle" checked onchange="toggleSecao('dome')"><span class="toggle-sl"></span></div>
+            </label>
+          </div>
+          <div class="card-body" id="dome-body">
+            <div id="dome-lista"></div>
+          </div>
+        </div>
+
+        <!-- CÂMARAS BULLET -->
+        <div class="card" id="card-bullet">
+          <div class="card-hdr">
+            <h3>🔫 Câmaras Bullet (exterior)</h3>
+            <label class="toggle-row">
+              <span style="font-size:12px;color:var(--muted)">Incluir</span>
+              <div class="toggle-sw"><input type="checkbox" id="bullet-toggle" onchange="toggleSecao('bullet')"><span class="toggle-sl"></span></div>
+            </label>
+          </div>
+          <div class="card-body" id="bullet-body">
+            <div id="bullet-lista"></div>
+          </div>
+        </div>
+
+        <!-- HDD -->
+        <div class="card" id="card-hdd">
+          <div class="card-hdr">
+            <h3>💾 Disco HDD</h3>
+            <label class="toggle-row">
+              <span style="font-size:12px;color:var(--muted)">Incluir</span>
+              <div class="toggle-sw"><input type="checkbox" id="hdd-toggle" checked onchange="toggleSecao('hdd')"><span class="toggle-sl"></span></div>
+            </label>
+          </div>
+          <div class="card-body" id="hdd-body">
+            <div id="hdd-lista"></div>
           </div>
         </div>
 
@@ -202,6 +239,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
             </div>
           </div>
         </div>
+
       </div>
 
       <!-- COLUNA DIREITA -->
@@ -211,7 +249,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
             <div class="card-hdr"><h3>💰 Resumo do Orçamento</h3></div>
             <div class="card-body">
               <div class="resumo-card" id="resumo-linhas">
-                <div class="empty" style="padding:20px">Selecione um kit</div>
+                <div class="empty" style="padding:16px;font-size:12px">Selecione componentes à esquerda</div>
               </div>
               <div style="display:flex;gap:6px;margin-bottom:10px;margin-top:8px">
                 <button id="btn-iva-s" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center" onclick="setIva(false)">S/ IVA</button>
@@ -249,7 +287,6 @@ tbody td{padding:9px 12px;vertical-align:middle}
           </div>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -273,14 +310,8 @@ tbody td{padding:9px 12px;vertical-align:middle}
           </select>
         </div>
         <table>
-          <thead>
-            <tr>
-              <th>Nº</th><th>Data</th><th>Cliente</th><th>Tipo</th><th>Kit</th><th>Total</th><th>Estado</th><th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="lista-tbody">
-            <tr><td colspan="8" class="empty">A carregar...</td></tr>
-          </tbody>
+          <thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Marca</th><th>Componentes</th><th>Total</th><th>Estado</th><th>Ações</th></tr></thead>
+          <tbody id="lista-tbody"><tr><td colspan="8" class="empty">A carregar...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -290,12 +321,12 @@ tbody td{padding:9px 12px;vertical-align:middle}
   <div id="tab-precos" style="display:none">
     <div class="card" style="margin-bottom:16px">
       <div class="card-hdr">
-        <h3>📦 Preços dos Kits</h3>
+        <h3>⚙️ Preços dos Componentes</h3>
         <button class="btn btn-green btn-sm" onclick="guardarPrecos()">💾 Guardar Preços</button>
       </div>
       <div class="card-body">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Edita os preços de venda ao cliente. Guardado no Firebase — carrega automaticamente na próxima vez.</div>
-        <div id="precos-kits-tabela"></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Edita os preços unitários de cada componente. Guardado no Firebase.</div>
+        <div id="precos-tabela"></div>
       </div>
     </div>
     <div class="card">
@@ -303,20 +334,18 @@ tbody td{padding:9px 12px;vertical-align:middle}
         <h3>🔧 Preços dos Extras</h3>
         <button class="btn btn-green btn-sm" onclick="guardarPrecos()">💾 Guardar Preços</button>
       </div>
-      <div class="card-body">
-        <div id="precos-extras-tabela"></div>
-      </div>
+      <div class="card-body"><div id="precos-extras-tabela"></div></div>
     </div>
   </div>
 
-</div><!-- /content -->
+</div>
 
 <!-- MODAL WHATSAPP -->
 <div class="ov" id="mWhats">
   <div class="modal">
     <div class="mhdr"><h3>📱 Texto para WhatsApp</h3><button class="mclose" onclick="closeM('mWhats')">✕</button></div>
     <div class="mbody">
-      <textarea id="whats-texto" style="width:100%;min-height:340px;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:monospace;line-height:1.6" readonly></textarea>
+      <textarea id="whats-texto" style="width:100%;min-height:360px;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:monospace;line-height:1.6" readonly></textarea>
     </div>
     <div class="mfoot">
       <button class="btn btn-ghost" onclick="closeM('mWhats')">Fechar</button>
@@ -325,285 +354,305 @@ tbody td{padding:9px 12px;vertical-align:middle}
   </div>
 </div>
 
-<!-- DIV IMPRESSÃO -->
 <div id="print-orc"></div>
 
 <script>
-// ─── BASE DE DADOS ───────────────────────────────────────────────────────────
+// ─── BASE DE DADOS ────────────────────────────────────────────────────────────
 var DB = {
-  'NVR/DVR + Gravador': {
-    desc: 'Sistema com gravador central, câmaras cabladas e disco HDD — visão 24/7 e acesso remoto por app',
-    marcas: {
-      Hikvision: {
-        aviso: null,
-        kits: [
-          { ref:'DS-7104NI-Q1/4P', nome:'Hikvision Kit 4 câmaras IP PoE', desc:'NVR 4 canais PoE + 4 câmaras 2MP 2.8mm + HDD 1TB, acesso app iVMS-4500', preco:0, bdg:'4 câmaras', bc:'bdg-eco' },
-          { ref:'DS-7108NI-Q1/8P/M', nome:'Hikvision Kit 8 câmaras IP PoE', desc:'NVR 8 canais PoE 75W, suporta câmaras até 6MP, H.265+, HDD até 6TB, saída HDMI+VGA, app Hik-Connect, detecção linha/intrusão', preco:0, bdg:'8 câmaras', bc:'bdg-std' },
-          { ref:'DS-7116NI-Q1/16P', nome:'Hikvision Kit 16 câmaras IP PoE', desc:'NVR 16 canais PoE + 16 câmaras 2MP + HDD 4TB, áudio, detecção IA', preco:0, bdg:'16 câmaras', bc:'bdg-pro' },
-        ]
-      },
-      Dahua: {
-        aviso: null,
-        kits: [
-          { ref:'DHI-NVR2104-P-I', nome:'Dahua Kit 4 câmaras IP PoE', desc:'NVR 4 canais PoE + 4 câmaras 4MP + HDD 1TB, app DMSS, detecção IA', preco:0, bdg:'4 câmaras', bc:'bdg-eco' },
-          { ref:'DHI-NVR2108-8P-I', nome:'Dahua Kit 8 câmaras IP PoE', desc:'NVR 8 canais PoE + 8 câmaras 4MP + HDD 2TB, Smart Detection, app DMSS', preco:0, bdg:'8 câmaras', bc:'bdg-std' },
-          { ref:'DHI-NVR2116-16P-I', nome:'Dahua Kit 16 câmaras IP PoE', desc:'NVR 16 canais PoE + 16 câmaras 2MP + HDD 4TB, IA integrada', preco:0, bdg:'16 câmaras', bc:'bdg-pro' },
-        ]
-      },
-      EZVIZ: {
-        aviso: null,
-        kits: [
-          { ref:'CS-X5C-4WD2H', nome:'EZVIZ Kit 4 câmaras NVR', desc:'NVR + 4 câmaras 1080P + HDD 1TB, app EZVIZ, visão noturna 30m', preco:0, bdg:'4 câmaras', bc:'bdg-eco' },
-          { ref:'CS-X5C-8WD2H', nome:'EZVIZ Kit 8 câmaras NVR', desc:'NVR + 8 câmaras 1080P + HDD 2TB, app EZVIZ, detecção de movimento', preco:0, bdg:'8 câmaras', bc:'bdg-std' },
-        ]
-      },
-      Reolink: {
-        aviso: null,
-        kits: [
-          { ref:'RLK8-800B4', nome:'Reolink Kit 4 câmaras 4K NVR', desc:'NVR 8 canais + 4 câmaras 4K PoE + HDD 2TB, app Reolink, sem taxas mensais', preco:0, bdg:'4 câmaras 4K', bc:'bdg-eco' },
-          { ref:'RLK16-800B8', nome:'Reolink Kit 8 câmaras 4K NVR', desc:'NVR 16 canais + 8 câmaras 4K PoE + HDD 3TB, Smart Detection, app', preco:0, bdg:'8 câmaras 4K', bc:'bdg-std' },
-        ]
-      },
-    }
+  Hikvision: {
+    nvr: [
+      { ref:'DS-7104NI-Q1/4P', nome:'NVR 4 canais PoE', desc:'4 canais PoE 40W, câmaras até 4MP, H.265+, 1 HDD até 6TB, app Hik-Connect', preco:0 },
+      { ref:'DS-7108NI-Q1/8P/M', nome:'NVR 8 canais PoE', desc:'8 canais PoE 75W, câmaras até 6MP, H.265+, 1 HDD até 6TB, HDMI+VGA, app Hik-Connect', preco:0 },
+      { ref:'DS-7116NI-Q1/16P', nome:'NVR 16 canais PoE', desc:'16 canais PoE, câmaras até 4MP, H.265+, 1 HDD até 6TB, app Hik-Connect', preco:0 },
+    ],
+    dome: [
+      { ref:'DS-2CD2143G2-I', nome:'Dome 4MP AcuSense', desc:'Dome exterior 4MP, IR 40m, IP67, IK10, detecção humana/veículo, H.265+', preco:0 },
+      { ref:'DS-2CD2183G2-I', nome:'Dome 8MP (4K) AcuSense', desc:'Dome exterior 4K/8MP, IR 40m, IP67, IK10, detecção IA, H.265+', preco:0 },
+      { ref:'DS-2CD2112G2-I', nome:'Dome 12MP AcuSense', desc:'Dome exterior 12MP ultra-HD, IR 30m, IP67, IK10, H.265+', preco:0 },
+    ],
+    bullet: [
+      { ref:'DS-2CD2T47G2-L', nome:'Bullet 4MP ColorVu', desc:'Bullet exterior 4MP, visão noturna colorida, luz branca 60m, IP67, H.265+', preco:0 },
+      { ref:'DS-2CD2T87G2-L', nome:'Bullet 8MP (4K) ColorVu', desc:'Bullet exterior 4K/8MP, visão noturna colorida, luz 60m, IP67, H.265+', preco:0 },
+      { ref:'DS-2CD2T12G2-I', nome:'Bullet 12MP AcuSense', desc:'Bullet exterior 12MP ultra-HD, IR 60m, IP67, detecção IA, H.265+', preco:0 },
+    ],
+    hdd: [
+      { ref:'WD-Purple-1TB', nome:'HDD WD Purple 1TB', desc:'Disco vigilância 24/7, até 64 câmaras, 180 MB/s', preco:0 },
+      { ref:'WD-Purple-2TB', nome:'HDD WD Purple 2TB', desc:'Disco vigilância 24/7, até 64 câmaras, 180 MB/s', preco:0 },
+      { ref:'WD-Purple-4TB', nome:'HDD WD Purple 4TB', desc:'Disco vigilância 24/7, até 64 câmaras, 210 MB/s', preco:0 },
+      { ref:'Seagate-Sky-6TB', nome:'HDD Seagate SkyHawk 6TB', desc:'Disco vigilância 24/7, até 64 câmaras, 256MB cache', preco:0 },
+    ],
   },
-  'WiFi Independente': {
-    desc: 'Câmaras WiFi autónomas com gravação em nuvem ou cartão SD — instalação simples sem cablagem',
-    marcas: {
-      Hikvision: {
-        aviso: null,
-        kits: [
-          { ref:'DS-2CD2143G2-I', nome:'Hikvision 2 câmaras WiFi 4MP', desc:'2× câmara dome WiFi 4MP, SD 256GB, app Hik-Connect, IR 40m', preco:0, bdg:'2 câmaras', bc:'bdg-eco' },
-          { ref:'DS-2CD2143G2-I-4U', nome:'Hikvision 4 câmaras WiFi 4MP', desc:'4× câmara dome WiFi 4MP, SD 256GB cada, detecção humana, app Hik-Connect', preco:0, bdg:'4 câmaras', bc:'bdg-std' },
-        ]
-      },
-      Dahua: {
-        aviso: null,
-        kits: [
-          { ref:'IPC-F42FEP-D', nome:'Dahua 2 câmaras WiFi 4MP', desc:'2× câmara fisheye WiFi 4MP, SD 256GB, app gDMSS, visão panorâmica 180°', preco:0, bdg:'2 câmaras', bc:'bdg-eco' },
-          { ref:'IPC-HDW1439S1-LED', nome:'Dahua 4 câmaras WiFi 4MP', desc:'4× câmara WiFi 4MP full-color, SD 256GB, visão noturna colorida', preco:0, bdg:'4 câmaras', bc:'bdg-std' },
-        ]
-      },
-      EZVIZ: {
-        aviso: null,
-        kits: [
-          { ref:'CS-C3W-A0-3H4WFL', nome:'EZVIZ 2 câmaras C3W Pro', desc:'2× câmara exterior WiFi 4MP, sirene, luz, SD 256GB, app EZVIZ', preco:0, bdg:'2 câmaras', bc:'bdg-eco' },
-          { ref:'CS-C3W-A0-4H4WFL', nome:'EZVIZ 4 câmaras C3W Pro', desc:'4× câmara exterior WiFi 4MP, sirene, luz integrada, detecção IA', preco:0, bdg:'4 câmaras', bc:'bdg-std' },
-          { ref:'CS-H8c-R100', nome:'EZVIZ Kit 4 câmaras H8c 2K', desc:'4× câmara PTZ WiFi 2K, zoom 4x, seguimento automático, app EZVIZ', preco:0, bdg:'4 câmaras PTZ', bc:'bdg-pro' },
-        ]
-      },
-      Reolink: {
-        aviso: null,
-        kits: [
-          { ref:'RLC-810A-2PK', nome:'Reolink 2 câmaras 4K WiFi', desc:'2× câmara exterior 4K WiFi, SD 256GB, detecção pessoa/veículo, app', preco:0, bdg:'2 câmaras 4K', bc:'bdg-eco' },
-          { ref:'RLC-810A-4PK', nome:'Reolink 4 câmaras 4K WiFi', desc:'4× câmara exterior 4K WiFi, visão noturna colorida, sem taxas mensais', preco:0, bdg:'4 câmaras 4K', bc:'bdg-std' },
-        ]
-      },
-    }
+  Dahua: {
+    nvr: [
+      { ref:'DHI-NVR2104-P-I', nome:'NVR 4 canais PoE', desc:'4 canais PoE 40W, câmaras até 8MP, H.265+, Smart Detection, app DMSS', preco:0 },
+      { ref:'DHI-NVR2108-8P-I', nome:'NVR 8 canais PoE', desc:'8 canais PoE 80W, câmaras até 8MP, H.265+, IA integrada, app DMSS', preco:0 },
+      { ref:'DHI-NVR2116-16P-I', nome:'NVR 16 canais PoE', desc:'16 canais PoE, câmaras até 8MP, H.265+, Smart Detection, app DMSS', preco:0 },
+    ],
+    dome: [
+      { ref:'IPC-HDW2849H-S-IL', nome:'Dome 4MP Full-Color', desc:'Dome exterior 4MP, visão noturna colorida, microfone integrado, IP67, SMD Plus', preco:0 },
+      { ref:'IPC-HDW2849H-ASE-IL', nome:'Dome 8MP (4K) Full-Color', desc:'Dome exterior 4K/8MP, visão noturna colorida, microfone, IP67, detecção IA', preco:0 },
+      { ref:'IPC-HDW3849H-AS-PV', nome:'Dome 12MP Dual Light', desc:'Dome exterior 12MP, luz branca + IR, alarme sonoro+luminoso, IP67', preco:0 },
+    ],
+    bullet: [
+      { ref:'IPC-HFW2849S-S-IL', nome:'Bullet 4MP Full-Color', desc:'Bullet exterior 4MP, visão noturna colorida, IP67, SMD Plus, H.265+', preco:0 },
+      { ref:'IPC-HFW2849S-S-IL-8MP', nome:'Bullet 8MP (4K) Full-Color', desc:'Bullet exterior 4K/8MP, visão noturna colorida, IP67, detecção IA', preco:0 },
+      { ref:'IPC-HFW3849T1-AS-PV', nome:'Bullet 12MP Dual Light', desc:'Bullet exterior 12MP, luz branca + IR 60m, alarme, IP67, H.265+', preco:0 },
+    ],
+    hdd: [
+      { ref:'WD-Purple-1TB', nome:'HDD WD Purple 1TB', desc:'Disco vigilância 24/7, até 64 câmaras', preco:0 },
+      { ref:'WD-Purple-2TB', nome:'HDD WD Purple 2TB', desc:'Disco vigilância 24/7, até 64 câmaras', preco:0 },
+      { ref:'WD-Purple-4TB', nome:'HDD WD Purple 4TB', desc:'Disco vigilância 24/7, até 64 câmaras', preco:0 },
+      { ref:'Seagate-Sky-6TB', nome:'HDD Seagate SkyHawk 6TB', desc:'Disco vigilância 24/7, 256MB cache', preco:0 },
+    ],
   },
-  'Sistema Misto': {
-    desc: 'Combinação de NVR com câmaras cabladas + câmaras WiFi adicionais — solução flexível e completa',
-    marcas: {
-      Hikvision: {
-        aviso: null,
-        kits: [
-          { ref:'MISTO-HIK-4+2', nome:'Hikvision Misto 4 cabladas + 2 WiFi', desc:'NVR 8ch + 4 câmaras PoE 2MP + 2 câmaras WiFi 4MP + HDD 2TB', preco:0, bdg:'6 câmaras', bc:'bdg-std' },
-          { ref:'MISTO-HIK-8+4', nome:'Hikvision Misto 8 cabladas + 4 WiFi', desc:'NVR 16ch + 8 câmaras PoE 2MP + 4 câmaras WiFi 4MP + HDD 4TB', preco:0, bdg:'12 câmaras', bc:'bdg-pro' },
-        ]
-      },
-      Dahua: {
-        aviso: null,
-        kits: [
-          { ref:'MISTO-DAH-4+2', nome:'Dahua Misto 4 cabladas + 2 WiFi', desc:'NVR 8ch + 4 câmaras PoE 4MP + 2 câmaras WiFi + HDD 2TB, app DMSS', preco:0, bdg:'6 câmaras', bc:'bdg-std' },
-          { ref:'MISTO-DAH-8+4', nome:'Dahua Misto 8 cabladas + 4 WiFi', desc:'NVR 16ch + 8 câmaras PoE 4MP + 4 câmaras WiFi + HDD 4TB', preco:0, bdg:'12 câmaras', bc:'bdg-pro' },
-        ]
-      },
-      EZVIZ: {
-        aviso: '💡 Para sistemas mistos EZVIZ recomenda o NVR CS-X5C com câmaras PoE + câmaras WiFi EZVIZ em paralelo via app.',
-        kits: [
-          { ref:'MISTO-EZV-4+2', nome:'EZVIZ Misto NVR + WiFi', desc:'NVR EZVIZ + 4 câmaras PoE + 2 câmaras C3W Pro WiFi + HDD 2TB', preco:0, bdg:'6 câmaras', bc:'bdg-std' },
-        ]
-      },
-      Reolink: {
-        aviso: null,
-        kits: [
-          { ref:'MISTO-REO-4+2', nome:'Reolink Misto NVR + WiFi', desc:'NVR Reolink 8ch + 4 câmaras PoE 4K + 2 câmaras WiFi 4K + HDD 2TB', preco:0, bdg:'6 câmaras 4K', bc:'bdg-std' },
-        ]
-      },
-    }
-  }
+  EZVIZ: {
+    nvr: [
+      { ref:'CS-X5C-4WD2H', nome:'NVR EZVIZ 4 canais PoE', desc:'4 canais PoE, câmaras até 4MP, H.265, 1 HDD, app EZVIZ', preco:0 },
+      { ref:'CS-X5C-8WD2H', nome:'NVR EZVIZ 8 canais PoE', desc:'8 canais PoE, câmaras até 4MP, H.265, 1 HDD, app EZVIZ', preco:0 },
+    ],
+    dome: [
+      { ref:'CS-C3T-A0-3H4WFL', nome:'Dome 4MP Full-Color', desc:'Dome exterior 4MP, visão noturna colorida, IP67, H.265, app EZVIZ', preco:0 },
+      { ref:'CS-C3T-A0-8H4WFL', nome:'Dome 8MP (4K) Full-Color', desc:'Dome exterior 4K/8MP, visão noturna colorida, IP67, detecção movimento', preco:0 },
+    ],
+    bullet: [
+      { ref:'CS-C3W-A0-3H4WFL', nome:'Bullet 4MP ColorVu', desc:'Bullet exterior 4MP, sirene integrada, luz branca, IP67, app EZVIZ', preco:0 },
+      { ref:'CS-C3W-A0-8H4WFL', nome:'Bullet 8MP (4K) ColorVu', desc:'Bullet exterior 4K/8MP, sirene, luz branca, IP67, app EZVIZ', preco:0 },
+    ],
+    hdd: [
+      { ref:'WD-Purple-1TB', nome:'HDD WD Purple 1TB', desc:'Disco vigilância 24/7', preco:0 },
+      { ref:'WD-Purple-2TB', nome:'HDD WD Purple 2TB', desc:'Disco vigilância 24/7', preco:0 },
+      { ref:'WD-Purple-4TB', nome:'HDD WD Purple 4TB', desc:'Disco vigilância 24/7', preco:0 },
+    ],
+  },
+  Reolink: {
+    nvr: [
+      { ref:'RLN8-410', nome:'NVR Reolink 8 canais PoE', desc:'8 canais PoE, câmaras até 4K, H.265, 1 HDD até 10TB, app Reolink, sem taxas', preco:0 },
+      { ref:'RLN16-410', nome:'NVR Reolink 16 canais PoE', desc:'16 canais PoE, câmaras até 4K, H.265, 2 HDD até 20TB, app Reolink', preco:0 },
+    ],
+    dome: [
+      { ref:'RLC-842A', nome:'Dome 4K Smart Detection', desc:'Dome exterior 4K/8MP, IR 30m, IP66, detecção pessoa/veículo/animal, PoE', preco:0 },
+      { ref:'RLC-1212A', nome:'Dome 12MP Ultra HD', desc:'Dome exterior 12MP, IR 30m, IP66, detecção IA, PoE, H.265', preco:0 },
+    ],
+    bullet: [
+      { ref:'RLC-810A', nome:'Bullet 4K Smart Detection', desc:'Bullet exterior 4K/8MP, IR 30m, IP66, detecção IA, PoE, sem taxas mensais', preco:0 },
+      { ref:'RLC-1210A', nome:'Bullet 12MP Ultra HD', desc:'Bullet exterior 12MP, IR 60m, IP66, detecção IA, PoE, H.265', preco:0 },
+    ],
+    hdd: [
+      { ref:'WD-Purple-2TB', nome:'HDD WD Purple 2TB', desc:'Disco vigilância 24/7', preco:0 },
+      { ref:'WD-Purple-4TB', nome:'HDD WD Purple 4TB', desc:'Disco vigilância 24/7', preco:0 },
+      { ref:'Seagate-Sky-6TB', nome:'HDD Seagate SkyHawk 6TB', desc:'Disco vigilância 24/7', preco:0 },
+    ],
+  },
 };
 
 var EXTRAS = [
-  { n:'Mão de obra — instalação (por câmara)', p:25 },
-  { n:'Mão de obra — instalação sistema completo', p:120 },
-  { n:'Cablagem UTP Cat6 (até 20m por câmara)', p:20 },
-  { n:'Cablagem UTP Cat6 (20 a 50m por câmara)', p:40 },
-  { n:'Disco HDD 1TB (se não incluído no kit)', p:55 },
-  { n:'Disco HDD 2TB adicional', p:75 },
-  { n:'Fonte de alimentação exterior / proteção', p:30 },
-  { n:'Configuração app telemóvel (por dispositivo)', p:20 },
-  { n:'Integração com videoporteiro', p:45 },
-  { n:'Suporte / fixação câmara exterior', p:12 },
-  { n:'Switch PoE 8 portas (se necessário)', p:65 },
+  { n:'Mão de obra — instalação sistema completo', p:0 },
+  { n:'Mão de obra — por câmara adicional', p:0 },
+  { n:'Cablagem UTP Cat6 (até 20m por câmara)', p:0 },
+  { n:'Cablagem UTP Cat6 (20 a 50m por câmara)', p:0 },
+  { n:'Configuração app telemóvel (por dispositivo)', p:0 },
+  { n:'Integração com videoporteiro', p:0 },
+  { n:'Suporte / fixação câmara exterior', p:0 },
+  { n:'Switch PoE 8 portas', p:0 },
+  { n:'Proteção de sobretensão', p:0 },
 ];
 
-// ─── ESTADO ──────────────────────────────────────────────────────────────────
-var tipo = 'NVR/DVR + Gravador';
+// ─── ESTADO ───────────────────────────────────────────────────────────────────
 var marca = 'Hikvision';
-var kitSel = null;
 var mostrarComIva = true;
 var listaOrc = [];
 var orcAtualId = null;
 
-// ─── INIT ────────────────────────────────────────────────────────────────────
+// qtd e sel por secção
+var STATE = {
+  nvr:    { ativo: true,  selIdx: 0, qty: 1 },
+  dome:   { ativo: true,  selIdx: 0, qty: 4 },
+  bullet: { ativo: false, selIdx: 0, qty: 2 },
+  hdd:    { ativo: true,  selIdx: 0, qty: 1 },
+};
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function(){
   var hoje = new Date();
   document.getElementById('tbDate').textContent = hoje.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   document.getElementById('orc-data').value = hoje.toISOString().split('T')[0];
-  document.getElementById('orc-num').value = 'ORC-CAM-' + hoje.getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
-  renderTipo(); renderMarca(); renderKits(); renderExtras(); calc();
+  document.getElementById('orc-num').value = 'ORC-CAM-'+hoje.getFullYear()+'-'+String(Math.floor(Math.random()*900)+100);
+  renderMarcas(); renderAll(); renderExtras(); calc();
   firebase.auth().onAuthStateChanged(function(u){ if(u) carregarPrecos(); });
 });
 
-function setTab(tab, btn) {
+function setTab(tab,btn){
   ['tab-novo','tab-lista','tab-precos'].forEach(function(id){ document.getElementById(id).style.display='none'; });
-  document.getElementById('tab-'+tab).style.display = 'block';
+  document.getElementById('tab-'+tab).style.display='block';
   document.querySelectorAll('.sec-tab').forEach(function(b){ b.classList.remove('on'); });
   btn.classList.add('on');
   if(tab==='lista') carregarLista();
   if(tab==='precos') renderPrecosTabela();
 }
 
-// ─── RENDER ──────────────────────────────────────────────────────────────────
-function renderTipo(){
-  var t = document.getElementById('tipo-tabs');
-  t.innerHTML = '';
-  var icons = {'NVR/DVR + Gravador':'🖥','WiFi Independente':'📡','Sistema Misto':'🔀'};
-  Object.keys(DB).forEach(function(tp){
-    var b = document.createElement('button');
-    b.className = 'ct'+(tp===tipo?' on':'');
-    b.textContent = (icons[tp]||'') + ' ' + tp;
-    b.onclick = function(){ tipo=tp; marca='Hikvision'; kitSel=null; renderTipo(); renderMarca(); renderKits(); calc(); };
-    t.appendChild(b);
-  });
-  document.getElementById('tipo-info-box').innerHTML = '<div class="info-box">📋 '+DB[tipo].desc+'</div>';
-}
-
-function renderMarca(){
-  var t = document.getElementById('marca-tabs');
-  t.innerHTML = '';
-  Object.keys(DB[tipo].marcas).forEach(function(m){
-    var b = document.createElement('button');
-    b.className = 'ct'+(m===marca?' on':'');
-    b.textContent = m;
-    b.onclick = function(){ marca=m; kitSel=null; renderMarca(); renderKits(); calc(); };
+// ─── RENDER MARCAS ────────────────────────────────────────────────────────────
+function renderMarcas(){
+  var t=document.getElementById('marca-tabs'); t.innerHTML='';
+  Object.keys(DB).forEach(function(m){
+    var b=document.createElement('button');
+    b.className='chip'+(m===marca?' on':'');
+    b.textContent=m;
+    b.onclick=function(){ marca=m; STATE.nvr.selIdx=0; STATE.dome.selIdx=0; STATE.bullet.selIdx=0; STATE.hdd.selIdx=0; renderMarcas(); renderAll(); calc(); };
     t.appendChild(b);
   });
 }
 
-function renderKits(){
-  var av = DB[tipo].marcas[marca].aviso;
-  document.getElementById('marca-aviso-box').innerHTML = av ? '<div class="warn-box">'+av+'</div>' : '';
-  var g = document.getElementById('kits-grid');
-  g.innerHTML = '';
-  DB[tipo].marcas[marca].kits.forEach(function(k){
-    var c = document.createElement('div');
-    c.className = 'kit-card'+(kitSel&&kitSel.ref===k.ref?' sel':'');
-    var precoTxt = k.preco > 0 ? k.preco.toFixed(2)+' €' : '<span style="color:var(--amber)">Definir em ⚙️ Preços</span>';
-    c.innerHTML = '<div class="kit-fb">'+k.ref+'</div>'
-      +'<span class="kit-bdg '+k.bc+'">'+k.bdg+'</span>'
-      +'<div class="kit-nome">'+k.nome+'</div>'
-      +'<div class="kit-ref">Ref: '+k.ref+'</div>'
-      +'<div class="kit-desc">'+k.desc+'</div>'
-      +'<div class="kit-preco">'+precoTxt+'</div>';
-    c.onclick = function(){ kitSel=k; document.querySelectorAll('.kit-card').forEach(function(x){ x.classList.remove('sel'); }); c.classList.add('sel'); calc(); };
-    g.appendChild(c);
+// ─── RENDER SECÇÕES ───────────────────────────────────────────────────────────
+function renderAll(){
+  renderSecao('nvr');
+  renderSecao('dome');
+  renderSecao('bullet');
+  renderSecao('hdd');
+  // sync toggles
+  ['nvr','dome','bullet','hdd'].forEach(function(s){
+    document.getElementById(s+'-toggle').checked = STATE[s].ativo;
+    document.getElementById(s+'-body').classList.toggle('card-disabled', !STATE[s].ativo);
   });
 }
 
+function renderSecao(tipo){
+  var items = DB[marca][tipo] || [];
+  var div = document.getElementById(tipo+'-lista');
+  div.innerHTML='';
+  items.forEach(function(item, idx){
+    var sel = STATE[tipo].selIdx === idx;
+    var qty = STATE[tipo].qty;
+    var subtotal = item.preco * (tipo==='nvr'||tipo==='hdd' ? qty : qty);
+    var row = document.createElement('div');
+    row.className='comp-row';
+    row.style.cursor='pointer';
+    if(sel) row.style.background='rgba(37,99,235,.06)';
+    row.innerHTML='<div class="comp-info" onclick="selecionarItem(\''+tipo+'\','+idx+')">'
+      +'<div class="comp-nome">'+(sel?'<span style="color:#60A5FA;margin-right:4px">✔</span>':'')+item.nome+'</div>'
+      +'<div class="comp-ref">Ref: '+item.ref+'</div>'
+      +'<div class="comp-desc">'+item.desc+'</div>'
+      +'</div>'
+      +'<div class="comp-preco-unit" onclick="selecionarItem(\''+tipo+'\','+idx+')">'+(item.preco>0?item.preco.toFixed(2)+' €/un':'<span style="color:var(--amber);font-size:11px">Def. preço ⚙️</span>')+'</div>'
+      +'<div class="qty-ctrl">'
+        +'<button class="qty-btn" onclick="event.stopPropagation();changeQty(\''+tipo+'\',-1)">−</button>'
+        +'<span class="qty-val" id="qty-'+tipo+'-'+idx+'">'+qty+'</span>'
+        +'<button class="qty-btn" onclick="event.stopPropagation();changeQty(\''+tipo+'\',1)">+</button>'
+      +'</div>'
+      +'<div class="comp-total">'+(sel&&item.preco>0?(item.preco*qty).toFixed(2)+' €':'—')+'</div>';
+    div.appendChild(row);
+  });
+}
+
+function selecionarItem(tipo, idx){
+  STATE[tipo].selIdx = idx;
+  renderSecao(tipo);
+  calc();
+}
+
+function changeQty(tipo, delta){
+  STATE[tipo].qty = Math.max(1, STATE[tipo].qty + delta);
+  renderSecao(tipo);
+  calc();
+}
+
+function toggleSecao(tipo){
+  STATE[tipo].ativo = document.getElementById(tipo+'-toggle').checked;
+  document.getElementById(tipo+'-body').classList.toggle('card-disabled', !STATE[tipo].ativo);
+  calc();
+}
+
+// ─── EXTRAS ──────────────────────────────────────────────────────────────────
 function renderExtras(){
-  var l = document.getElementById('extras-list');
-  l.innerHTML = '';
+  var l=document.getElementById('extras-list'); l.innerHTML='';
   EXTRAS.forEach(function(e){
-    var r = document.createElement('label');
-    r.className = 'extra-row';
-    r.innerHTML = '<input type="checkbox" data-p="'+e.p+'" data-n="'+e.n+'"><span style="flex:1">'+e.n+'</span><span class="extra-preco">'+e.p.toFixed(2)+' €</span>';
-    r.querySelector('input').addEventListener('change', calc);
+    var r=document.createElement('label');
+    r.style.cssText='display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer';
+    r.innerHTML='<input type="checkbox" data-p="'+e.p+'" data-n="'+e.n+'" style="width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:var(--blue)"><span style="flex:1">'+e.n+'</span><span style="margin-left:auto;color:var(--muted);font-size:12px;font-family:monospace">'+e.p.toFixed(2)+' €</span>';
+    r.querySelector('input').addEventListener('change',calc);
     l.appendChild(r);
   });
 }
 
-// ─── IVA + CÁLCULO ───────────────────────────────────────────────────────────
+// ─── IVA + CALC ──────────────────────────────────────────────────────────────
 function setIva(comIva){
-  mostrarComIva = comIva;
-  document.getElementById('btn-iva-c').className = comIva ? 'btn btn-blue btn-sm' : 'btn btn-ghost btn-sm';
-  document.getElementById('btn-iva-s').className = comIva ? 'btn btn-ghost btn-sm' : 'btn btn-blue btn-sm';
-  document.getElementById('btn-iva-c').style.flex='1'; document.getElementById('btn-iva-c').style.justifyContent='center';
-  document.getElementById('btn-iva-s').style.flex='1'; document.getElementById('btn-iva-s').style.justifyContent='center';
+  mostrarComIva=comIva;
+  document.getElementById('btn-iva-c').className=comIva?'btn btn-blue btn-sm':'btn btn-ghost btn-sm';
+  document.getElementById('btn-iva-s').className=comIva?'btn btn-ghost btn-sm':'btn btn-blue btn-sm';
+  document.getElementById('btn-iva-c').style.flex='1';document.getElementById('btn-iva-c').style.justifyContent='center';
+  document.getElementById('btn-iva-s').style.flex='1';document.getElementById('btn-iva-s').style.justifyContent='center';
   calc();
 }
 
-function calc(){
-  var tot = 0, linhas = [];
-  if(kitSel && kitSel.preco > 0){
-    tot += kitSel.preco;
-    linhas.push({ n: kitSel.nome+' ('+kitSel.ref+')', v: kitSel.preco });
-  } else if(kitSel){
-    linhas.push({ n: kitSel.nome+' ('+kitSel.ref+')', v: null });
-  }
-  document.querySelectorAll('#extras-list input:checked').forEach(function(cb){
-    var p = parseFloat(cb.dataset.p); tot += p;
-    linhas.push({ n: cb.dataset.n, v: p });
+function getLinhas(){
+  var linhas=[];
+  ['nvr','dome','bullet','hdd'].forEach(function(tipo){
+    if(!STATE[tipo].ativo) return;
+    var items=DB[marca][tipo]||[];
+    var item=items[STATE[tipo].selIdx];
+    if(!item) return;
+    var qty=STATE[tipo].qty;
+    var label={'nvr':'NVR','dome':'Câmara Dome','bullet':'Câmara Bullet','hdd':'HDD'}[tipo];
+    linhas.push({ n: label+' — '+item.nome+' ('+item.ref+')', v: item.preco, qty: qty, total: item.preco*qty, semPreco: item.preco===0 });
   });
-  var div = document.getElementById('resumo-linhas');
-  if(!linhas.length){ div.innerHTML='<div class="empty" style="padding:20px">Selecione um kit</div>'; document.getElementById('total-final').textContent='—'; document.getElementById('total-sem-iva').textContent=''; return; }
-  div.innerHTML = linhas.map(function(l){ return '<div class="res-linha"><span>'+l.n+'</span><span style="color:#60A5FA">'+(l.v!==null?l.v.toFixed(2)+' €':'<em style="color:var(--amber)">a definir</em>')+'</span></div>'; }).join('');
-  var comIva = tot * 1.23;
-  var totalMostrar = mostrarComIva ? comIva : tot;
-  var totalOutro   = mostrarComIva ? tot : comIva;
-  document.getElementById('total-label').textContent = mostrarComIva ? 'Total c/ IVA 23%' : 'Total s/ IVA';
-  document.getElementById('total-final').textContent = totalMostrar.toFixed(2)+' €';
-  document.getElementById('total-sem-iva').textContent = (mostrarComIva?'Valor s/ IVA: ':'Valor c/ IVA 23%: ') + totalOutro.toFixed(2)+' €';
+  document.querySelectorAll('#extras-list input:checked').forEach(function(cb){
+    var p=parseFloat(cb.dataset.p);
+    linhas.push({ n:cb.dataset.n, v:p, qty:1, total:p, semPreco:false });
+  });
+  return linhas;
+}
+
+function calc(){
+  var linhas=getLinhas();
+  var div=document.getElementById('resumo-linhas');
+  if(!linhas.length){ div.innerHTML='<div class="empty" style="padding:16px;font-size:12px">Selecione componentes à esquerda</div>'; document.getElementById('total-final').textContent='—'; document.getElementById('total-sem-iva').textContent=''; return; }
+  var tot=0;
+  div.innerHTML=linhas.map(function(l){
+    if(!l.semPreco) tot+=l.total;
+    var valStr=l.semPreco?'<em style="color:var(--amber);font-size:11px">definir preço</em>':(l.qty>1?l.qty+'× '+l.v.toFixed(2)+' = <b>'+l.total.toFixed(2)+' €</b>':l.total.toFixed(2)+' €');
+    return '<div class="res-linha"><span style="flex:1;padding-right:8px">'+l.n+'</span><span style="color:#60A5FA;white-space:nowrap">'+valStr+'</span></div>';
+  }).join('');
+  var comIva=tot*1.23;
+  var mostrar=mostrarComIva?comIva:tot;
+  var outro=mostrarComIva?tot:comIva;
+  document.getElementById('total-label').textContent=mostrarComIva?'Total c/ IVA 23%':'Total s/ IVA';
+  document.getElementById('total-final').textContent=mostrar.toFixed(2)+' €';
+  document.getElementById('total-sem-iva').textContent=(mostrarComIva?'Valor s/ IVA: ':'Valor c/ IVA 23%: ')+outro.toFixed(2)+' €';
 }
 
 // ─── GUARDAR ─────────────────────────────────────────────────────────────────
 function guardarOrcamento(){
-  var num = document.getElementById('orc-num').value.trim();
-  var cliente = document.getElementById('orc-cliente').value.trim();
+  var num=document.getElementById('orc-num').value.trim();
+  var cliente=document.getElementById('orc-cliente').value.trim();
   if(!num||!cliente){ toast('Preenche o nº e o nome do cliente','a'); return; }
-  if(!kitSel){ toast('Seleciona um kit antes de guardar','a'); return; }
-  var extras = [];
-  document.querySelectorAll('#extras-list input:checked').forEach(function(cb){ extras.push({n:cb.dataset.n,p:parseFloat(cb.dataset.p)}); });
-  var tot = (kitSel.preco||0) + extras.reduce(function(s,e){ return s+e.p; },0);
-  var orc = {
-    id: orcAtualId || Date.now().toString(),
-    num: num, data: document.getElementById('orc-data').value,
-    cliente: cliente, contacto: document.getElementById('orc-contacto').value,
-    morada: document.getElementById('orc-morada').value,
-    validade: document.getElementById('orc-validade').value,
-    tipo: tipo, marca: marca,
-    kit: { ref: kitSel.ref, nome: kitSel.nome, preco: kitSel.preco },
-    extras: extras, totalSemIva: tot, totalComIva: tot*1.23,
-    estado: document.getElementById('orc-estado').value,
-    os: document.getElementById('orc-os').value,
-    notas: document.getElementById('orc-notas').value, ts: Date.now()
+  var linhas=getLinhas();
+  if(!linhas.length){ toast('Adiciona pelo menos um componente','a'); return; }
+  var tot=linhas.reduce(function(s,l){ return s+(l.semPreco?0:l.total); },0);
+  var orc={
+    id:orcAtualId||Date.now().toString(),
+    num:num, data:document.getElementById('orc-data').value,
+    cliente:cliente, contacto:document.getElementById('orc-contacto').value,
+    morada:document.getElementById('orc-morada').value,
+    validade:document.getElementById('orc-validade').value,
+    marca:marca, state:JSON.parse(JSON.stringify(STATE)),
+    linhas:linhas, totalSemIva:tot, totalComIva:tot*1.23,
+    estado:document.getElementById('orc-estado').value,
+    os:document.getElementById('orc-os').value,
+    notas:document.getElementById('orc-notas').value, ts:Date.now()
   };
   db.collection('mrc_dados').doc('m3_orc_cam').get().then(function(doc){
-    var lista = [];
-    if(doc.exists){ try{ lista=JSON.parse(doc.data().value||'[]'); }catch(e){} }
-    var idx = lista.findIndex(function(o){ return o.id===orc.id; });
+    var lista=[]; if(doc.exists){ try{ lista=JSON.parse(doc.data().value||'[]'); }catch(e){} }
+    var idx=lista.findIndex(function(o){ return o.id===orc.id; });
     if(idx>=0) lista[idx]=orc; else lista.unshift(orc);
     return db.collection('mrc_dados').doc('m3_orc_cam').set({value:JSON.stringify(lista),ts:Date.now()});
-  }).then(function(){ toast('✅ Orçamento guardado!','g'); orcAtualId=orc.id; })
+  }).then(function(){ toast('✅ Guardado!','g'); orcAtualId=orc.id; })
     .catch(function(e){ toast('Erro: '+e.message,'r'); });
 }
 
-// ─── LISTA ───────────────────────────────────────────────────────────────────
+// ─── LISTA ────────────────────────────────────────────────────────────────────
 function carregarLista(){
   document.getElementById('lista-tbody').innerHTML='<tr><td colspan="8" class="empty">A carregar...</td></tr>';
   db.collection('mrc_dados').doc('m3_orc_cam').get().then(function(doc){
-    listaOrc=[];
-    if(doc.exists){ try{ listaOrc=JSON.parse(doc.data().value||'[]'); }catch(e){} }
+    listaOrc=[]; if(doc.exists){ try{ listaOrc=JSON.parse(doc.data().value||'[]'); }catch(e){} }
     filtrarLista();
   }).catch(function(){ filtrarLista(); });
 }
@@ -612,37 +661,30 @@ function filtrarLista(){
   var q=(document.getElementById('lst-search').value||'').toLowerCase();
   var est=document.getElementById('lst-estado').value;
   var f=listaOrc.filter(function(o){ return (!q||o.cliente.toLowerCase().includes(q)||(o.num||'').toLowerCase().includes(q))&&(!est||o.estado===est); });
-  renderLista(f);
-}
-
-var ESTADOS={rascunho:{txt:'Rascunho',cls:'bs'},enviado:{txt:'Enviado',cls:'ba'},aceite:{txt:'Aceite',cls:'bg2'},recusado:{txt:'Recusado',cls:'br2'},expirado:{txt:'Expirado',cls:'bs'}};
-
-function renderLista(lista){
+  var ESTADOS={rascunho:{txt:'Rascunho',cls:'bs'},enviado:{txt:'Enviado',cls:'ba'},aceite:{txt:'Aceite',cls:'bg2'},recusado:{txt:'Recusado',cls:'br2'},expirado:{txt:'Expirado',cls:'bs'}};
   var tbody=document.getElementById('lista-tbody');
-  if(!lista.length){ tbody.innerHTML='<tr><td colspan="8" class="empty">Nenhum orçamento encontrado</td></tr>'; return; }
-  tbody.innerHTML=lista.map(function(o){
+  if(!f.length){ tbody.innerHTML='<tr><td colspan="8" class="empty">Nenhum orçamento</td></tr>'; return; }
+  tbody.innerHTML=f.map(function(o){
     var est=ESTADOS[o.estado]||{txt:o.estado,cls:'bs'};
+    var comps=(o.linhas||[]).length+'  componentes';
     return '<tr>'
       +'<td style="font-family:monospace;color:#60A5FA">'+(o.num||'—')+'</td>'
       +'<td style="color:var(--muted)">'+(o.data||'—')+'</td>'
       +'<td style="font-weight:600">'+(o.cliente||'—')+'</td>'
-      +'<td style="font-size:11px">'+(o.tipo||'—')+'</td>'
-      +'<td style="font-size:11px;color:var(--muted)">'+(o.kit?o.kit.ref:'—')+'</td>'
+      +'<td>'+(o.marca||'—')+'</td>'
+      +'<td style="font-size:11px;color:var(--muted)">'+comps+'</td>'
       +'<td style="font-family:monospace;color:#60A5FA">'+(o.totalComIva?o.totalComIva.toFixed(2)+' €':'—')+'</td>'
       +'<td><span class="badge '+est.cls+'">'+est.txt+'</span></td>'
       +'<td><div style="display:flex;gap:5px">'
         +'<button class="btn btn-blue btn-sm" onclick="editarOrcamento(\''+o.id+'\')">✏</button>'
         +'<button class="btn btn-red btn-sm" onclick="apagarOrcamento(\''+o.id+'\')">🗑</button>'
-      +'</div></td>'
-      +'</tr>';
+      +'</div></td></tr>';
   }).join('');
 }
 
 function editarOrcamento(id){
-  var o=listaOrc.find(function(x){ return x.id===id; });
-  if(!o) return;
-  setTab('novo',document.querySelector('.sec-tab'));
-  document.querySelector('.sec-tab').classList.add('on');
+  var o=listaOrc.find(function(x){ return x.id===id; }); if(!o) return;
+  setTab('novo',document.querySelector('.sec-tab')); document.querySelector('.sec-tab').classList.add('on');
   orcAtualId=o.id;
   document.getElementById('orc-num').value=o.num||'';
   document.getElementById('orc-data').value=o.data||'';
@@ -652,49 +694,38 @@ function editarOrcamento(id){
   document.getElementById('orc-notas').value=o.notas||'';
   document.getElementById('orc-os').value=o.os||'';
   document.getElementById('orc-estado').value=o.estado||'rascunho';
-  tipo=o.tipo||'NVR/DVR + Gravador'; marca=o.marca||'Hikvision';
-  renderTipo(); renderMarca(); renderKits();
-  if(o.kit){ DB[tipo].marcas[marca].kits.forEach(function(k){ if(k.ref===o.kit.ref){ kitSel=k; if(o.kit.preco) k.preco=o.kit.preco; } }); }
-  renderExtras();
-  if(o.extras){ document.querySelectorAll('#extras-list input').forEach(function(cb){ if(o.extras.find(function(e){ return e.n===cb.dataset.n; })) cb.checked=true; }); }
-  calc(); toast('A editar orçamento '+o.num,'b');
+  marca=o.marca||'Hikvision';
+  if(o.state) Object.assign(STATE,o.state);
+  renderMarcas(); renderAll(); renderExtras(); calc();
+  toast('A editar '+o.num,'b');
 }
 
 function apagarOrcamento(id){
-  if(!confirm('Apagar este orçamento?')) return;
+  if(!confirm('Apagar?')) return;
   listaOrc=listaOrc.filter(function(o){ return o.id!==id; });
   db.collection('mrc_dados').doc('m3_orc_cam').set({value:JSON.stringify(listaOrc),ts:Date.now()})
-    .then(function(){ filtrarLista(); toast('Apagado','r'); })
-    .catch(function(e){ toast('Erro: '+e.message,'r'); });
+    .then(function(){ filtrarLista(); toast('Apagado','r'); });
 }
 
-// ─── WHATSAPP ────────────────────────────────────────────────────────────────
+// ─── WHATSAPP ─────────────────────────────────────────────────────────────────
 function gerarTextoWhatsapp(){
-  if(!kitSel){ toast('Seleciona um kit primeiro','a'); return; }
+  var linhas=getLinhas();
+  if(!linhas.length){ toast('Adiciona componentes primeiro','a'); return; }
   var cliente=document.getElementById('orc-cliente').value||'(cliente)';
   var num=document.getElementById('orc-num').value||'';
   var data=document.getElementById('orc-data').value||'';
   var dataFmt=data?new Date(data+'T12:00').toLocaleDateString('pt-PT'):new Date().toLocaleDateString('pt-PT');
+  var morada=document.getElementById('orc-morada').value||'';
   var validade=document.getElementById('orc-validade').value;
   var notas=document.getElementById('orc-notas').value;
-  var morada=document.getElementById('orc-morada').value||'';
-  var tot=kitSel.preco||0;
-  var extrasLinhas=[];
-  document.querySelectorAll('#extras-list input:checked').forEach(function(cb){ var p=parseFloat(cb.dataset.p); tot+=p; extrasLinhas.push(cb.dataset.n+' — '+p.toFixed(2)+' €'); });
+  var tot=linhas.reduce(function(s,l){ return s+(l.semPreco?0:l.total); },0);
   var txt='📷 *ORÇAMENTO MRC — Videovigilância*\n'
     +'━━━━━━━━━━━━━━━━━━━━\n'
-    +(num?'📋 Nº: *'+num+'*\n':'')
-    +'📅 Data: '+dataFmt+'\n'
-    +'👤 Cliente: *'+cliente+'*\n'
-    +(morada?'📍 '+morada+'\n':'')
+    +(num?'📋 Nº: *'+num+'*\n':'')+'📅 '+dataFmt+'\n'
+    +'👤 *'+cliente+'*\n'+(morada?'📍 '+morada+'\n':'')
     +'━━━━━━━━━━━━━━━━━━━━\n'
-    +'🎥 *Tipo:* '+tipo+'\n'
-    +'🏷 *Marca:* '+marca+'\n'
-    +'📦 *Kit:* '+kitSel.nome+'\n'
-    +'    Ref: '+kitSel.ref+'\n'
-    +'    '+kitSel.desc+'\n'
-    +'    Preço: '+(kitSel.preco||0).toFixed(2)+' €\n'
-    +(extrasLinhas.length?'━━━━━━━━━━━━━━━━━━━━\n➕ *Extras:*\n'+extrasLinhas.map(function(e){ return '  • '+e; }).join('\n')+'\n':'')
+    +'🏷 Marca: *'+marca+'*\n\n'
+    +linhas.map(function(l){ return '▪ '+l.n+(l.qty>1?' ('+l.qty+'×)':'')+' — '+(l.semPreco?'a definir':l.total.toFixed(2)+' €'); }).join('\n')+'\n'
     +'━━━━━━━━━━━━━━━━━━━━\n'
     +'💰 Subtotal s/ IVA: '+tot.toFixed(2)+' €\n'
     +'💳 *Total c/ IVA 23%: '+(tot*1.23).toFixed(2)+' €*\n'
@@ -702,17 +733,17 @@ function gerarTextoWhatsapp(){
     +'⏳ Validade: '+validade+'\n'
     +(notas?'📝 '+notas+'\n':'')
     +'━━━━━━━━━━━━━━━━━━━━\n'
-    +'🔧 *MRC Reparação de Equipamentos Elétricos*\n'
-    +'📍 Fradelos, Vila Nova de Famalicão';
+    +'🔧 *MRC Reparação de Equipamentos Elétricos*\n📍 Fradelos, Vila Nova de Famalicão';
   document.getElementById('whats-texto').value=txt;
   document.getElementById('mWhats').classList.add('open');
 }
 
 function copiarTexto(){ var ta=document.getElementById('whats-texto'); ta.select(); document.execCommand('copy'); toast('✅ Copiado!','g'); }
 
-// ─── PDF ─────────────────────────────────────────────────────────────────────
+// ─── PDF ──────────────────────────────────────────────────────────────────────
 function gerarPDF(){
-  if(!kitSel){ toast('Seleciona um kit primeiro','a'); return; }
+  var linhas=getLinhas();
+  if(!linhas.length){ toast('Adiciona componentes primeiro','a'); return; }
   var num=document.getElementById('orc-num').value||'';
   var data=document.getElementById('orc-data').value||'';
   var dataFmt=data?new Date(data+'T12:00').toLocaleDateString('pt-PT'):new Date().toLocaleDateString('pt-PT');
@@ -721,11 +752,11 @@ function gerarPDF(){
   var morada=document.getElementById('orc-morada').value||'—';
   var validade=document.getElementById('orc-validade').value||'30 dias';
   var notas=document.getElementById('orc-notas').value||'';
-  var tot=kitSel.preco||0;
-  var extrasLinhas=[];
-  document.querySelectorAll('#extras-list input:checked').forEach(function(cb){ var p=parseFloat(cb.dataset.p); tot+=p; extrasLinhas.push({n:cb.dataset.n,p:p}); });
+  var tot=linhas.reduce(function(s,l){ return s+(l.semPreco?0:l.total); },0);
   var comIva=tot*1.23;
-  var extHtml=extrasLinhas.map(function(e){ return '<div class="p-total-row"><span>'+e.n+'</span><span>'+e.p.toFixed(2)+' €</span></div>'; }).join('');
+  var linhasHtml=linhas.map(function(l){
+    return '<div class="p-total-row"><span>'+l.n+(l.qty>1?' × '+l.qty:'')+'</span><span>'+(l.semPreco?'a definir':l.total.toFixed(2)+' €')+'</span></div>';
+  }).join('');
   var html='<div class="p-header">'
     +'<div><div class="p-empresa">MRC Reparação de Equipamentos Elétricos</div><div class="p-empresa-sub">Fradelos, Vila Nova de Famalicão</div></div>'
     +'<div class="p-num"><span style="font-size:9pt;color:#777">ORÇAMENTO</span><strong>'+(num||'—')+'</strong><span style="font-size:9pt;color:#777">'+dataFmt+'</span></div>'
@@ -733,16 +764,13 @@ function gerarPDF(){
     +'<div class="p-section"><div class="p-section-title">👤 Dados do Cliente</div>'
     +'<div class="p-row"><span class="p-row-label">Nome</span><span class="p-row-value">'+cliente+'</span></div>'
     +'<div class="p-row"><span class="p-row-label">Contacto</span><span class="p-row-value">'+contacto+'</span></div>'
-    +'<div class="p-row"><span class="p-row-label">Local de instalação</span><span class="p-row-value">'+morada+'</span></div>'
+    +'<div class="p-row"><span class="p-row-label">Local</span><span class="p-row-value">'+morada+'</span></div>'
     +'</div>'
-    +'<div class="p-section"><div class="p-section-title">📷 Sistema de Videovigilância</div>'
-    +'<div class="p-row"><span class="p-row-label">Tipo de sistema</span><span class="p-row-value">'+tipo+'</span></div>'
-    +'<div class="p-row"><span class="p-row-label">Marca</span><span class="p-row-value">'+marca+'</span></div>'
-    +'<div class="p-kit-box"><div class="p-kit-nome">'+kitSel.nome+'</div><div class="p-kit-ref">Ref: '+kitSel.ref+'</div><div class="p-kit-desc">'+kitSel.desc+'</div></div>'
-    +'</div>'
-    +'<div class="p-total-section">'
-    +'<div class="p-total-row"><span>'+kitSel.nome+'</span><span>'+kitSel.preco.toFixed(2)+' €</span></div>'
-    +extHtml
+    +'<div class="p-section"><div class="p-section-title">📷 Sistema de Videovigilância — '+marca+'</div>'
+    +'<div class="p-kit-box" style="padding:10px 12px;font-size:10pt;color:#333;line-height:1.8">'
+    +linhas.map(function(l){ return '<div>▪ '+l.n+(l.qty>1?' (×'+l.qty+')':'')+'</div>'; }).join('')
+    +'</div></div>'
+    +'<div class="p-total-section">'+linhasHtml
     +'<div class="p-total-row" style="border-top:1px solid #ccc"><span>Subtotal s/ IVA</span><span>'+tot.toFixed(2)+' €</span></div>'
     +'<div class="p-total-row"><span>IVA 23%</span><span>'+(tot*0.23).toFixed(2)+' €</span></div>'
     +'<div class="p-total-final"><span>TOTAL C/ IVA</span><span>'+comIva.toFixed(2)+' €</span></div>'
@@ -754,36 +782,37 @@ function gerarPDF(){
   setTimeout(function(){ window.print(); },100);
 }
 
-// ─── GERIR PREÇOS ────────────────────────────────────────────────────────────
+// ─── GERIR PREÇOS ─────────────────────────────────────────────────────────────
 function renderPrecosTabela(){
-  var html='<table style="width:100%;border-collapse:collapse"><thead><tr>'
-    +'<th style="text-align:left;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Tipo</th>'
-    +'<th style="text-align:left;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Marca</th>'
-    +'<th style="text-align:left;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Kit</th>'
-    +'<th style="text-align:right;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Preço €</th>'
-    +'</tr></thead><tbody>';
-  Object.keys(DB).forEach(function(tp){
-    Object.keys(DB[tp].marcas).forEach(function(mk){
-      DB[tp].marcas[mk].kits.forEach(function(k){
-        html+='<tr style="border-bottom:1px solid rgba(37,45,61,.4)">'
-          +'<td style="padding:7px 10px;color:var(--muted);font-size:11px">'+tp+'</td>'
-          +'<td style="padding:7px 10px;font-size:12px;font-weight:600">'+mk+'</td>'
-          +'<td style="padding:7px 10px;font-size:12px">'+k.nome+'<br><span style="font-size:10px;color:var(--muted);font-family:monospace">'+k.ref+'</span></td>'
-          +'<td style="padding:7px 10px;text-align:right"><input type="number" step="0.01" min="0" data-tipo="'+tp+'" data-marca="'+mk+'" data-ref="'+k.ref+'" value="'+k.preco+'" style="width:90px;padding:5px 8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:Inter,sans-serif;text-align:right" class="preco-kit-input"></td>'
+  var secoes=[{key:'nvr',label:'NVR/Gravador'},{key:'dome',label:'Câmaras Dome'},{key:'bullet',label:'Câmaras Bullet'},{key:'hdd',label:'HDD'}];
+  var html='';
+  secoes.forEach(function(s){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:10px 0 6px;margin-top:8px;border-bottom:1px solid var(--border)">'+s.label+'</div>';
+    html+='<table style="width:100%;border-collapse:collapse"><thead><tr>'
+      +'<th style="text-align:left;padding:7px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Marca</th>'
+      +'<th style="text-align:left;padding:7px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Ref / Nome</th>'
+      +'<th style="text-align:right;padding:7px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Preço Unitário €</th>'
+      +'</tr></thead><tbody>';
+    Object.keys(DB).forEach(function(mk){
+      (DB[mk][s.key]||[]).forEach(function(item){
+        html+='<tr style="border-bottom:1px solid rgba(37,45,61,.3)">'
+          +'<td style="padding:6px 8px;font-size:12px;font-weight:600">'+mk+'</td>'
+          +'<td style="padding:6px 8px;font-size:12px">'+item.nome+'<br><span style="font-size:10px;color:var(--muted);font-family:monospace">'+item.ref+'</span></td>'
+          +'<td style="padding:6px 8px;text-align:right"><input type="number" step="0.01" min="0" class="preco-input preco-kit-input" data-mk="'+mk+'" data-sec="'+s.key+'" data-ref="'+item.ref+'" value="'+item.preco+'"></td>'
           +'</tr>';
       });
     });
+    html+='</tbody></table>';
   });
-  html+='</tbody></table>';
-  document.getElementById('precos-kits-tabela').innerHTML=html;
+  document.getElementById('precos-tabela').innerHTML=html;
   var htmlE='<table style="width:100%;border-collapse:collapse"><thead><tr>'
-    +'<th style="text-align:left;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Serviço / Extra</th>'
-    +'<th style="text-align:right;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Preço €</th>'
+    +'<th style="text-align:left;padding:7px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Serviço / Extra</th>'
+    +'<th style="text-align:right;padding:7px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Preço €</th>'
     +'</tr></thead><tbody>';
   EXTRAS.forEach(function(e,i){
-    htmlE+='<tr style="border-bottom:1px solid rgba(37,45,61,.4)">'
-      +'<td style="padding:7px 10px;font-size:13px">'+e.n+'</td>'
-      +'<td style="padding:7px 10px;text-align:right"><input type="number" step="0.01" min="0" data-idx="'+i+'" value="'+e.p+'" style="width:90px;padding:5px 8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:Inter,sans-serif;text-align:right" class="preco-extra-input"></td>'
+    htmlE+='<tr style="border-bottom:1px solid rgba(37,45,61,.3)">'
+      +'<td style="padding:6px 8px;font-size:13px">'+e.n+'</td>'
+      +'<td style="padding:6px 8px;text-align:right"><input type="number" step="0.01" min="0" class="preco-input preco-extra-input" data-idx="'+i+'" value="'+e.p+'"></td>'
       +'</tr>';
   });
   htmlE+='</tbody></table>';
@@ -793,14 +822,14 @@ function renderPrecosTabela(){
 function guardarPrecos(){
   document.querySelectorAll('.preco-kit-input').forEach(function(inp){
     var val=parseFloat(inp.value)||0;
-    DB[inp.dataset.tipo].marcas[inp.dataset.marca].kits.forEach(function(k){ if(k.ref===inp.dataset.ref) k.preco=val; });
+    (DB[inp.dataset.mk][inp.dataset.sec]||[]).forEach(function(item){ if(item.ref===inp.dataset.ref) item.preco=val; });
   });
   document.querySelectorAll('.preco-extra-input').forEach(function(inp){ EXTRAS[parseInt(inp.dataset.idx)].p=parseFloat(inp.value)||0; });
   var p={kits:{},extras:[]};
-  Object.keys(DB).forEach(function(tp){ p.kits[tp]={}; Object.keys(DB[tp].marcas).forEach(function(mk){ p.kits[tp][mk]={}; DB[tp].marcas[mk].kits.forEach(function(k){ p.kits[tp][mk][k.ref]=k.preco; }); }); });
+  Object.keys(DB).forEach(function(mk){ p.kits[mk]={}; ['nvr','dome','bullet','hdd'].forEach(function(s){ p.kits[mk][s]={}; (DB[mk][s]||[]).forEach(function(item){ p.kits[mk][s][item.ref]=item.preco; }); }); });
   p.extras=EXTRAS.map(function(e){ return {n:e.n,p:e.p}; });
   db.collection('mrc_dados').doc('m3_cam_precos').set({value:JSON.stringify(p),ts:Date.now()})
-    .then(function(){ toast('✅ Preços guardados!','g'); renderExtras(); if(kitSel) calc(); })
+    .then(function(){ toast('✅ Preços guardados!','g'); renderExtras(); calc(); })
     .catch(function(e){ toast('Erro: '+e.message,'r'); });
 }
 
@@ -809,39 +838,33 @@ function carregarPrecos(){
     if(!doc.exists) return;
     try{
       var p=JSON.parse(doc.data().value||'{}');
-      if(p.kits){ Object.keys(p.kits).forEach(function(tp){ if(!DB[tp]) return; Object.keys(p.kits[tp]).forEach(function(mk){ if(!DB[tp].marcas[mk]) return; DB[tp].marcas[mk].kits.forEach(function(k){ if(p.kits[tp][mk][k.ref]!==undefined) k.preco=p.kits[tp][mk][k.ref]; }); }); }); }
+      if(p.kits){ Object.keys(p.kits).forEach(function(mk){ if(!DB[mk]) return; ['nvr','dome','bullet','hdd'].forEach(function(s){ if(!DB[mk][s]) return; (DB[mk][s]).forEach(function(item){ if(p.kits[mk][s]&&p.kits[mk][s][item.ref]!==undefined) item.preco=p.kits[mk][s][item.ref]; }); }); }); }
       if(p.extras){ p.extras.forEach(function(pe){ EXTRAS.forEach(function(e){ if(e.n===pe.n) e.p=pe.p; }); }); }
-      renderExtras(); renderKits();
+      renderAll(); renderExtras(); calc();
     }catch(e){ console.warn(e); }
   });
 }
 
-// ─── UTILS ───────────────────────────────────────────────────────────────────
+// ─── UTILS ────────────────────────────────────────────────────────────────────
 function closeM(id){ document.getElementById(id).classList.remove('open'); }
 function toast(msg,tipo){ var el=document.createElement('div'); el.className='toast '+(tipo==='g'?'tg':tipo==='r'?'tr2':'ta'); el.textContent=msg; document.body.appendChild(el); setTimeout(function(){ el.remove(); },3500); }
 </script>
 
-<!-- PRINT STYLES -->
+<!-- PRINT -->
 <style>
 #print-orc{display:none}
 @media print{
   body>*:not(#print-orc){display:none!important}
   #print-orc{display:block!important;font-family:Inter,Arial,sans-serif;font-size:11pt;color:#000;padding:20px}
   .p-header{border-bottom:2px solid #1a4db1;padding-bottom:10px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start}
-  .p-empresa{font-size:13pt;font-weight:800;color:#1a4db1}
-  .p-empresa-sub{font-size:9pt;color:#555;margin-top:2px}
-  .p-num{text-align:right;font-size:10pt;color:#555}
-  .p-num strong{font-size:14pt;color:#000;display:block}
+  .p-empresa{font-size:13pt;font-weight:800;color:#1a4db1}.p-empresa-sub{font-size:9pt;color:#555;margin-top:2px}
+  .p-num{text-align:right;font-size:10pt;color:#555}.p-num strong{font-size:14pt;color:#000;display:block}
   .p-section{margin-bottom:14px;border:1px solid #ccc;border-radius:6px;overflow:hidden;break-inside:avoid}
   .p-section-title{background:#f0f0f0;padding:6px 12px;font-size:10pt;font-weight:700;color:#333;border-bottom:1px solid #ccc}
   .p-row{display:flex;justify-content:space-between;padding:6px 12px;border-bottom:1px solid #eee;font-size:10pt}
-  .p-row:last-child{border-bottom:none}
-  .p-row-label{color:#555}
-  .p-row-value{font-weight:500}
-  .p-kit-box{padding:10px 12px;background:#f8f8f8}
-  .p-kit-nome{font-size:12pt;font-weight:700;margin-bottom:2px}
-  .p-kit-ref{font-size:9pt;color:#777;font-family:monospace;margin-bottom:4px}
-  .p-kit-desc{font-size:10pt;color:#444}
+  .p-row:last-child{border-bottom:none}.p-row-label{color:#555}.p-row-value{font-weight:500}
+  .p-kit-box{padding:10px 12px;background:#f8f8f8}.p-kit-nome{font-size:12pt;font-weight:700;margin-bottom:2px}
+  .p-kit-ref{font-size:9pt;color:#777;font-family:monospace;margin-bottom:4px}.p-kit-desc{font-size:10pt;color:#444}
   .p-total-section{border:2px solid #1a4db1;border-radius:6px;overflow:hidden;margin-top:14px;break-inside:avoid}
   .p-total-row{display:flex;justify-content:space-between;padding:7px 14px;border-bottom:1px solid #ddd;font-size:11pt}
   .p-total-row:last-child{border-bottom:none}
