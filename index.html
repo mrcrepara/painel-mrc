@@ -2457,7 +2457,7 @@ function renderOrc(){
     const ivaR = o.iva_active===false ? 0 : (o.iva||23);
     const siva = ((o.mo||0)+(o.mat||0)+(o.desl_total||0))*(1-(o.desc_pct||0)/100);
     const tot = siva * (1 + ivaR/100);
-    html+='<tr><td><strong style="color:#fff">'+(o.num||'—')+'</strong></td><td style="color:var(--muted)">'+(o.data||'—')+'</td><td>'+(o.cli||'—')+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(o.desc||'—')+'</td><td style="color:var(--green);font-weight:600">'+eur(tot)+'</td><td>'+ebadge(o.est)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-orc" data-id="'+o.id+'">✏ Editar</button><button class="btn-xs" style="background:#8B5CF6" data-action="print-orc" data-id="'+o.id+'">🖨 Imprimir</button><button class="btn-xs" style="background:var(--red)" data-action="del-orc" data-id="'+o.id+'">🗑</button></td></tr>';
+    html+='<tr><td><strong style="color:#fff">'+(o.num||'—')+'</strong></td><td style="color:var(--muted)">'+(o.data||'—')+'</td><td>'+(o.cli||'—')+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(o.desc||'—')+'</td><td style="color:var(--green);font-weight:600">'+eur(tot)+'</td><td>'+ebadge(o.est)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-orc" data-id="'+o.id+'">✏ Editar</button><button class="btn-xs" style="background:#8B5CF6" data-action="print-orc" data-id="'+o.id+'">🖨 Imprimir</button><button class="btn-xs" style="background:#25D366" data-action="wa-orc" data-id="'+o.id+'">📲 WhatsApp</button><button class="btn-xs" style="background:var(--red)" data-action="del-orc" data-id="'+o.id+'">🗑</button></td></tr>';
   });
   tb.innerHTML=html;
 }
@@ -3397,6 +3397,7 @@ document.addEventListener('click', function(e) {
     alert(msg);
   }
   else if (action === 'print-orc') printOrcamento(id);
+  else if (action === 'wa-orc') whatsappOrcamento(id);
   else if (action === 'print-rep') printReparacao(id);
 });
 
@@ -3577,7 +3578,44 @@ function printOrcamento(id) {
   w.document.close();
 }
 
-function printReparacao(id) {
+function whatsappOrcamento(id) {
+  const o = ld('orc').find(x => x.id === id);
+  if (!o) { toast('Orçamento não encontrado!', 'r'); return; }
+  const emp = getEmpresa();
+  const cli = ld('cli').find(c => c.id === o.cli_id) || {};
+  const siva = (o.mo||0) + (o.mat||0) + (o.desl_total||0);
+  const ivaR = o.iva_active===false ? 0 : (o.iva||23);
+  const descPct = o.desc_pct||0;
+  const subDesc = siva * (1 - descPct/100);
+  const viva = subDesc * ivaR / 100;
+  const total = subDesc + viva;
+  const validade = o.dias ? new Date(Date.now() + o.dias*86400000).toISOString().slice(0,10) : '';
+
+  let tel = (cli.tel||'').replace(/[^0-9+]/g,'');
+  if (!tel) { toast('Este cliente não tem número de telefone guardado!','r'); return; }
+  if (!tel.startsWith('+')) {
+    tel = tel.startsWith('351') ? '+'+tel : '+351'+tel.replace(/^0+/,'');
+  }
+  tel = tel.replace('+','');
+
+  let msg = `*ORÇAMENTO ${o.num||''}*\n`;
+  msg += `${emp.nome||'MRC — Reparação de Equipamentos Elétricos'}\n\n`;
+  msg += `Olá ${o.cli||cli.nome||''}, segue o orçamento solicitado:\n\n`;
+  if (o.desc) msg += `📋 *Descrição:* ${o.desc}\n\n`;
+  if (o.mo) msg += `🔧 Mão de Obra: ${eur(o.mo)}\n`;
+  if (o.mat) msg += `📦 Materiais: ${eur(o.mat)}\n`;
+  if (o.desl_total) msg += `🚗 Deslocação: ${eur(o.desl_total)}\n`;
+  msg += `\nSubtotal: ${eur(siva)}\n`;
+  if (descPct) msg += `Desconto: ${descPct}%\n`;
+  if (ivaR>0) msg += `IVA (${ivaR}%): ${eur(viva)}\n`;
+  msg += `\n*TOTAL ${ivaR>0?'c/IVA':'s/IVA'}: ${eur(total)}*\n\n`;
+  if (validade) msg += `📅 Válido até: ${validade}\n\n`;
+  msg += `Qualquer dúvida estou à disposição.\n`;
+  if (emp.tel) msg += `📞 ${emp.tel}`;
+
+  const url = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
   const r = ld('rep').find(x => x.id === id);
   if (!r) { toast('Reparação não encontrada!', 'r'); return; }
   const emp = getEmpresa();
