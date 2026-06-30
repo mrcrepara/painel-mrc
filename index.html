@@ -3598,19 +3598,26 @@ function whatsappOrcamento(id) {
   }
   tel = tel.replace('+','');
 
-  let msg = `*ORÇAMENTO ${o.num||''}*\n`;
-  msg += `${emp.nome||'MRC — Reparação de Equipamentos Elétricos'}\n\n`;
-  msg += `Olá ${o.cli||cli.nome||''}, segue o orçamento solicitado:\n\n`;
-  if (o.desc) msg += `📋 *Descrição:* ${o.desc}\n\n`;
-  if (o.mo) msg += `🔧 Mão de Obra: ${eur(o.mo)}\n`;
-  if (o.mat) msg += `📦 Materiais: ${eur(o.mat)}\n`;
-  if (o.desl_total) msg += `🚗 Deslocação: ${eur(o.desl_total)}\n`;
-  msg += `\nSubtotal: ${eur(siva)}\n`;
-  if (descPct) msg += `Desconto: ${descPct}%\n`;
-  if (ivaR>0) msg += `IVA (${ivaR}%): ${eur(viva)}\n`;
-  msg += `\n*TOTAL ${ivaR>0?'c/IVA':'s/IVA'}: ${eur(total)}*\n\n`;
-  if (validade) msg += `📅 Válido até: ${validade}\n\n`;
-  msg += `Qualquer dúvida estou à disposição.\n`;
+  let msg = `🔧 *ORÇAMENTO MRC*\n`;
+  msg += `━━━━━━━━━━━━━━━━━━\n`;
+  msg += `📄 *Nº:* ${o.num||'—'}\n`;
+  msg += `📅 *Data:* ${o.data||'—'}\n`;
+  msg += `👤 *Cliente:* ${o.cli||cli.nome||'—'}\n`;
+  if (cli.morada) msg += `📍 ${cli.morada}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━\n\n`;
+  if (o.desc) msg += `📋 *Descrição do Serviço*\n${o.desc}\n\n`;
+  msg += `➕ *Detalhe:*\n`;
+  if (o.mo) msg += `• Mão de Obra — ${eur(o.mo)}\n`;
+  if (o.mat) msg += `• Materiais — ${eur(o.mat)}\n`;
+  if (o.desl_total) msg += `• Deslocação — ${eur(o.desl_total)}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━\n`;
+  msg += `💰 *Subtotal (s/IVA):* ${eur(siva)}\n`;
+  if (descPct) msg += `🏷 *Desconto:* ${descPct}%\n`;
+  msg += `🧾 *Total ${ivaR>0?'c/IVA '+ivaR+'%':'s/IVA'}:* ${eur(total)}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━\n`;
+  if (validade) msg += `⏳ *Validade:* ${o.dias||30} dias\n\n`;
+  msg += `🔌 *${emp.nome||'MRC — Reparação de Equipamentos Elétricos'}*\n`;
+  if (emp.morada) msg += `📍 ${emp.morada}\n`;
   if (emp.tel) msg += `📞 ${emp.tel}`;
 
   const url = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
