@@ -3599,30 +3599,30 @@ function whatsappOrcamento(id) {
   tel = tel.replace('+','');
 
   let msg = `🔧 *ORÇAMENTO MRC*\n`;
-  msg += `━━━━━━━━━━━━━━━━━━\n`;
+  msg += `-------------------------\n`;
   msg += `📄 *Nº:* ${o.num||'—'}\n`;
   msg += `📅 *Data:* ${o.data||'—'}\n`;
   msg += `👤 *Cliente:* ${o.cli||cli.nome||'—'}\n`;
   if (cli.morada) msg += `📍 ${cli.morada}\n`;
-  msg += `━━━━━━━━━━━━━━━━━━\n\n`;
+  msg += `-------------------------\n\n`;
   if (o.desc) msg += `📋 *Descrição do Serviço*\n${o.desc}\n\n`;
   if ((o.linhas||[]).length) {
     msg += `📦 *Materiais:*\n`;
     o.linhas.forEach(l => {
       const un = l.un && l.un!=='un' ? ' '+l.un : '';
-      msg += `• ${l.desc} — ${l.qty}${un} × ${eur(l.preco)} = ${eur(l.total)}\n`;
+      msg += `🔩 ${l.desc} — ${l.qty}${un} x ${eur(l.preco)} = ${eur(l.total)}\n`;
     });
     msg += `\n`;
   }
   msg += `➕ *Detalhe:*\n`;
-  if (o.mo) msg += `• Mão de Obra — ${eur(o.mo)}\n`;
-  if (!  (o.linhas||[]).length && o.mat) msg += `• Materiais — ${eur(o.mat)}\n`;
-  if (o.desl_total) msg += `• Deslocação — ${eur(o.desl_total)}\n`;
-  msg += `━━━━━━━━━━━━━━━━━━\n`;
+  if (o.mo) msg += `🛠 Mão de Obra — ${eur(o.mo)}\n`;
+  if (!  (o.linhas||[]).length && o.mat) msg += `📦 Materiais — ${eur(o.mat)}\n`;
+  if (o.desl_total) msg += `🚗 Deslocação — ${eur(o.desl_total)}\n`;
+  msg += `-------------------------\n`;
   msg += `💰 *Subtotal (s/IVA):* ${eur(siva)}\n`;
   if (descPct) msg += `🏷 *Desconto:* ${descPct}%\n`;
   msg += `🧾 *Total ${ivaR>0?'c/IVA '+ivaR+'%':'s/IVA'}:* ${eur(total)}\n`;
-  msg += `━━━━━━━━━━━━━━━━━━\n`;
+  msg += `-------------------------\n`;
   if (validade) msg += `⏳ *Validade:* ${o.dias||30} dias\n\n`;
   msg += `🔌 *${emp.nome||'MRC — Reparação de Equipamentos Elétricos'}*\n`;
   if (emp.morada) msg += `📍 ${emp.morada}\n`;
