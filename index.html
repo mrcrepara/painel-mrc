@@ -3616,6 +3616,8 @@ function whatsappOrcamento(id) {
   const url = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
   window.open(url, '_blank');
 }
+
+function printReparacao(id) {
   const r = ld('rep').find(x => x.id === id);
   if (!r) { toast('Reparação não encontrada!', 'r'); return; }
   const emp = getEmpresa();
