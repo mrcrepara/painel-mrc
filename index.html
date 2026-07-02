@@ -2029,7 +2029,17 @@ setSaveState('saved');
     <div class="fg"><label>Fornecedor</label><input id="desp_forn"></div>
     <div class="frow"><div class="fg"><label>Valor s/IVA (€)</label><input type="number" id="desp_val" value="0" step="0.01"></div><div class="fg"><label>IVA (€)</label><input type="number" id="desp_iva" value="0" step="0.01"></div></div>
     <div class="fg"><label>Data</label><input type="date" id="desp_data"></div>
-    <div class="fg"><label>Cliente (opcional)</label><select id="desp_cli"><option value="">— Nenhum —</option></select></div>
+    <div class="fg"><label>Cliente (opcional)</label><select id="desp_cli"><option value="">— Nenhum —</option></select>
+    <div style="margin-top:10px;padding:10px;background:var(--card2);border-radius:8px;border:1px solid var(--border)">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="desp_recorrente" style="accent-color:var(--blue);width:15px;height:15px" onchange="toggleDespRecorrente()">
+        <span>🔁 Despesa recorrente (mensal)</span>
+      </label>
+      <div id="desp_recorrente_dia" style="display:none;margin-top:8px">
+        <label style="font-size:12px;color:var(--muted)">Dia do mês em que é gerada</label>
+        <input type="number" id="desp_dia_mes" min="1" max="28" value="1" style="width:80px;margin-top:4px">
+      </div>
+    </div></div>
     <div id="desp_fat_box" style="display:none;padding:10px 12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:8px;margin-top:4px">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
         <input type="checkbox" id="desp_criar_fat" style="accent-color:var(--blue);width:15px;height:15px">
@@ -2685,7 +2695,9 @@ function saveDesp(){
   const cliSel=document.getElementById('desp_cli');
   const cliId=cliSel?cliSel.value:'';
   const cliNome=cliSel&&cliId?cliSel.options[cliSel.selectedIndex].text:'';
-  const obj={cat:gv('desp_cat'),desc,forn:gv('desp_forn'),val:gf('desp_val'),iva:gf('desp_iva'),data:gv('desp_data')||td(),cli_id:cliId,cli:cliNome};
+  const recorrente=document.getElementById('desp_recorrente')?.checked||false;
+  const diaMes=recorrente?parseInt(document.getElementById('desp_dia_mes')?.value||'1'):null;
+  const obj={cat:gv('desp_cat'),desc,forn:gv('desp_forn'),val:gf('desp_val'),iva:gf('desp_iva'),data:gv('desp_data')||td(),cli_id:cliId,cli:cliNome,recorrente,dia_mes:diaMes};
   if(editId){const i=desps.findIndex(d=>d.id===editId);if(i>=0)desps[i]={...desps[i],...obj}}
   else{obj.id=uid();desps.push(obj)}
   sv('desp',desps);
@@ -2721,6 +2733,44 @@ function saveDesp(){
   }
   closeM('mDesp');renderDesp();
 }
+function toggleDespRecorrente(){
+  const cb=document.getElementById('desp_recorrente');
+  const div=document.getElementById('desp_recorrente_dia');
+  if(div) div.style.display=cb?.checked?'block':'none';
+}
+
+function gerarDespesasRecorrentes(){
+  const hoje=new Date();
+  const mesAtual=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0');
+  const diaAtual=hoje.getDate();
+  const desps=ld('desp');
+  const recorrentes=desps.filter(d=>d.recorrente&&d.dia_mes);
+  let novas=0;
+  recorrentes.forEach(d=>{
+    // Verificar se já existe uma despesa gerada deste recorrente neste mês
+    const jaExiste=desps.some(x=>x.origem_rec===d.id&&(x.data||'').startsWith(mesAtual));
+    if(jaExiste) return;
+    // Só gerar se o dia já chegou
+    if(diaAtual<d.dia_mes) return;
+    const dia=String(d.dia_mes).padStart(2,'0');
+    const novaDesp={
+      id:uid(),
+      cat:d.cat,desc:d.desc+' (Auto)',forn:d.forn||'',
+      val:d.val,iva:d.iva,
+      data:mesAtual+'-'+dia,
+      cli_id:d.cli_id||'',cli:d.cli||'',
+      recorrente:false,
+      origem_rec:d.id
+    };
+    desps.push(novaDesp);
+    novas++;
+  });
+  if(novas>0){
+    sv('desp',desps);
+    toast('🔁 '+novas+' despesa'+(novas>1?'s recorrentes geradas':'  recorrente gerada')+' automaticamente','a');
+  }
+}
+
 function renderDesp(){
   const all=ld('desp');let desps=[...all];
   const q=gv('despQ').toLowerCase(),f=gv('despF');
@@ -3759,6 +3809,7 @@ document.addEventListener('DOMContentLoaded',function(){
       try{renderAll();}catch(e){}
       try{renderDef();}catch(e){}
       try{verificarFaturasAtrasadas();}catch(e){}
+      try{gerarDespesasRecorrentes();}catch(e){}
       if(typeof window._fbStartRealtime==='function') window._fbStartRealtime();
     });
   } else {
@@ -5989,6 +6040,10 @@ document.addEventListener('DOMContentLoaded',function(){
       // Reset checkbox
       var cb=document.getElementById('desp_criar_fat');if(cb)cb.checked=false;
       var box=document.getElementById('desp_fat_box');if(box)box.style.display='none';
+      // Reset recorrente
+      var cbRec=document.getElementById('desp_recorrente');if(cbRec)cbRec.checked=false;
+      var divRec=document.getElementById('desp_recorrente_dia');if(divRec)divRec.style.display='none';
+      var diaMes=document.getElementById('desp_dia_mes');if(diaMes)diaMes.value='1';
     }
   });}).observe(mDesp,{attributes:true,attributeFilter:['class']});
   // Mostrar/esconder opção fatura ao selecionar cliente
