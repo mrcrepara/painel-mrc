@@ -2672,7 +2672,7 @@ function renderRec(){
   const tb=g('recTbl');if(!tb)return;
   if(!recs.length){tb.innerHTML=eRow(7,'Sem recebimentos');return}
   let html='';
-  [...recs].reverse().forEach(r=>{html+='<tr><td style="color:var(--muted)">'+r.data+'</td><td>'+r.cli+'</td><td style="color:var(--muted)">'+(r.fat_num||'—')+'</td><td style="color:var(--green);font-weight:700">'+eur(r.val)+'</td><td>'+(r.forma||'—')+'</td><td style="color:var(--muted)">'+(r.ref||'—')+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-rec" data-id="'+r.id+'">✏</button><button class="btn-xs" style="background:var(--red)" data-action="del-rec" data-id="'+r.id+'">🗑</button></td></tr>'});
+  [...recs].reverse().forEach(r=>{const fatNum=r.fat_num||(r.fat_id?((ld('fat').find(f=>f.id===r.fat_id)||{}).num||r.fat_id):'—');html+='<tr><td style="color:var(--muted)">'+r.data+'</td><td>'+r.cli+'</td><td style="color:var(--muted)">'+fatNum+'</td><td style="color:var(--green);font-weight:700">'+eur(r.val)+'</td><td>'+(r.forma||'—')+'</td><td style="color:var(--muted)">'+(r.ref||'—')+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-rec" data-id="'+r.id+'">✏</button><button class="btn-xs" style="background:var(--red)" data-action="del-rec" data-id="'+r.id+'">🗑</button></td></tr>'});
   tb.innerHTML=html;
 }
 
@@ -3014,7 +3014,7 @@ function verificarFaturasAtrasadas(){
   const fats = ld('fat');
   let alterado = false;
   const atualizadas = fats.map(f => {
-    if((f.est === 'Pendente' || f.est === 'Pago Parcialmente') && f.venc && f.venc < hoje){
+    if(f.est === 'Pendente' && f.venc && f.venc < hoje){
       alterado = true;
       return Object.assign({}, f, {est: 'Em Atraso'});
     }
