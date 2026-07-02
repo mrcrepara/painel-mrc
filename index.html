@@ -3009,6 +3009,24 @@ function _filterPeriod(arr,field){
   var parts=p.split('-'),yr=parseInt(parts[0]),mo=parseInt(parts[1])-1;
   return arr.filter(function(x){var d=new Date(x[field]||x.data||'');return d.getFullYear()===yr&&d.getMonth()===mo;});
 }
+function verificarFaturasAtrasadas(){
+  const hoje = new Date().toISOString().slice(0,10);
+  const fats = ld('fat');
+  let alterado = false;
+  const atualizadas = fats.map(f => {
+    if((f.est === 'Pendente' || f.est === 'Pago Parcialmente') && f.venc && f.venc < hoje){
+      alterado = true;
+      return Object.assign({}, f, {est: 'Em Atraso'});
+    }
+    return f;
+  });
+  if(alterado){
+    sv('fat', atualizadas);
+    const n = atualizadas.filter(f=>f.est==='Em Atraso').length - fats.filter(f=>f.est==='Em Atraso').length;
+    if(n > 0) toast('⚠ '+n+' fatura'+(n>1?'s':'')+' passaram para Em Atraso', 'a');
+  }
+}
+
 function renderDash(){
   _getDashPeriod();
   renderDashBanner();
@@ -3740,6 +3758,7 @@ document.addEventListener('DOMContentLoaded',function(){
       try{fillFatSel();}catch(e){}
       try{renderAll();}catch(e){}
       try{renderDef();}catch(e){}
+      try{verificarFaturasAtrasadas();}catch(e){}
       if(typeof window._fbStartRealtime==='function') window._fbStartRealtime();
     });
   } else {
