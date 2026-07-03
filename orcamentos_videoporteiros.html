@@ -1097,18 +1097,22 @@ function guardarPrecos() {
     EXTRAS[idx].p = parseFloat(inp.value) || 0;
   });
 
-  // Construir objeto para guardar
-  var precosGuardar = { kits: {}, extras: [] };
+  // Construir objeto para guardar (preços + kits personalizados completos)
+  var precosGuardar = { kits: {}, kitsExtra: {}, extras: [] };
   Object.keys(DB).forEach(function(tp) {
     precosGuardar.kits[tp] = {};
+    precosGuardar.kitsExtra[tp] = {};
     Object.keys(DB[tp].marcas).forEach(function(mk) {
       precosGuardar.kits[tp][mk] = {};
+      // Guardar kits personalizados (não existentes no DB original)
+      var kitsCustom = DB[tp].marcas[mk].kits.filter(function(k){ return k._custom; });
+      if(kitsCustom.length) precosGuardar.kitsExtra[tp][mk] = kitsCustom;
       DB[tp].marcas[mk].kits.forEach(function(k) {
         precosGuardar.kits[tp][mk][k.ref] = k.preco;
       });
     });
   });
-  precosGuardar.extras = EXTRAS.map(function(e) { return { n: e.n, p: e.p }; });
+  precosGuardar.extras = EXTRAS.map(function(e) { return { n: e.n, p: e.p, _custom: e._custom||false }; });
 
   db.collection('mrc_dados').doc('m3_vp_precos').set({
     value: JSON.stringify(precosGuardar),
@@ -1137,12 +1141,33 @@ function carregarPrecos() {
           });
         });
       }
+      // Carregar kits personalizados (adicionados pelo utilizador)
+      if(p.kitsExtra) {
+        Object.keys(p.kitsExtra).forEach(function(tp) {
+          if(!DB[tp]) DB[tp] = {desc:'',marcas:{}};
+          Object.keys(p.kitsExtra[tp]).forEach(function(mk) {
+            if(!DB[tp].marcas[mk]) DB[tp].marcas[mk] = {aviso:null,kits:[]};
+            p.kitsExtra[tp][mk].forEach(function(k) {
+              var existe = DB[tp].marcas[mk].kits.find(function(x){return x.ref===k.ref;});
+              if(!existe) DB[tp].marcas[mk].kits.push(k);
+              else { existe.preco = k.preco; }
+            });
+          });
+        });
+      }
       // Aplicar preços dos extras
       if(p.extras) {
+        // Adicionar extras personalizados que não existam ainda
         p.extras.forEach(function(pe) {
-          EXTRAS.forEach(function(e) {
-            if(e.n === pe.n) e.p = pe.p;
-          });
+          if(pe._custom) {
+            var existe = EXTRAS.find(function(e){return e.n===pe.n;});
+            if(!existe) EXTRAS.push({n:pe.n, p:pe.p, on:false, _custom:true});
+            else existe.p = pe.p;
+          } else {
+            EXTRAS.forEach(function(e) {
+              if(e.n === pe.n) e.p = pe.p;
+            });
+          }
         });
       }
       renderExtras();
@@ -1192,7 +1217,7 @@ function guardarNovoKit() {
   // Verificar se ref já existe
   var existe = DB[tipo].marcas[marca].kits.find(function(k){return k.ref===ref;});
   if(existe){alert('Já existe um kit com esta referência para esta marca/tipo.');return;}
-  DB[tipo].marcas[marca].kits.push({ref:ref,nome:nome,desc:desc,preco:preco,bdg:'',bc:'bdg-eco',img:img});
+  DB[tipo].marcas[marca].kits.push({ref:ref,nome:nome,desc:desc,preco:preco,bdg:'',bc:'bdg-eco',img:img,_custom:true});
   guardarPrecos();
   fecharNovoKit();
   renderPrecosTabela();
@@ -1218,7 +1243,7 @@ function guardarNovoExtra() {
   var nome = document.getElementById('ne_nome').value.trim();
   var preco = parseFloat(document.getElementById('ne_preco').value)||0;
   if(!nome){alert('Preenche o nome do serviço.');return;}
-  EXTRAS.push({n:nome,p:preco,on:false});
+  EXTRAS.push({n:nome,p:preco,on:false,_custom:true});
   guardarPrecos();
   fecharNovoExtra();
   renderPrecosTabela();
