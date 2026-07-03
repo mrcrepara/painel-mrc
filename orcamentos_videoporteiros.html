@@ -342,7 +342,10 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div class="card" style="margin-bottom:16px">
       <div class="card-hdr">
         <h3>📦 Preços dos Kits</h3>
-        <button class="btn btn-green btn-sm" onclick="guardarPrecos()">💾 Guardar Preços</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-blue btn-sm" onclick="abrirNovoKit()">+ Novo Kit</button>
+          <button class="btn btn-green btn-sm" onclick="guardarPrecos()">💾 Guardar Preços</button>
+        </div>
       </div>
       <div class="card-body">
         <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Edita os preços de venda ao cliente (com IVA ou sem IVA, como preferires — o orçamento aplica IVA por cima). Guardado automaticamente no Firebase.</div>
@@ -352,7 +355,10 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div class="card">
       <div class="card-hdr">
         <h3>🔧 Preços dos Extras e Serviços</h3>
-        <button class="btn btn-green btn-sm" onclick="guardarPrecos()">💾 Guardar Preços</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-blue btn-sm" onclick="abrirNovoExtra()">+ Novo Extra</button>
+          <button class="btn btn-green btn-sm" onclick="guardarPrecos()">💾 Guardar Preços</button>
+        </div>
       </div>
       <div class="card-body">
         <div id="precos-extras-tabela"></div>
@@ -361,6 +367,58 @@ tbody td{padding:9px 12px;vertical-align:middle}
   </div>
 
 </div><!-- /content -->
+
+<!-- MODAL: NOVO KIT -->
+<div id="mNovoKit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:none;align-items:center;justify-content:center">
+  <div style="background:var(--card);border-radius:14px;padding:24px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <h3 style="margin:0">➕ Novo Kit</h3>
+      <button onclick="fecharNovoKit()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Tipo *</label>
+        <select id="nk_tipo" style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text)">
+          <option>Unifamiliar</option><option>Bifamiliar</option><option>Multifamiliar</option>
+        </select></div>
+      <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Marca *</label>
+        <input id="nk_marca" placeholder="Ex: VIMAR, FERMAX, GOLMAR..." style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);box-sizing:border-box"></div>
+      <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Referência *</label>
+        <input id="nk_ref" placeholder="Ex: K40930" style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);box-sizing:border-box"></div>
+      <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Nome *</label>
+        <input id="nk_nome" placeholder="Ex: Vimar Elvox K40930" style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);box-sizing:border-box"></div>
+      <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Descrição</label>
+        <input id="nk_desc" placeholder="Breve descrição do kit" style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);box-sizing:border-box"></div>
+      <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Preço (€) *</label>
+        <input id="nk_preco" type="number" step="0.01" min="0" value="0" style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);box-sizing:border-box"></div>
+      <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">URL Imagem (opcional)</label>
+        <input id="nk_img" placeholder="https://..." style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);box-sizing:border-box"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+      <button onclick="fecharNovoKit()" style="padding:9px 18px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer">Cancelar</button>
+      <button onclick="guardarNovoKit()" style="padding:9px 18px;background:var(--green);border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer">💾 Adicionar Kit</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOVO EXTRA -->
+<div id="mNovoExtra" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--card);border-radius:14px;padding:24px;width:100%;max-width:400px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <h3 style="margin:0">➕ Novo Extra/Serviço</h3>
+      <button onclick="fecharNovoExtra()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Nome do Serviço *</label>
+        <input id="ne_nome" placeholder="Ex: Mão de obra – instalação" style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);box-sizing:border-box"></div>
+      <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Preço (€) *</label>
+        <input id="ne_preco" type="number" step="0.01" min="0" value="0" style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);box-sizing:border-box"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+      <button onclick="fecharNovoExtra()" style="padding:9px 18px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer">Cancelar</button>
+      <button onclick="guardarNovoExtra()" style="padding:9px 18px;background:var(--green);border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer">💾 Adicionar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL: VER ORÇAMENTO -->
 <div class="ov" id="mVer">
@@ -985,10 +1043,13 @@ function renderPrecosTabela() {
           + '<td style="padding:7px 10px;font-size:12px;font-weight:600">' + mk + '</td>'
           + '<td style="padding:7px 10px;font-size:12px">' + k.nome + '<br><span style="font-size:10px;color:var(--muted);font-family:monospace">' + k.ref + '</span></td>'
           + '<td style="padding:7px 10px;text-align:right">'
+          + '<div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">'
           + '<input type="number" step="0.01" min="0" data-tipo="' + tp + '" data-marca="' + mk + '" data-ref="' + k.ref + '" '
           + 'value="' + k.preco + '" '
           + 'style="width:90px;padding:5px 8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:Inter,sans-serif;text-align:right" '
           + 'class="preco-kit-input">'
+          + '<button onclick="apagarKit(\'' + tp + '\',\'' + mk + '\',\'' + k.ref + '\')" style="padding:4px 8px;background:#ef4444;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:12px">🗑</button>'
+          + '</div>'
           + '</td></tr>';
       });
     });
@@ -1104,6 +1165,65 @@ setTab = function(tab, btn) {
   document.getElementById('tab-precos').style.display = tab === 'precos' ? 'block' : 'none';
   if(tab === 'precos') renderPrecosTabela();
 };
+
+// ── Novo Kit ─────────────────────────────────────────────
+function abrirNovoKit() {
+  document.getElementById('nk_tipo').value = 'Unifamiliar';
+  document.getElementById('nk_marca').value = '';
+  document.getElementById('nk_ref').value = '';
+  document.getElementById('nk_nome').value = '';
+  document.getElementById('nk_desc').value = '';
+  document.getElementById('nk_preco').value = '0';
+  document.getElementById('nk_img').value = '';
+  document.getElementById('mNovoKit').style.display = 'flex';
+}
+function fecharNovoKit() { document.getElementById('mNovoKit').style.display = 'none'; }
+function guardarNovoKit() {
+  var tipo = document.getElementById('nk_tipo').value;
+  var marca = document.getElementById('nk_marca').value.trim().toUpperCase();
+  var ref = document.getElementById('nk_ref').value.trim();
+  var nome = document.getElementById('nk_nome').value.trim();
+  var desc = document.getElementById('nk_desc').value.trim();
+  var preco = parseFloat(document.getElementById('nk_preco').value)||0;
+  var img = document.getElementById('nk_img').value.trim();
+  if(!marca||!ref||!nome){alert('Preenche Marca, Referência e Nome.');return;}
+  if(!DB[tipo]) DB[tipo] = {desc:'',marcas:{}};
+  if(!DB[tipo].marcas[marca]) DB[tipo].marcas[marca] = {aviso:null,kits:[]};
+  // Verificar se ref já existe
+  var existe = DB[tipo].marcas[marca].kits.find(function(k){return k.ref===ref;});
+  if(existe){alert('Já existe um kit com esta referência para esta marca/tipo.');return;}
+  DB[tipo].marcas[marca].kits.push({ref:ref,nome:nome,desc:desc,preco:preco,bdg:'',bc:'bdg-eco',img:img});
+  guardarPrecos();
+  fecharNovoKit();
+  renderPrecosTabela();
+  alert('✅ Kit adicionado com sucesso!');
+}
+function apagarKit(tipo, marca, ref) {
+  if(!confirm('Apagar kit "'+ref+'" de '+marca+'?')) return;
+  if(DB[tipo]&&DB[tipo].marcas[marca]){
+    DB[tipo].marcas[marca].kits = DB[tipo].marcas[marca].kits.filter(function(k){return k.ref!==ref;});
+    guardarPrecos();
+    renderPrecosTabela();
+  }
+}
+
+// ── Novo Extra ───────────────────────────────────────────
+function abrirNovoExtra() {
+  document.getElementById('ne_nome').value = '';
+  document.getElementById('ne_preco').value = '0';
+  document.getElementById('mNovoExtra').style.display = 'flex';
+}
+function fecharNovoExtra() { document.getElementById('mNovoExtra').style.display = 'none'; }
+function guardarNovoExtra() {
+  var nome = document.getElementById('ne_nome').value.trim();
+  var preco = parseFloat(document.getElementById('ne_preco').value)||0;
+  if(!nome){alert('Preenche o nome do serviço.');return;}
+  EXTRAS.push({n:nome,p:preco,on:false});
+  guardarPrecos();
+  fecharNovoExtra();
+  renderPrecosTabela();
+  alert('✅ Extra adicionado!');
+}
 </script>
 
 </body>
