@@ -1940,6 +1940,11 @@ setSaveState('saved');
       <div style="font-size:11px;font-weight:700;color:#60A5FA;text-transform:uppercase;margin-bottom:7px">🔧 Reparações em aberto</div>
       <div id="fat_rep_list"></div>
     </div>
+    <div class="fg"><label>Ordem de Serviço (opç.)</label><select id="fat_os_sel" onchange="fatOsSel()"><option value="">— Nenhuma —</option></select></div>
+    <div id="fat_os_panel" style="display:none;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.25);border-radius:9px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:#A78BFA;text-transform:uppercase;margin-bottom:4px">📋 OS selecionada</div>
+      <div id="fat_os_info" style="font-size:12px;color:var(--muted)"></div>
+    </div>
     <div class="fg"><label>Descrição do Serviço *</label><textarea id="fat_desc" placeholder="Descrição do serviço prestado"></textarea></div>
 
     <!-- LISTA DE MATERIAIS -->
@@ -4466,6 +4471,8 @@ window.clearForm = function(id) {
     const rep = document.getElementById('fat_rep'); if (rep) rep.value = '';
     const descEl = document.getElementById('fat_desc'); if (descEl) descEl.value = '';
     const panel = document.getElementById('fat_rep_panel'); if (panel) panel.style.display = 'none';
+    const osSel = document.getElementById('fat_os_sel'); if(osSel){fillFatOsSel('');osSel.value='';}
+    const osPanel = document.getElementById('fat_os_panel'); if(osPanel) osPanel.style.display='none';
     const pprow = document.getElementById('fat_pagparcial_row'); if(pprow) pprow.style.display='none';
     const vpago = document.getElementById('fat_val_pago'); if(vpago) vpago.value='0';
     calcFatModal();
@@ -5868,6 +5875,39 @@ function fatCliChange(){
       selFatRep(el.dataset.repId);
     });
   });
+  // Preencher OS do cliente
+  fillFatOsSel(cli_id);
+}
+
+function fillFatOsSel(cli_id){
+  var sel=document.getElementById('fat_os_sel');
+  if(!sel)return;
+  var os=ld('os').filter(function(o){return (!cli_id||o.cli_id===cli_id)&&o.est!=='Faturado';});
+  sel.innerHTML='<option value="">— Nenhuma —</option>'+os.map(function(o){
+    return '<option value="'+o.id+'">'+(o.num||o.id.slice(-6).toUpperCase())+' — '+(o.cli||'')+(o.desc?' | '+o.desc.slice(0,40):'')+'</option>';
+  }).join('');
+  var panel=document.getElementById('fat_os_panel');
+  if(panel)panel.style.display='none';
+}
+
+function fatOsSel(){
+  var sel=document.getElementById('fat_os_sel');
+  var osId=sel?sel.value:'';
+  var panel=document.getElementById('fat_os_panel');
+  var info=document.getElementById('fat_os_info');
+  if(!osId){if(panel)panel.style.display='none';return;}
+  var os=ld('os').find(function(o){return o.id===osId;});
+  if(!os){if(panel)panel.style.display='none';return;}
+  // Preencher campos da fatura com dados da OS
+  var cliSel=document.getElementById('fat_cli');
+  if(cliSel&&os.cli_id)cliSel.value=os.cli_id;
+  var df=document.getElementById('fat_desc');
+  if(df)df.value=(os.num?os.num+' — ':'')+(os.desc||'')+(os.trabalho?' | '+os.trabalho:'');
+  var mf=document.getElementById('fat_mo');
+  if(mf&&os.horas&&os.valor_hora)mf.value=(parseFloat(os.horas)*parseFloat(os.valor_hora)).toFixed(2);
+  if(panel)panel.style.display='block';
+  if(info)info.innerHTML='<strong style="color:#A78BFA">'+(os.num||'OS')+'</strong> — '+(os.cli||'')+(os.desc?' | '+os.desc.slice(0,60):'')+(os.est?' <span style="color:var(--muted)">Estado: '+os.est+'</span>':'');
+  if(typeof calcFatModal==='function')calcFatModal();
 }
 function selFatRep(rep_id){
   var r=ld('rep').find(function(x){return x.id===rep_id;});if(!r)return;
@@ -6089,7 +6129,7 @@ document.addEventListener('DOMContentLoaded',function(){
   if(mDespCat)new MutationObserver(function(ms){ms.forEach(function(m){if(m.target.classList.contains('open'))renderDespCatsList();});}).observe(mDespCat,{attributes:true,attributeFilter:['class']});
   // fat_cli observer
   var mFat=document.getElementById('mFat');
-  if(mFat)new MutationObserver(function(ms){ms.forEach(function(m){if(m.target.classList.contains('open'))setTimeout(fatCliChange,100);});}).observe(mFat,{attributes:true,attributeFilter:['class']});
+  if(mFat)new MutationObserver(function(ms){ms.forEach(function(m){if(m.target.classList.contains('open')){setTimeout(fatCliChange,100);setTimeout(function(){fillFatOsSel('');},150);}});}).observe(mFat,{attributes:true,attributeFilter:['class']});
 });
 
 // Hook renderDash for margem
