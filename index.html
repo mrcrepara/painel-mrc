@@ -69,8 +69,8 @@
         try{localStorage.setItem(K[shortKey]||fbKey,JSON.stringify(val));}catch(e){}
         if(fbTs)localStorage.setItem('_ts_'+fbKey,String(fbTs));
       });
-      if(cb)cb();
-    }).catch(function(e){console.warn('FB load:',e);if(cb)cb();});
+      if(cb)cb(true);
+    }).catch(function(e){console.warn('FB load:',e);if(cb)cb(false);});
     });
   };
 
@@ -280,6 +280,33 @@ tbody td{padding:9px 12px;vertical-align:middle}
 #mobNav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--sb);border-top:1px solid var(--border);justify-content:space-around;align-items:center;padding:6px 0}
 .mob-ni{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;cursor:pointer;border-radius:8px;color:var(--muted);font-size:10px;font-weight:600;min-width:52px}
 @media(max-width:768px){#mobNav{display:flex!important}}
+
+/* ── MELHORIAS DE LEGIBILIDADE / TOQUE NO TELEMÓVEL ── */
+@media(max-width:768px){
+  body{font-size:15px}
+  .content{padding:14px 12px 90px}
+  .pg-hdr h1{font-size:19px}
+  .pg-hdr p{font-size:12.5px}
+  /* KPIs: uma coluna, valores maiores e mais fáceis de ler rapidamente */
+  .kpi-grid{grid-template-columns:1fr!important;gap:9px}
+  .kpi{padding:14px 16px}
+  .kpi-val{font-size:22px}
+  .kpi-label{font-size:11px}
+  /* Botões e campos maiores para tocar com o dedo */
+  .btn{padding:11px 16px;font-size:14px}
+  .btn-sm{padding:9px 14px;font-size:13px}
+  .fg input,.fg select,.fg textarea{padding:12px 13px;font-size:15px}
+  .sbar input,.sbar select{padding:11px 13px;font-size:14px}
+  /* Tabelas: mantém scroll horizontal mas com texto legível */
+  table{font-size:13px!important}
+  thead th{font-size:10.5px;padding:10px 10px}
+  tbody td{padding:11px 10px}
+  /* Modais a ocupar o ecrã todo — mais fácil de preencher formulários */
+  .ov{padding:0;align-items:flex-end}
+  .modal{max-width:100%;width:100%;max-height:94vh;border-radius:16px 16px 0 0}
+  .modal-lg{max-width:100%}
+  .frow,.frow3{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -2112,7 +2139,11 @@ function ensureAdmin(){
 }
 
 // SEED
-(function seed(){
+// NOTA: esta função só deve correr DEPOIS do Firebase responder (ver chamada
+// dentro do _fbLoad no bloco INIT), nunca logo ao carregar a página — caso
+// contrário, num dispositivo novo (localStorage vazio) ela grava dados de
+// exemplo por cima dos dados reais no Firebase antes de estes chegarem.
+window._runSeedIfEmpty=function(){
   ensureAdmin();
   if(!ld('cli').length) sv('cli',[
     {id:uid(),tipo:'Empresa',nome:'Indústria ABC Lda',nif:'501234567',tel:'21 123 4567',email:'geral@abc.pt',morada:'Rua Industrial 5, Lisboa',obs:''},
@@ -2149,7 +2180,7 @@ function ensureAdmin(){
   ]);
   const def=ldO('def');
   sv('def',{nome:'MRC — Reparação de Equipamentos Elétricos',nif:'',morada:'',tel:'',email:'',iva:23,km:0.40,marg:30,...def});
-})();
+};
 
 // ══════════════════════════════════════════════════════════
 // AUTH
@@ -3835,7 +3866,11 @@ document.addEventListener('DOMContentLoaded',function(){
   _s('umName','Rui Veloso');_s('umRole','Administrador');
   // Load from Firebase first, then render
   if(typeof window._fbLoad==='function'){
-    window._fbLoad(function(){
+    window._fbLoad(function(fbOk){
+      // Só cria dados de exemplo depois de confirmar que o Firebase já
+      // respondeu com sucesso — assim nunca sobrescreve dados reais num
+      // dispositivo novo, nem numa falha de rede/ligação.
+      try{if(fbOk!==false&&typeof window._runSeedIfEmpty==='function')window._runSeedIfEmpty();}catch(e){}
       try{fillCatSelects();}catch(e){}
       try{fillCliSel();}catch(e){}
       try{fillFatSel();}catch(e){}
@@ -3847,6 +3882,7 @@ document.addEventListener('DOMContentLoaded',function(){
     });
   } else {
     setTimeout(function(){
+      try{if(typeof window._runSeedIfEmpty==='function')window._runSeedIfEmpty();}catch(e){}
       try{fillCatSelects();}catch(e){}
       try{fillCliSel();}catch(e){}
       try{fillFatSel();}catch(e){}
