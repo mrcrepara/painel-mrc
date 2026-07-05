@@ -3236,7 +3236,9 @@ function renderDashRD(){
 }
 
 function renderDashMargemMaterial(){
-  var fats=ld('fat'),mats=ld('mat');
+  var allFats=ld('fat'),mats=ld('mat');
+  // Filtrar por período e só faturas pagas
+  var fats=_filterPeriod(allFats,'data').filter(function(f){return f.est==='Paga'||f.est==='Pago Parcialmente';});
   // Calcular PVP faturado vs custo de materiais
   var totalPVP=0,totalCusto=0,linhasCount=0;
   fats.forEach(function(f){
