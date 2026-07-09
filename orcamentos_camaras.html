@@ -728,7 +728,7 @@ function gerarTextoWhatsapp(){
     +linhas.map(function(l){ return '▪ '+l.n+(l.qty>1?' ('+l.qty+'×)':'')+' — '+(l.semPreco?'a definir':l.total.toFixed(2)+' €'); }).join('\n')+'\n'
     +'━━━━━━━━━━━━━━━━━━━━\n'
     +'💰 Subtotal s/ IVA: '+tot.toFixed(2)+' €\n'
-    +'💳 *Total c/ IVA 23%: '+(tot*1.23).toFixed(2)+' €*\n'
+    +(mostrarComIva ? '💳 *Total c/ IVA 23%: '+(tot*1.23).toFixed(2)+' €*\n' : '💳 *Total s/ IVA: '+tot.toFixed(2)+' €*\n')
     +'━━━━━━━━━━━━━━━━━━━━\n'
     +'⏳ Validade: '+validade+'\n'
     +(notas?'📝 '+notas+'\n':'')
@@ -772,8 +772,11 @@ function gerarPDF(){
     +'</div></div>'
     +'<div class="p-total-section">'+linhasHtml
     +'<div class="p-total-row" style="border-top:1px solid #ccc"><span>Subtotal s/ IVA</span><span>'+tot.toFixed(2)+' €</span></div>'
-    +'<div class="p-total-row"><span>IVA 23%</span><span>'+(tot*0.23).toFixed(2)+' €</span></div>'
-    +'<div class="p-total-final"><span>TOTAL C/ IVA</span><span>'+comIva.toFixed(2)+' €</span></div>'
+    +(mostrarComIva
+      ? '<div class="p-total-row"><span>IVA 23%</span><span>'+(tot*0.23).toFixed(2)+' €</span></div>'
+        +'<div class="p-total-final"><span>TOTAL C/ IVA</span><span>'+comIva.toFixed(2)+' €</span></div>'
+      : '<div class="p-total-final"><span>TOTAL S/ IVA</span><span>'+tot.toFixed(2)+' €</span></div>'
+    )
     +'</div>'
     +(notas?'<div class="p-notas"><strong>Notas:</strong> '+notas+'</div>':'')
     +'<div class="p-validade">⏳ Validade: '+validade+' a partir de '+dataFmt+'</div>'
