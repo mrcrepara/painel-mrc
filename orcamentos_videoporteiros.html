@@ -186,7 +186,13 @@ tbody td{padding:9px 12px;vertical-align:middle}
               <div class="fg"><label>Data</label><input type="date" id="orc-data"></div>
             </div>
             <div class="frow">
-              <div class="fg"><label>Nome do Cliente</label><input id="orc-cliente" placeholder="Ex: João Silva"></div>
+              <div class="fg"><label>Cliente</label>
+                <select id="orc-cliente-sel" onchange="selecionarCliente(this)" style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px">
+                  <option value="">— Selecionar cliente —</option>
+                </select>
+                <input id="orc-cliente" type="hidden" value="">
+                <input id="orc-cliente-id" type="hidden" value="">
+              </div>
               <div class="fg"><label>Contacto</label><input id="orc-contacto" placeholder="912 345 678"></div>
             </div>
             <div class="fg"><label>Morada</label><input id="orc-morada" placeholder="Ex: Rua das Flores nº5, Famalicão"></div>
@@ -540,6 +546,30 @@ var listaOrc = [];
 var orcAtualId = null;
 var mostrarComIva = true;
 
+function carregarClientes(){
+  db.collection('mrc_dados').doc('m3_cli').get().then(function(doc){
+    var clis = doc.exists ? (JSON.parse(doc.data().value||'[]')||[]) : [];
+    var sel = document.getElementById('orc-cliente-sel');
+    if(!sel) return;
+    clis.sort(function(a,b){return (a.nome||'').localeCompare(b.nome||'');});
+    sel.innerHTML = '<option value="">— Selecionar cliente —</option>'
+      + clis.map(function(c){
+          return '<option value="'+c.id+'" data-nome="'+c.nome+'" data-tel="'+(c.tel||'')+'" data-morada="'+(c.morada||'')+'">'+c.nome+(c.morada?' — '+c.morada.slice(0,30):'')+'</option>';
+        }).join('');
+  }).catch(function(){});
+}
+
+function selecionarCliente(sel){
+  var opt = sel.options[sel.selectedIndex];
+  document.getElementById('orc-cliente').value = opt.dataset.nome||'';
+  document.getElementById('orc-cliente-id').value = sel.value||'';
+  // Preencher contacto e morada se estiverem vazios
+  var tel = document.getElementById('orc-contacto');
+  var mor = document.getElementById('orc-morada');
+  if(tel && !tel.value && opt.dataset.tel) tel.value = opt.dataset.tel;
+  if(mor && !mor.value && opt.dataset.morada) mor.value = opt.dataset.morada;
+}
+
 function setIva(comIva){
   mostrarComIva = comIva;
   var bc = document.getElementById('btn-iva-c');
@@ -827,7 +857,7 @@ function editarOrcamento(id) {
   orcAtualId = o.id;
   document.getElementById('orc-num').value = o.num||'';
   document.getElementById('orc-data').value = o.data||'';
-  document.getElementById('orc-cliente').value = o.cliente||'';
+  document.getElementById('orc-cliente').value = o.cliente||''; var cSel=document.getElementById('orc-cliente-sel'); if(cSel && o.cli_id){cSel.value=o.cli_id;} else if(cSel){Array.from(cSel.options).forEach(function(op){if(op.dataset.nome===o.cliente)cSel.value=op.value;});}
   document.getElementById('orc-contacto').value = o.contacto||'';
   document.getElementById('orc-morada').value = o.morada||'';
   document.getElementById('orc-notas').value = o.notas||'';
@@ -1201,7 +1231,7 @@ function carregarPrecos() {
 // Carregar preços guardados ao iniciar
 document.addEventListener('DOMContentLoaded', function() {
   firebase.auth().onAuthStateChanged(function(user) {
-    if(user) carregarPrecos();
+    if(user) { carregarPrecos(); carregarClientes(); }
   });
 });
 
