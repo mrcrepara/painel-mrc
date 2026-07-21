@@ -356,6 +356,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
     <div class="mfoot">
       <button class="btn btn-ghost" onclick="closeM('mWhats')">Fechar</button>
       <button class="btn btn-green" onclick="copiarTexto()">📋 Copiar</button>
+      <button class="btn btn-blue" onclick="enviarWhatsapp()">📲 Enviar</button>
     </div>
   </div>
 </div>
@@ -776,6 +777,14 @@ function gerarTextoWhatsapp(){
 }
 
 function copiarTexto(){ var ta=document.getElementById('whats-texto'); ta.select(); document.execCommand('copy'); toast('✅ Copiado!','g'); }
+
+function enviarWhatsapp(){
+  var txt=document.getElementById('whats-texto').value;
+  var contacto=(document.getElementById('orc-contacto').value||'').replace(/[^0-9+]/g,'');
+  if(contacto && !contacto.startsWith('+') && contacto.length<=9) contacto='+351'+contacto;
+  var url='https://wa.me/'+(contacto?contacto.replace('+',''):'')+'?text='+encodeURIComponent(txt);
+  window.open(url,'_blank');
+}
 
 // ─── PDF ──────────────────────────────────────────────────────────────────────
 function gerarPDF(){
