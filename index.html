@@ -4515,6 +4515,9 @@ window.fillForm = function(id, d) {
       const dk = document.getElementById('fat_desl_km'); if (dk) dk.value = d.desl_km || 0;
       const dp = document.getElementById('fat_desl_preco'); if (dp) dp.value = d.desl_preco || 0.40;
       const dd = document.getElementById('fat_desl_dest'); if (dd) dd.value = d.desl_dest || '';
+      const dtm = document.getElementById('fat_desl_total_manual'); if (dtm) dtm.value = d.desl_total || 0;
+    } else {
+      const dtm = document.getElementById('fat_desl_total_manual'); if (dtm) dtm.value = 0;
     }
     const dpct = document.getElementById('fat_desc_pct'); if (dpct) dpct.value = d.desc_pct || 0;
     calcFatModal();
