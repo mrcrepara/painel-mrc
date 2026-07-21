@@ -656,6 +656,7 @@ function guardarOrcamento(){
   var linhas=getLinhas();
   if(!linhas.length){ toast('Adiciona pelo menos um componente','a'); return; }
   var tot=linhas.reduce(function(s,l){ return s+(l.semPreco?0:l.total); },0);
+  var extrasSel=Array.from(document.querySelectorAll('#extras-list input:checked')).map(function(cb){ return cb.dataset.n; });
   var orc={
     id:orcAtualId||Date.now().toString(),
     num:num, data:document.getElementById('orc-data').value,
@@ -664,6 +665,7 @@ function guardarOrcamento(){
     validade:document.getElementById('orc-validade').value,
     marca:marca, state:JSON.parse(JSON.stringify(STATE)),
     linhas:linhas, totalSemIva:tot, totalComIva:tot*1.23,
+    extrasSel:extrasSel,
     estado:document.getElementById('orc-estado').value,
     os:document.getElementById('orc-os').value,
     notas:document.getElementById('orc-notas').value, ts:Date.now()
@@ -725,7 +727,13 @@ function editarOrcamento(id){
   document.getElementById('orc-estado').value=o.estado||'rascunho';
   marca=o.marca||'Hikvision';
   if(o.state) Object.assign(STATE,o.state);
-  renderMarcas(); renderAll(); renderExtras(); calc();
+  renderMarcas(); renderAll(); renderExtras();
+  if(o.extrasSel && o.extrasSel.length){
+    document.querySelectorAll('#extras-list input').forEach(function(cb){
+      if(o.extrasSel.indexOf(cb.dataset.n)>=0) cb.checked=true;
+    });
+  }
+  calc();
   toast('A editar '+o.num,'b');
 }
 
