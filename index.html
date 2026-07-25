@@ -3110,7 +3110,7 @@ function renderDash(){
   const custoHoras=osFilt.reduce((s,o)=>s+((o.horas||0)*(o.valor_hora||0)),0);
   const custoMatOS=osFilt.reduce((s,o)=>s+(o.custo_mat||0),0);
   const custoMat=custoMatRep+custoMatFat+custoMatOS;
-  const lucro=fatPaga-totDesp-custoMat-custoHoras;
+  const lucro=fatPaga-totDesp-custoMat;
   const margemPct=fatPaga>0?((lucro/fatPaga)*100).toFixed(1):0;
   const aberto=reps.filter(r=>r.est!=='Entregue').length;
   const low=mats.filter(m=>m.stock<=m.min).length;
