@@ -23,8 +23,17 @@
   });
   var db=firebase.firestore();
   var col='mrc_dados';
-  // Login anónimo automático (necessário p/ as regras de segurança do Firestore)
-  var _authReady=firebase.auth().signInAnonymously().catch(function(e){console.warn('FB auth:',e);});
+  // ── AUTENTICAÇÃO REAL (email + password) ──
+  // Substitui o login anónimo. window._authReady só resolve depois de um
+  // login real bem sucedido (ou de uma sessão já guardada no browser).
+  var _authResolve;
+  var _authReady = new Promise(function(res){ _authResolve = res; });
+  firebase.auth().onAuthStateChanged(function(user){
+    if(user){ _authResolve(user); if(typeof window._onAuthUser==='function') window._onAuthUser(user); }
+    else { if(typeof window._onAuthNone==='function') window._onAuthNone(); }
+  });
+  window._fbSignIn=function(email,pass){ return firebase.auth().signInWithEmailAndPassword(email,pass); };
+  window._fbSignOut=function(){ return firebase.auth().signOut(); };
 
   // Hardcoded key mapping (Firestore key -> localStorage key)
   var KEY_MAP={
@@ -74,7 +83,31 @@
     });
   };
 
-  // Realtime listener
+  // ── BACKUP AUTOMÁTICO (proteção contra perda de dados) ──
+  // Grava uma cópia completa dos dados numa coleção Firestore separada,
+  // de tempos a tempos (ver window._autoBackupCheck, chamado em INIT).
+  // Isto é independente da coleção 'mrc_dados' — mesmo que algo corrompa
+  // os dados "ao vivo", ficam sempre cópias datadas guardadas aqui.
+  window._fbAutoBackup=function(backupObj){
+    _authReady.then(function(){
+      var docId='auto_'+new Date().toISOString().slice(0,10);
+      db.collection('mrc_auto_backups').doc(docId).set({
+        value: JSON.stringify(backupObj),
+        ts: Date.now(),
+        data: new Date().toISOString()
+      }).then(function(){
+        console.log('[MRC] Backup automático guardado: '+docId);
+        // Limpeza: mantém só os 15 backups automáticos mais recentes
+        db.collection('mrc_auto_backups').orderBy('ts','desc').get().then(function(snap){
+          var docs=snap.docs;
+          if(docs.length>15){
+            docs.slice(15).forEach(function(d){ d.ref.delete().catch(function(){}); });
+          }
+        }).catch(function(){});
+      }).catch(function(e){console.warn('FB auto-backup:',e);});
+    });
+  };
+
   window._fbRestoring=false;
   window._fbStartRealtime=function(){
     _authReady.then(function(){
@@ -293,17 +326,10 @@ tbody td{padding:9px 12px;vertical-align:middle}
       <p style="font-size:12px;color:var(--muted)">Reparação de Equipamentos Elétricos</p>
     </div>
     <div class="lerr" id="lerr"></div>
-    <div class="lfg"><label>Utilizador</label><input id="luser" placeholder="admin" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <div class="lfg"><label>Password</label><input type="password" id="lpass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="lfg"><label>Email</label><input id="luser" type="email" placeholder="o-teu-email@exemplo.pt" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="lfg"><label>Password</label><input type="password" id="lpass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="lbtn" onclick="doLogin()">🔓 Entrar</button>
-    <div style="border-top:1px solid var(--border);padding-top:14px">
-      <p style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Acesso rápido</p>
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:9px;cursor:pointer" onclick="ql()">
-        <div style="width:30px;height:30px;border-radius:8px;background:rgba(37,99,235,.2);color:#60A5FA;display:flex;align-items:center;justify-content:center;font-weight:700">A</div>
-        <div><div style="font-size:13px;font-weight:600;color:#fff">Admin</div><div style="font-size:11px;color:var(--muted)">admin / admin123</div></div>
-      </div>
-      <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline" onclick="resetCreds()">Repor credenciais</div>
-    </div>
+    <p style="font-size:11px;color:var(--muted);text-align:center">Acesso protegido — só com a tua conta.</p>
   </div>
 </div>
 
@@ -2112,7 +2138,14 @@ function ensureAdmin(){
 }
 
 // SEED
-(function seed(){
+// ⚠️ IMPORTANTE: esta função só deve ser chamada DEPOIS de confirmarmos
+// que o Firestore está mesmo vazio (ver window._maybeSeed, chamada no
+// callback de window._fbLoad, em INIT, mais abaixo).
+// NUNCA chamar seed() diretamente no arranque da página — isso cria uma
+// condição de corrida: os dados de exemplo seriam gravados no Firestore
+// ANTES dos dados reais terem tido tempo de chegar da rede, sobrepondo-se
+// e destruindo dados reais (bug que já causou perdas de dados).
+function seed(){
   ensureAdmin();
   if(!ld('cli').length) sv('cli',[
     {id:uid(),tipo:'Empresa',nome:'Indústria ABC Lda',nif:'501234567',tel:'21 123 4567',email:'geral@abc.pt',morada:'Rua Industrial 5, Lisboa',obs:''},
@@ -2149,25 +2182,45 @@ function ensureAdmin(){
   ]);
   const def=ldO('def');
   sv('def',{nome:'MRC — Reparação de Equipamentos Elétricos',nif:'',morada:'',tel:'',email:'',iva:23,km:0.40,marg:30,...def});
-})();
+}
+
+// Só semeia dados de exemplo se, DEPOIS de carregado o Firestore, continuar
+// tudo genuinamente vazio (ou seja, é mesmo a primeira utilização do painel
+// nesta conta — não um caso de localStorage limpo por engano).
+window._maybeSeed=function(){
+  ensureAdmin();
+  var reallyEmpty = !ld('cli').length && !ld('fat').length && !ld('rep').length;
+  if(reallyEmpty){
+    console.warn('[MRC] Firestore e localStorage ambos vazios — a criar dados de exemplo (primeira utilização).');
+    seed();
+  } else {
+    console.log('[MRC] Dados existentes detetados — SEED ignorado (proteção contra perda de dados).');
+  }
+};
 
 // ══════════════════════════════════════════════════════════
 // AUTH
 // ══════════════════════════════════════════════════════════
 let CU=null;
 function doLogin(){
-  const u=(document.getElementById('luser').value||'').trim().toLowerCase();
+  const email=(document.getElementById('luser').value||'').trim();
   const p=document.getElementById('lpass').value||'';
   const err=document.getElementById('lerr');
+  const btn=document.querySelector('.lbtn');
   err.classList.remove('show');
-  if(!u||!p){err.textContent='Preencha utilizador e password.';err.classList.add('show');return}
-  ensureAdmin();
-  const found=ld('users').find(x=>x.user.toLowerCase()===u&&x.pass===p);
-  if(found){CU=found;enterApp(found);}
-  else{err.textContent='Utilizador ou password incorretos.';err.classList.add('show');}
+  if(!email||!p){err.textContent='Preencha email e password.';err.classList.add('show');return}
+  if(typeof window._fbSignIn!=='function'){err.textContent='Sistema de autenticação indisponível. Verifica a ligação à internet.';err.classList.add('show');return}
+  if(btn){btn.disabled=true;btn.textContent='A entrar...';}
+  window._fbSignIn(email,p).then(function(){
+    // window._onAuthUser (definido em INIT) trata da entrada na app
+  }).catch(function(e){
+    console.warn('Login falhou:',e);
+    err.textContent='Email ou password incorretos.';
+    err.classList.add('show');
+  }).finally(function(){
+    if(btn){btn.disabled=false;btn.textContent='🔓 Entrar';}
+  });
 }
-function ql(){document.getElementById('luser').value='admin';document.getElementById('lpass').value='admin123';doLogin()}
-function resetCreds(){localStorage.removeItem(K.users);ensureAdmin();document.getElementById('luser').value='admin';document.getElementById('lpass').value='admin123';alert('Credenciais repostas: admin / admin123')}
 function enterApp(u){
   document.getElementById('tbAv').textContent=u.nome[0];
   document.getElementById('tbName').textContent=u.nome;
@@ -2188,12 +2241,14 @@ function enterApp(u){
   renderAll();setDate();
 }
 function doLogout(){
+  if(typeof window._fbSignOut==='function'){ window._fbSignOut().catch(function(e){console.warn('Logout:',e);}); }
   CU=null;
   document.getElementById('app').classList.remove('on');
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('luser').value='';document.getElementById('lpass').value='';
   document.getElementById('lerr').classList.remove('show');closeU();
 }
+
 
 // ══════════════════════════════════════════════════════════
 // NAV
@@ -3833,34 +3888,64 @@ document.addEventListener('DOMContentLoaded',function(){
   setDate();
   var loginEl=document.getElementById('loginScreen');
   var appEl=document.getElementById('app');
-  if(loginEl)loginEl.style.display='none';
-  if(appEl)appEl.classList.add('on');
-  CU={id:'admin',nome:'Rui Veloso',perfil:'Administrador'};
-  var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
-  _s('tbAv','R');_s('tbName','Rui Veloso');_s('tbRole','Administrador');
-  _s('umName','Rui Veloso');_s('umRole','Administrador');
-  // Load from Firebase first, then render
-  if(typeof window._fbLoad==='function'){
-    window._fbLoad(function(){
-      try{fillCatSelects();}catch(e){}
-      try{fillCliSel();}catch(e){}
-      try{fillFatSel();}catch(e){}
-      try{renderAll();}catch(e){}
-      try{renderDef();}catch(e){}
-      try{verificarFaturasAtrasadas();}catch(e){}
-      try{gerarDespesasRecorrentes();}catch(e){}
-      if(typeof window._fbStartRealtime==='function') window._fbStartRealtime();
-    });
-  } else {
-    setTimeout(function(){
-      try{fillCatSelects();}catch(e){}
-      try{fillCliSel();}catch(e){}
-      try{fillFatSel();}catch(e){}
-      try{renderAll();}catch(e){}
-      try{renderDef();}catch(e){}
-    },50);
+  // Por defeito mostra o login — só entra depois de confirmarmos
+  // autenticação real (sessão guardada ou login submetido com sucesso).
+  if(loginEl) loginEl.style.display='flex';
+  if(appEl) appEl.classList.remove('on');
+
+  function startApp(){
+    CU={id:'admin',nome:'Rui Veloso',perfil:'Administrador'};
+    var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+    _s('tbAv','R');_s('tbName','Rui Veloso');_s('tbRole','Administrador');
+    _s('umName','Rui Veloso');_s('umRole','Administrador');
+    if(loginEl) loginEl.style.display='none';
+    if(appEl) appEl.classList.add('on');
+    // Load from Firebase first, then render
+    if(typeof window._fbLoad==='function'){
+      window._fbLoad(function(){
+        if(typeof window._maybeSeed==='function') window._maybeSeed();
+        try{fillCatSelects();}catch(e){}
+        try{fillCliSel();}catch(e){}
+        try{fillFatSel();}catch(e){}
+        try{renderAll();}catch(e){}
+        try{renderDef();}catch(e){}
+        try{verificarFaturasAtrasadas();}catch(e){}
+        try{gerarDespesasRecorrentes();}catch(e){}
+        if(typeof window._fbStartRealtime==='function') window._fbStartRealtime();
+        // Backup automático de segurança (só corre se já passaram 2 dias)
+        setTimeout(function(){ if(typeof window._autoBackupCheck==='function') window._autoBackupCheck(); }, 3000);
+      });
+    } else {
+      setTimeout(function(){
+        if(typeof window._maybeSeed==='function') window._maybeSeed();
+        try{fillCatSelects();}catch(e){}
+        try{fillCliSel();}catch(e){}
+        try{fillFatSel();}catch(e){}
+        try{renderAll();}catch(e){}
+        try{renderDef();}catch(e){}
+      },50);
+    }
   }
+
+  // Chamado (a partir do <head>) quando o Firebase confirma sessão ativa
+  window._onAuthUser=function(user){ startApp(); };
+  // Chamado quando não há sessão ativa — fica no ecrã de login
+  window._onAuthNone=function(){
+    if(loginEl) loginEl.style.display='flex';
+    if(appEl) appEl.classList.remove('on');
+  };
+
+  // Se, por algum motivo, o Firebase não carregar de todo (ex: bloqueado
+  // pela rede), entra em modo totalmente offline ao fim de 4 segundos,
+  // para o painel não ficar preso no ecrã de login sem alternativa.
+  setTimeout(function(){
+    if(typeof firebase==='undefined' || !firebase.auth){
+      console.warn('[MRC] Firebase indisponível — a arrancar em modo offline.');
+      startApp();
+    }
+  },4000);
 });;
+
 
 // ══════════════════════════════════════════════════════════
 // CATEGORIAS DE MATERIAIS (com sub-categorias)
@@ -6294,6 +6379,24 @@ function buildBackupData(){
   data.versao = '5.0';
   return data;
 }
+
+// ── VERIFICAÇÃO DE BACKUP AUTOMÁTICO ──
+// Corre uma vez por sessão (ver INIT). Se já passaram 2 dias (48h) desde o
+// último backup automático, cria um novo backup completo no Firestore,
+// silenciosamente, sem interromper o utilizador.
+var AUTO_BACKUP_INTERVAL_MS = 2*24*60*60*1000; // 2 dias
+window._autoBackupCheck=function(){
+  try{
+    var last=parseInt(localStorage.getItem('_last_auto_backup')||'0');
+    if(Date.now()-last < AUTO_BACKUP_INTERVAL_MS) return; // ainda não é preciso
+    if(typeof window._fbAutoBackup!=='function') return;
+    var data=buildBackupData();
+    // Só faz backup automático se houver mesmo dados (evita gravar backups vazios)
+    if(!data.cli || !data.cli.length) return;
+    window._fbAutoBackup(data);
+    localStorage.setItem('_last_auto_backup', String(Date.now()));
+  }catch(e){console.warn('[MRC] autoBackupCheck falhou:',e);}
+};
 
 
 
