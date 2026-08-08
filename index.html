@@ -29,8 +29,17 @@
   var _authResolve;
   var _authReady = new Promise(function(res){ _authResolve = res; });
   firebase.auth().onAuthStateChanged(function(user){
-    if(user){ _authResolve(user); if(typeof window._onAuthUser==='function') window._onAuthUser(user); }
-    else { if(typeof window._onAuthNone==='function') window._onAuthNone(); }
+    if(user && !user.isAnonymous){
+      // Login real (email/password) confirmado
+      _authResolve(user);
+      if(typeof window._onAuthUser==='function') window._onAuthUser(user);
+    } else if(user && user.isAnonymous){
+      // Sessão anónima antiga (de antes da correção de segurança) — termina-a
+      // para forçar sempre um login real a partir de agora.
+      firebase.auth().signOut().catch(function(){});
+    } else {
+      if(typeof window._onAuthNone==='function') window._onAuthNone();
+    }
   });
   window._fbSignIn=function(email,pass){ return firebase.auth().signInWithEmailAndPassword(email,pass); };
   window._fbSignOut=function(){ return firebase.auth().signOut(); };
