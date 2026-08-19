@@ -2329,6 +2329,7 @@ function clearForm(id){
     else el.value='';
   });
   if(id==='mFat'){
+    _fatOrcOrigem = null;
     setFatTipo('fatura');setFatIVA(true);
     document.getElementById('fat_data').value=td();
     document.getElementById('fat_venc').value=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
@@ -2392,6 +2393,7 @@ document.addEventListener('click',function(e){
   // ORÇAMENTOS
   else if(action==='edit-orc'){const o=ld('orc').find(x=>x.id===id);if(o)openM('mOrc',id,o)}
   else if(action==='del-orc'){askDel('orçamento',()=>{sv('orc',ld('orc').filter(x=>x.id!==id));renderOrc();toast('Orçamento apagado.','a')})}
+  else if(action==='conv-orc'){convertOrcToFat(id)}
   // CLIENTES
   else if(action==='edit-cli'){const c=ld('cli').find(x=>x.id===id);if(c)openM('mCli',id,c)}
   else if(action==='del-cli'){askDel('cliente',()=>{sv('cli',ld('cli').filter(x=>x.id!==id));renderCli();toast('Cliente apagado.','a')})}
@@ -2550,7 +2552,7 @@ function renderOrc(){
     const ivaR = o.iva_active===false ? 0 : (o.iva||23);
     const siva = ((o.mo||0)+(o.mat||0)+(o.desl_total||0))*(1-(o.desc_pct||0)/100);
     const tot = siva * (1 + ivaR/100);
-    html+='<tr><td><strong style="color:#fff">'+(o.num||'—')+'</strong></td><td style="color:var(--muted)">'+(o.data||'—')+'</td><td>'+(o.cli||'—')+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(o.desc||'—')+'</td><td style="color:var(--green);font-weight:600">'+eur(tot)+'</td><td>'+ebadge(o.est)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-orc" data-id="'+o.id+'">✏ Editar</button><button class="btn-xs" style="background:#8B5CF6" data-action="print-orc" data-id="'+o.id+'">🖨 Imprimir</button><button class="btn-xs" style="background:#25D366" data-action="wa-orc" data-id="'+o.id+'">📲 WhatsApp</button><button class="btn-xs" style="background:var(--red)" data-action="del-orc" data-id="'+o.id+'">🗑</button></td></tr>';
+    html+='<tr><td><strong style="color:#fff">'+(o.num||'—')+'</strong></td><td style="color:var(--muted)">'+(o.data||'—')+'</td><td>'+(o.cli||'—')+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(o.desc||'—')+'</td><td style="color:var(--green);font-weight:600">'+eur(tot)+'</td><td>'+ebadge(o.est)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-orc" data-id="'+o.id+'">✏ Editar</button><button class="btn-xs" style="background:var(--green)" data-action="conv-orc" data-id="'+o.id+'">➡ Fatura</button><button class="btn-xs" style="background:#8B5CF6" data-action="print-orc" data-id="'+o.id+'">🖨 Imprimir</button><button class="btn-xs" style="background:#25D366" data-action="wa-orc" data-id="'+o.id+'">📲 WhatsApp</button><button class="btn-xs" style="background:var(--red)" data-action="del-orc" data-id="'+o.id+'">🗑</button></td></tr>';
   });
   tb.innerHTML=html;
 }
@@ -4451,6 +4453,25 @@ function calcOrcModal() {
 
 // ── Updated saveFat to store lines + deslocação ────────────
 // (override previous saveFat)
+// ── Conversão de Orçamento em Fatura ──────────────────────
+let _fatOrcOrigem = null;
+function convertOrcToFat(orcId) {
+  const o = ld('orc').find(x => x.id === orcId);
+  if (!o) { toast('Orçamento não encontrado.', 'r'); return; }
+  const fatObj = {
+    cli_id: o.cli_id, cli: o.cli, desc: o.desc,
+    mo: o.mo || 0, mat: o.mat || 0, iva: o.iva || 23, iva_active: o.iva_active !== false, desc_pct: o.desc_pct || 0,
+    desl_on: o.desl_on || false, desl_km: o.desl_km || 0, desl_preco: o.desl_preco || 0.40, desl_dest: o.desl_dest || '', desl_total: o.desl_total || 0,
+    linhas: (o.linhas || []).map(l => ({ ...l })),
+    est: 'Pendente', data: td(), venc: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10),
+    rep: ''
+  };
+  _fatOrcOrigem = o.id;
+  goPage('faturas');
+  setTimeout(() => openM('mFat', null, fatObj), 200);
+  toast('Fatura pré-preenchida a partir do orçamento ' + (o.num || '') + '. Revê e grava.', 'a');
+}
+
 function saveFat() {
   const desc = gv('fat_desc').trim();
   if (!desc) { toast('Descrição é obrigatória!', 'r'); return; }
@@ -4510,6 +4531,7 @@ function saveFat() {
     tipo: document.getElementById('fat_tipo')?.value || 'fatura',
     val_pago, hist_pag
   };
+  if (!editId && _fatOrcOrigem) obj.orc_origem = _fatOrcOrigem;
 
   if (editId) {
     const i = fats.findIndex(f => f.id === editId);
@@ -4518,6 +4540,12 @@ function saveFat() {
     obj.id = uid(); obj.num = nextFatNum(); fats.push(obj);
   }
   sv('fat', fats);
+  if (!editId && obj.orc_origem) {
+    const orcs = ld('orc');
+    const oi = orcs.findIndex(o => o.id === obj.orc_origem);
+    if (oi >= 0) { orcs[oi].est = 'Aprovado'; sv('orc', orcs); if (typeof renderOrc === 'function') renderOrc(); }
+    _fatOrcOrigem = null;
+  }
   if(obj.est==='Paga'||obj.est==='Pago Parcialmente'){
     var recs=ld('rec'),fatId=editId||obj.id;
     var valRec=obj.est==='Paga'?fatTot(obj):(obj.val_pago||0);
