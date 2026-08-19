@@ -4617,6 +4617,7 @@ window.fillForm = function(id, d) {
   _origFillForm(id, d);
   if (id === 'mFat') {
     clearLinhasFat();
+    const _matsForEdit = ld('mat');
     (d.linhas || []).forEach(l => {
       addLinhaFat();
       const idx = _fatLinhas - 1;
@@ -4624,6 +4625,17 @@ window.fillForm = function(id, d) {
       const qEl = document.getElementById('fat_l' + idx + '_qty');  if (qEl) qEl.value = l.qty;
       const unEl = document.getElementById('fat_l' + idx + '_un'); if (unEl && l.un) unEl.value = l.un;
       const pEl = document.getElementById('fat_l' + idx + '_preco'); if (pEl) pEl.value = l.preco;
+      // Restaurar o custo guardado na linha; se a fatura for antiga e não tiver custo gravado,
+      // tentar encontrar o material no catálogo pela descrição para recuperar o custo.
+      const cEl = document.getElementById('fat_l' + idx + '_custo');
+      if (cEl) {
+        let custoRestaurado = l.custo;
+        if (!custoRestaurado) {
+          const matEncontrado = _matsForEdit.find(m => m.desc === l.desc || m.ref === l.desc);
+          custoRestaurado = matEncontrado ? (matEncontrado.custo || 0) : 0;
+        }
+        cEl.value = (parseFloat(custoRestaurado) || 0).toFixed(2);
+      }
     });
     if (d.desl_on) {
       const cb = document.getElementById('fat_desl_on'); if (cb) { cb.checked = true; toggleDeslFat(); }
