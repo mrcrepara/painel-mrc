@@ -5086,7 +5086,11 @@ function pdvFinalizar() {
 
 function printRecibo(venda) {
   const emp = ldO('def');
-  const w = window.open('', '_blank', 'width=420,height:600');
+  const w = window.open('', '_blank', 'width=420,height=600');
+  if (!w) {
+    toast('⚠ O navegador bloqueou a janela de impressão. Permite pop-ups para este site e tenta novamente.', 'r');
+    return;
+  }
   w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Recibo</title>' +
     '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:monospace;font-size:12px;max-width:320px;margin:0 auto;padding:20px}hr{border:1px dashed #ccc;margin:8px 0}.row{display:flex;justify-content:space-between;margin-bottom:4px}@media print{button{display:none}}</style>' +
     '</head><body>' +
