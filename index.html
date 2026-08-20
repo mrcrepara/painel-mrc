@@ -26,6 +26,10 @@
   // ── AUTENTICAÇÃO REAL (email + password) ──
   // Substitui o login anónimo. window._authReady só resolve depois de um
   // login real bem sucedido (ou de uma sessão já guardada no browser).
+  // Força persistência LOCAL explícita — garante que a sessão fica guardada
+  // no browser e é reconhecida ao navegar entre páginas do painel (index.html,
+  // os.html, eletricidade.html, etc), evitando pedidos de login repetidos.
+  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
   var _authResolve;
   var _authReady = new Promise(function(res){ _authResolve = res; });
   firebase.auth().onAuthStateChanged(function(user){
@@ -325,6 +329,14 @@ tbody td{padding:9px 12px;vertical-align:middle}
 </style>
 </head>
 <body>
+
+<!-- ECRÃ DE VERIFICAÇÃO DE SESSÃO (evita o "flash" do formulário de login) -->
+<div id="authCheckScreen" style="position:fixed;inset:0;background:#0A0E1A;z-index:10000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px">
+  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzFhMWEyZSIgcng9IjEwIi8+PHRleHQgeD0iNTAiIHk9IjU1IiBmb250LXNpemU9IjM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjM0I3QkY2Ij5NUkM8L3RleHQ+PC9zdmc+" alt="MRC" style="width:64px;height:64px;object-fit:contain;border-radius:12px">
+  <div style="width:28px;height:28px;border:3px solid rgba(59,123,246,.25);border-top-color:#3B7BF6;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+  <p style="font-size:12px;color:#8892a6">A verificar sessão…</p>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
 <!-- LOGIN -->
 <div id="loginScreen" style="display:none">
@@ -628,7 +640,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 
 <!-- DESPESAS -->
 <div class="page" id="page-despesas">
-  <div class="pg-hdr"><div><h1>💸 Despesas</h1></div><button class="btn btn-red" onclick="openM('mDesp')">+ Nova Despesa</button><button class="btn btn-ghost btn-sm" onclick="openM('mDespCat')">🏷 Categorias</button></div>
+  <div class="pg-hdr"><div><h1>💸 Despesas</h1></div><button class="btn btn-red" onclick="openM('mDesp')">+ Nova Despesa</button><button class="btn btn-ghost btn-sm" onclick="openM('mDespCat')">🏷 Categorias</button><button class="btn btn-ghost btn-sm" onclick="exportTableCSV('despTbl','despesas')">⬇ CSV</button></div>
   <div class="kpi-grid" id="despKpi"></div>
   <div class="card"><div class="card-body">
     <div class="sbar"><input id="despQ" placeholder="🔍 Pesquisar..." oninput="renderDesp()"><select id="despF" onchange="renderDesp()"><option value="">Todas as categorias</option><option>Matérias-Primas</option><option>Rendas</option><option>Serviços</option><option>Salários</option><option>Ferramentas</option><option>Outros</option></select></div>
@@ -3899,12 +3911,13 @@ document.addEventListener('DOMContentLoaded',function(){
   setDate();
   var loginEl=document.getElementById('loginScreen');
   var appEl=document.getElementById('app');
-  // Por defeito mostra o login — só entra depois de confirmarmos
-  // autenticação real (sessão guardada ou login submetido com sucesso).
-  if(loginEl) loginEl.style.display='flex';
+  var authCheckEl=document.getElementById('authCheckScreen');
+  // Fica no ecrã "A verificar sessão…" até o Firebase confirmar se há (ou não)
+  // uma sessão guardada — evita o formulário de login aparecer e desaparecer.
   if(appEl) appEl.classList.remove('on');
 
   function startApp(){
+    if(authCheckEl) authCheckEl.style.display='none';
     CU={id:'admin',nome:'Rui Veloso',perfil:'Administrador'};
     var _s=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
     _s('tbAv','R');_s('tbName','Rui Veloso');_s('tbRole','Administrador');
@@ -3942,6 +3955,7 @@ document.addEventListener('DOMContentLoaded',function(){
   window._onAuthUser=function(user){ startApp(); };
   // Chamado quando não há sessão ativa — fica no ecrã de login
   window._onAuthNone=function(){
+    if(authCheckEl) authCheckEl.style.display='none';
     if(loginEl) loginEl.style.display='flex';
     if(appEl) appEl.classList.remove('on');
   };
