@@ -2085,7 +2085,8 @@ setSaveState('saved');
 <div class="ov" id="mDesp" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mDespT">+ Nova Despesa</h3><button class="mclose" onclick="closeM('mDesp')">✕</button></div>
   <div class="mbody">
-    <div class="fg"><label>Categoria</label><select id="desp_cat"><option>Matérias-Primas</option><option>Rendas</option><option>Serviços</option><option>Salários</option><option>Ferramentas</option><option>Outros</option></select></div>
+    <div class="fg"><label>Categoria</label><select id="desp_cat" onchange="fillDespSubCat()"><option>Matérias-Primas</option><option>Rendas</option><option>Serviços</option><option>Salários</option><option>Ferramentas</option><option>Outros</option></select></div>
+    <div class="fg" id="desp_subcat_wrap" style="display:none"><label>Subcategoria</label><select id="desp_subcat"></select></div>
     <div class="fg"><label>Descrição *</label><input id="desp_desc"></div>
     <div class="fg"><label>Fornecedor</label><input id="desp_forn"></div>
     <div class="frow"><div class="fg"><label>Valor s/IVA (€)</label><input type="number" id="desp_val" value="0" step="0.01"></div><div class="fg"><label>IVA (€)</label><input type="number" id="desp_iva" value="0" step="0.01"></div></div>
@@ -2339,6 +2340,7 @@ function clearForm(id){
     else if(el.type==='date')el.value=td();
     else el.value='';
   });
+  if(id==='mDesp')window._despEditData=null;
   if(id==='mFat'){
     _fatOrcOrigem = null;
     setFatTipo('fatura');setFatIVA(true);
@@ -2378,6 +2380,7 @@ function fillForm(id,d){
   }
   if(id==='mOrc')calcOrcModal();
   if(id==='mDesl')calcDeslModal();
+  if(id==='mDesp')window._despEditData=d;
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2806,7 +2809,8 @@ function saveDesp(){
   const cliNome=cliSel&&cliId?cliSel.options[cliSel.selectedIndex].text:'';
   const recorrente=document.getElementById('desp_recorrente')?.checked||false;
   const diaMes=recorrente?parseInt(document.getElementById('desp_dia_mes')?.value||'1'):null;
-  const obj={cat:gv('desp_cat'),desc,forn:gv('desp_forn'),val:gf('desp_val'),iva:gf('desp_iva'),data:gv('desp_data')||td(),cli_id:cliId,cli:cliNome,recorrente,dia_mes:diaMes};
+  const subcat=gv('desp_subcat')||'';
+  const obj={cat:gv('desp_cat'),subcat,desc,forn:gv('desp_forn'),val:gf('desp_val'),iva:gf('desp_iva'),data:gv('desp_data')||td(),cli_id:cliId,cli:cliNome,recorrente,dia_mes:diaMes};
   if(editId){const i=desps.findIndex(d=>d.id===editId);if(i>=0)desps[i]={...desps[i],...obj}}
   else{obj.id=uid();desps.push(obj)}
   sv('desp',desps);
@@ -2856,6 +2860,9 @@ function gerarDespesasRecorrentes(){
   const recorrentes=desps.filter(d=>d.recorrente&&d.dia_mes);
   let novas=0;
   recorrentes.forEach(d=>{
+    // Se a despesa original já foi lançada este mês, esse mês já está coberto —
+    // não gerar uma cópia "(Auto)" duplicada logo a seguir a criá-la
+    if((d.data||'').startsWith(mesAtual)) return;
     // Verificar se já existe uma despesa gerada deste recorrente neste mês
     const jaExiste=desps.some(x=>x.origem_rec===d.id&&(x.data||'').startsWith(mesAtual));
     if(jaExiste) return;
@@ -2892,7 +2899,7 @@ function renderDesp(){
   const tb=g('despTbl');if(!tb)return;
   if(!desps.length){tb.innerHTML=eRow(8,'Sem despesas');return}
   let html='';
-  [...desps].reverse().forEach(d=>{html+='<tr><td style="color:var(--muted)">'+d.data+'</td><td><span class="badge bb">'+d.cat+'</span></td><td><strong>'+d.desc+'</strong></td><td style="color:var(--muted)">'+(d.forn||'—')+'</td><td>'+eur(d.val)+'</td><td>'+eur(d.iva)+'</td><td style="color:var(--red);font-weight:700">'+eur(d.val+d.iva)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-desp" data-id="'+d.id+'">✏ Editar</button><button class="btn-xs" style="background:var(--red)" data-action="del-desp" data-id="'+d.id+'">🗑</button></td></tr>'});
+  [...desps].reverse().forEach(d=>{html+='<tr><td style="color:var(--muted)">'+d.data+'</td><td><span class="badge bb">'+d.cat+(d.subcat?' / '+d.subcat:'')+'</span></td><td><strong>'+d.desc+'</strong></td><td style="color:var(--muted)">'+(d.forn||'—')+'</td><td>'+eur(d.val)+'</td><td>'+eur(d.iva)+'</td><td style="color:var(--red);font-weight:700">'+eur(d.val+d.iva)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-desp" data-id="'+d.id+'">✏ Editar</button><button class="btn-xs" style="background:var(--red)" data-action="del-desp" data-id="'+d.id+'">🗑</button></td></tr>'});
   tb.innerHTML=html;
 }
 
@@ -6303,6 +6310,15 @@ document.addEventListener('DOMContentLoaded',function(){
   if(mDesp)new MutationObserver(function(ms){ms.forEach(function(m){
     if(m.target.classList.contains('open')){
       fillDespCatSelect();
+      // Se estamos a editar uma despesa existente, restaurar a categoria/subcategoria
+      // corretas (a reconstrução da lista de categorias acima reseta o select)
+      if(window._despEditData){
+        var dcEl=document.getElementById('desp_cat');
+        if(dcEl && window._despEditData.cat) dcEl.value=window._despEditData.cat;
+        fillDespSubCat();
+        var dscEl=document.getElementById('desp_subcat');
+        if(dscEl && window._despEditData.subcat) dscEl.value=window._despEditData.subcat;
+      }
       // Preencher clientes
       var sel=document.getElementById('desp_cli');
       if(sel){
