@@ -559,7 +559,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
     </div>
   </div>
   <div class="card"><div class="card-body">
-    <div class="sbar"><input id="matQ" placeholder="🔍 Pesquisar..." oninput="renderMat()"><select id="matCat" onchange="renderMat()"></select></div>
+    <div class="sbar"><input id="matQ" placeholder="🔍 Pesquisar..." oninput="renderMat()"><select id="matCat" onchange="renderMat()"></select><select id="matSort" onchange="renderMat()"><option value="ref">Ordenar: Referência</option><option value="margem_asc">Ordenar: Margem (pior primeiro)</option><option value="margem_desc">Ordenar: Margem (melhor primeiro)</option></select></div>
     <div class="tbl-wrap"><table><thead><tr><th>Ref.</th><th>Descrição</th><th>Categoria</th><th>Un.</th><th>Custo</th><th>PVP</th><th>Margem</th><th>Stock</th><th>Mín.</th><th>Estado</th><th>Ações</th></tr></thead><tbody id="matTbl"></tbody></table></div>
   </div></div>
 </div>
@@ -2510,7 +2510,11 @@ function renderMat(){
   const q=gv('matQ').toLowerCase(),cat=gv('matCat');
   if(q)mats=mats.filter(m=>m.ref.toLowerCase().includes(q)||m.desc.toLowerCase().includes(q));
   if(cat)mats=mats.filter(m=>m.cat===cat);
+  const sortMode = document.getElementById('matSort')?.value || 'ref';
+  const margemPct = m => { const pvp=m.pvp||0,custo=m.custo||0; return pvp>0 ? ((pvp-custo)/pvp)*100 : Infinity; };
   mats=mats.slice().sort((a,b)=>{
+    if(sortMode==='margem_asc') return margemPct(a)-margemPct(b);
+    if(sortMode==='margem_desc') return margemPct(b)-margemPct(a);
     // Natural/sequential sort: numbers within strings compared numerically
     const na=a.ref||'', nb=b.ref||'';
     return na.localeCompare(nb,'pt',{numeric:true,sensitivity:'base'});
@@ -4014,9 +4018,14 @@ function fillCatSelects() {
   const mcs = document.getElementById('mat_cat');
   if (mcs) mcs.innerHTML = allOptsWithSubs;
 
-  // filter select (cats only + "all")
+  // filter select (cats only + "all") — preserva a categoria que já estava selecionada,
+  // para não resetar o filtro para "Todas" sempre que esta lista é reconstruída
   const fcs = document.getElementById('matCat');
-  if (fcs) fcs.innerHTML = '<option value="">Todas as categorias</option>' + allOptions;
+  if (fcs) {
+    const prevVal = fcs.value;
+    fcs.innerHTML = '<option value="">Todas as categorias</option>' + allOptions;
+    if (prevVal && [...fcs.options].some(o => o.value === prevVal)) fcs.value = prevVal;
+  }
 
   // sub-cat parent select in mCats modal
   const scp = document.getElementById('subCatParent');
