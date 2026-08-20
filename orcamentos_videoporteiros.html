@@ -398,6 +398,8 @@ tbody td{padding:9px 12px;vertical-align:middle}
         <input id="nk_nome" placeholder="Ex: Vimar Elvox K40930" style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);box-sizing:border-box"></div>
       <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Descrição</label>
         <input id="nk_desc" placeholder="Breve descrição do kit" style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);box-sizing:border-box"></div>
+      <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Custo (€) — o que pagas ao fornecedor</label>
+        <input id="nk_custo" type="number" step="0.01" min="0" value="0" style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);box-sizing:border-box"></div>
       <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Preço (€) *</label>
         <input id="nk_preco" type="number" step="0.01" min="0" value="0" style="width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);box-sizing:border-box"></div>
       <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">URL Imagem (opcional)</label>
@@ -465,30 +467,30 @@ const DB = {
       VIMAR: {
         aviso: null,
         kits: [
-          { ref:'K40930', nome:'Vimar Elvox K40930', desc:'Monitor 7" LCD TFT, mãos livres, teclado capacitivo, 2 fios', preco:189, bdg:'Básico 2 fios', bc:'bdg-eco', img:'https://www.vimar.com/content/dam/vimar/product-pages/K40930.jpg' },
-          { ref:'K42945', nome:'Vimar Elvox K42945 WiFi', desc:'Monitor 7" touch screen, WiFi, app smartphone, 2 fios', preco:265, bdg:'WiFi App', bc:'bdg-std', img:'https://www.vimar.com/content/dam/vimar/product-pages/K42945.jpg' },
-          { ref:'K42955', nome:'Vimar Elvox K42955 RFID+WiFi', desc:'Monitor 7" touch WiFi + leitor RFID, memória 100 imagens, ângulo 130°', preco:320, bdg:'WiFi + RFID', bc:'bdg-pro', img:'https://www.vimar.com/content/dam/vimar/product-pages/K42955.jpg' },
+          { ref:'K40930', nome:'Vimar Elvox K40930', desc:'Monitor 7" LCD TFT, mãos livres, teclado capacitivo, 2 fios', preco:189, custo:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'https://www.vimar.com/content/dam/vimar/product-pages/K40930.jpg' },
+          { ref:'K42945', nome:'Vimar Elvox K42945 WiFi', desc:'Monitor 7" touch screen, WiFi, app smartphone, 2 fios', preco:265, custo:0, bdg:'WiFi App', bc:'bdg-std', img:'https://www.vimar.com/content/dam/vimar/product-pages/K42945.jpg' },
+          { ref:'K42955', nome:'Vimar Elvox K42955 RFID+WiFi', desc:'Monitor 7" touch WiFi + leitor RFID, memória 100 imagens, ângulo 130°', preco:320, custo:0, bdg:'WiFi + RFID', bc:'bdg-pro', img:'https://www.vimar.com/content/dam/vimar/product-pages/K42955.jpg' },
         ]
       },
       FERMAX: {
         aviso: null,
         kits: [
-          { ref:'VEO-XS 9449', nome:'Fermax VEO-XS DUOX PLUS', desc:'Monitor 4.3" colorido, sistema 2 fios DUOX PLUS', preco:175, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
-          { ref:'CITY 9471', nome:'Fermax CITY VEO-XL WiFi', desc:'Monitor 7" touch WiFi, app Blue, câmara 120°, IP54', preco:289, bdg:'WiFi App', bc:'bdg-std', img:'' },
-          { ref:'CITY 9479', nome:'Fermax CITY VEO-XL WiFi RFID', desc:'Monitor 7" Full HD WiFi + RFID, gravação de chamadas', preco:349, bdg:'WiFi + RFID', bc:'bdg-pro', img:'' },
+          { ref:'VEO-XS 9449', nome:'Fermax VEO-XS DUOX PLUS', desc:'Monitor 4.3" colorido, sistema 2 fios DUOX PLUS', preco:175, custo:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
+          { ref:'CITY 9471', nome:'Fermax CITY VEO-XL WiFi', desc:'Monitor 7" touch WiFi, app Blue, câmara 120°, IP54', preco:289, custo:0, bdg:'WiFi App', bc:'bdg-std', img:'' },
+          { ref:'CITY 9479', nome:'Fermax CITY VEO-XL WiFi RFID', desc:'Monitor 7" Full HD WiFi + RFID, gravação de chamadas', preco:349, custo:0, bdg:'WiFi + RFID', bc:'bdg-pro', img:'' },
         ]
       },
       EZVIZ: {
         aviso: null,
         kits: [
-          { ref:'CS-HP7-R100', nome:'EZVIZ HP7', desc:'Monitor tátil 7" (17,78cm), câmara 2K, WiFi 2.4/5GHz, leitor RFID, visão noturna 5m, 2 fios', preco:219, bdg:'WiFi + RFID', bc:'bdg-std', img:'https://m.media-amazon.com/images/I/61nFTMiTXAL._AC_SL1500_.jpg' },
+          { ref:'CS-HP7-R100', nome:'EZVIZ HP7', desc:'Monitor tátil 7" (17,78cm), câmara 2K, WiFi 2.4/5GHz, leitor RFID, visão noturna 5m, 2 fios', preco:219, custo:0, bdg:'WiFi + RFID', bc:'bdg-std', img:'https://m.media-amazon.com/images/I/61nFTMiTXAL._AC_SL1500_.jpg' },
         ]
       },
       TMZON: {
         aviso: null,
         kits: [
-          { ref:'TMZON-4.3"', nome:'TMZON 4.3" Basic', desc:'Ecrã 4.3" colorido, câmara noturna, 2 fios', preco:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
-          { ref:'TMZON-7"W', nome:'TMZON 7" WiFi', desc:'Ecrã 7" touch, WiFi, app, detecção de movimento', preco:0, bdg:'WiFi App', bc:'bdg-std', img:'' },
+          { ref:'TMZON-4.3"', nome:'TMZON 4.3" Basic', desc:'Ecrã 4.3" colorido, câmara noturna, 2 fios', preco:0, custo:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
+          { ref:'TMZON-7"W', nome:'TMZON 7" WiFi', desc:'Ecrã 7" touch, WiFi, app, detecção de movimento', preco:0, custo:0, bdg:'WiFi App', bc:'bdg-std', img:'' },
         ]
       },
     }
@@ -499,29 +501,29 @@ const DB = {
       VIMAR: {
         aviso: null,
         kits: [
-          { ref:'K40931', nome:'Vimar Elvox K40931', desc:'Botoneira alumínio 2 botões + 2× monitor 7" LCD TFT capacitivo, 2 fios', preco:349, bdg:'Básico 2 fios', bc:'bdg-eco', img:'https://www.vimar.com/content/dam/vimar/product-pages/K40931.jpg' },
-          { ref:'K42956', nome:'Vimar Elvox K42956 WiFi', desc:'Botoneira 2 botões + 2× monitor 7" touch WiFi, app smartphone', preco:520, bdg:'WiFi App', bc:'bdg-std', img:'https://www.vimar.com/content/dam/vimar/product-pages/K42956.jpg' },
-          { ref:'K42956+RFID', nome:'Vimar Elvox K42956 WiFi+RFID', desc:'Botoneira 2 botões RFID + 2× monitor 7" touch WiFi, memória chamadas', preco:620, bdg:'WiFi + RFID', bc:'bdg-pro', img:'' },
+          { ref:'K40931', nome:'Vimar Elvox K40931', desc:'Botoneira alumínio 2 botões + 2× monitor 7" LCD TFT capacitivo, 2 fios', preco:349, custo:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'https://www.vimar.com/content/dam/vimar/product-pages/K40931.jpg' },
+          { ref:'K42956', nome:'Vimar Elvox K42956 WiFi', desc:'Botoneira 2 botões + 2× monitor 7" touch WiFi, app smartphone', preco:520, custo:0, bdg:'WiFi App', bc:'bdg-std', img:'https://www.vimar.com/content/dam/vimar/product-pages/K42956.jpg' },
+          { ref:'K42956+RFID', nome:'Vimar Elvox K42956 WiFi+RFID', desc:'Botoneira 2 botões RFID + 2× monitor 7" touch WiFi, memória chamadas', preco:620, custo:0, bdg:'WiFi + RFID', bc:'bdg-pro', img:'' },
         ]
       },
       FERMAX: {
         aviso: null,
         kits: [
-          { ref:'VEO-XS Bif.', nome:'Fermax VEO-XS Bifamiliar', desc:'Botoneira 2 botões + 2× monitor 4.3" DUOX PLUS, 2 fios', preco:320, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
-          { ref:'CITY Bif. WiFi', nome:'Fermax CITY Bifamiliar WiFi', desc:'Botoneira 2 botões + 2× monitor 7" WiFi app Blue, DUOX PLUS', preco:549, bdg:'WiFi App', bc:'bdg-std', img:'' },
+          { ref:'VEO-XS Bif.', nome:'Fermax VEO-XS Bifamiliar', desc:'Botoneira 2 botões + 2× monitor 4.3" DUOX PLUS, 2 fios', preco:320, custo:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
+          { ref:'CITY Bif. WiFi', nome:'Fermax CITY Bifamiliar WiFi', desc:'Botoneira 2 botões + 2× monitor 7" WiFi app Blue, DUOX PLUS', preco:549, custo:0, bdg:'WiFi App', bc:'bdg-std', img:'' },
         ]
       },
       EZVIZ: {
         aviso: '⚠️ O EZVIZ HP7 não suporta instalação bifamiliar (duas habitações independentes). A alternativa é instalar 2 kits separados — cada habitação fica com a sua botoneira e monitor próprios.',
         kits: [
-          { ref:'2× CS-HP7-R100', nome:'2× EZVIZ HP7 (kits independentes)', desc:'Cada habitação com a sua botoneira exterior e monitor 7" WiFi — solução independente', preco:438, bdg:'2 kits independentes', bc:'bdg-std', img:'https://m.media-amazon.com/images/I/61nFTMiTXAL._AC_SL1500_.jpg' },
+          { ref:'2× CS-HP7-R100', nome:'2× EZVIZ HP7 (kits independentes)', desc:'Cada habitação com a sua botoneira exterior e monitor 7" WiFi — solução independente', preco:438, custo:0, bdg:'2 kits independentes', bc:'bdg-std', img:'https://m.media-amazon.com/images/I/61nFTMiTXAL._AC_SL1500_.jpg' },
         ]
       },
       TMZON: {
         aviso: null,
         kits: [
-          { ref:'TMZON-BIF2', nome:'TMZON Bifamiliar 7"', desc:'Botoneira 2 botões + 2× monitor 7" touch, 2 fios', preco:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
-          { ref:'TMZON-BIF2W', nome:'TMZON Bifamiliar 7" WiFi', desc:'Botoneira 2 botões + 2× monitor 7" WiFi, app', preco:0, bdg:'WiFi App', bc:'bdg-std', img:'' },
+          { ref:'TMZON-BIF2', nome:'TMZON Bifamiliar 7"', desc:'Botoneira 2 botões + 2× monitor 7" touch, 2 fios', preco:0, custo:0, bdg:'Básico 2 fios', bc:'bdg-eco', img:'' },
+          { ref:'TMZON-BIF2W', nome:'TMZON Bifamiliar 7" WiFi', desc:'Botoneira 2 botões + 2× monitor 7" WiFi, app', preco:0, custo:0, bdg:'WiFi App', bc:'bdg-std', img:'' },
         ]
       },
     }
@@ -1084,25 +1086,36 @@ function renderPrecosTabela() {
     + '<th style="text-align:left;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Tipo</th>'
     + '<th style="text-align:left;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Marca</th>'
     + '<th style="text-align:left;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Ref / Nome</th>'
-    + '<th style="text-align:right;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Preço €</th>'
+    + '<th style="text-align:right;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Custo €</th>'
+    + '<th style="text-align:right;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Preço Venda €</th>'
+    + '<th style="text-align:right;padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Margem</th>'
     + '</tr></thead><tbody>';
 
   Object.keys(DB).forEach(function(tp) {
     Object.keys(DB[tp].marcas).forEach(function(mk) {
       DB[tp].marcas[mk].kits.forEach(function(k) {
+        var mid = 'mg_'+tp.replace(/\s/g,'')+'_'+mk.replace(/\s/g,'')+'_'+k.ref.replace(/[^a-zA-Z0-9]/g,'');
         html += '<tr style="border-bottom:1px solid rgba(37,45,61,.4)">'
           + '<td style="padding:7px 10px;color:var(--muted);font-size:12px">' + tp + '</td>'
           + '<td style="padding:7px 10px;font-size:12px;font-weight:600">' + mk + '</td>'
           + '<td style="padding:7px 10px;font-size:12px">' + k.nome + '<br><span style="font-size:10px;color:var(--muted);font-family:monospace">' + k.ref + '</span></td>'
           + '<td style="padding:7px 10px;text-align:right">'
+          + '<input type="number" step="0.01" min="0" data-tipo="' + tp + '" data-marca="' + mk + '" data-ref="' + k.ref + '" data-mid="' + mid + '" '
+          + 'value="' + (k.custo||0) + '" '
+          + 'style="width:80px;padding:5px 8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:Inter,sans-serif;text-align:right" '
+          + 'class="custo-kit-input" oninput="atualizarMargemLinhaVP(this)">'
+          + '</td>'
+          + '<td style="padding:7px 10px;text-align:right">'
           + '<div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">'
-          + '<input type="number" step="0.01" min="0" data-tipo="' + tp + '" data-marca="' + mk + '" data-ref="' + k.ref + '" '
+          + '<input type="number" step="0.01" min="0" data-tipo="' + tp + '" data-marca="' + mk + '" data-ref="' + k.ref + '" data-mid="' + mid + '" '
           + 'value="' + k.preco + '" '
           + 'style="width:90px;padding:5px 8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:Inter,sans-serif;text-align:right" '
-          + 'class="preco-kit-input">'
+          + 'class="preco-kit-input" oninput="atualizarMargemLinhaVP(this)">'
           + '<button onclick="apagarKit(\'' + tp + '\',\'' + mk + '\',\'' + k.ref + '\')" style="padding:4px 8px;background:#ef4444;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:12px">🗑</button>'
           + '</div>'
-          + '</td></tr>';
+          + '</td>'
+          + '<td style="padding:7px 10px;text-align:right;font-size:12px;font-weight:700" id="' + mid + '">' + margemLabelVP(k.custo||0, k.preco) + '</td>'
+          + '</tr>';
       });
     });
   });
@@ -1131,6 +1144,28 @@ function renderPrecosTabela() {
   document.getElementById('precos-extras-tabela').innerHTML = htmlE;
 }
 
+// Calcula e formata a margem (venda - custo) / venda, com cor consoante o risco
+function margemLabelVP(custo, preco){
+  if(!preco || preco<=0) return '<span style="color:var(--muted)">—</span>';
+  var lucro = preco - custo;
+  var pct = (lucro/preco)*100;
+  var cor = pct>=30 ? 'var(--green)' : (pct>=15 ? 'var(--amber)' : 'var(--red)');
+  var aviso = custo>0 && lucro<0 ? ' ⚠️ Prejuízo!' : '';
+  return '<span style="color:'+cor+'">'+pct.toFixed(0)+'%'+aviso+'</span>';
+}
+
+// Atualiza a célula de margem da linha em tempo real, ao editar custo ou preço
+function atualizarMargemLinhaVP(inputEl){
+  var mid=inputEl.dataset.mid;
+  var row=inputEl.closest('tr');
+  var custoInp=row.querySelector('.custo-kit-input');
+  var precoInp=row.querySelector('.preco-kit-input');
+  var custo=parseFloat(custoInp.value)||0;
+  var preco=parseFloat(precoInp.value)||0;
+  var cell=document.getElementById(mid);
+  if(cell) cell.innerHTML=margemLabelVP(custo,preco);
+}
+
 function guardarPrecos() {
   // Ler inputs dos kits
   document.querySelectorAll('.preco-kit-input').forEach(function(inp) {
@@ -1140,6 +1175,15 @@ function guardarPrecos() {
     var val = parseFloat(inp.value) || 0;
     DB[tp].marcas[mk].kits.forEach(function(k) {
       if(k.ref === ref) k.preco = val;
+    });
+  });
+  document.querySelectorAll('.custo-kit-input').forEach(function(inp) {
+    var tp = inp.dataset.tipo;
+    var mk = inp.dataset.marca;
+    var ref = inp.dataset.ref;
+    var val = parseFloat(inp.value) || 0;
+    DB[tp].marcas[mk].kits.forEach(function(k) {
+      if(k.ref === ref) k.custo = val;
     });
   });
 
@@ -1160,7 +1204,7 @@ function guardarPrecos() {
       var kitsCustom = DB[tp].marcas[mk].kits.filter(function(k){ return k._custom; });
       if(kitsCustom.length) precosGuardar.kitsExtra[tp][mk] = kitsCustom;
       DB[tp].marcas[mk].kits.forEach(function(k) {
-        precosGuardar.kits[tp][mk][k.ref] = k.preco;
+        precosGuardar.kits[tp][mk][k.ref] = {preco:k.preco, custo:k.custo||0};
       });
     });
   });
@@ -1188,7 +1232,11 @@ function carregarPrecos() {
           Object.keys(p.kits[tp]).forEach(function(mk) {
             if(!DB[tp].marcas[mk]) return;
             DB[tp].marcas[mk].kits.forEach(function(k) {
-              if(p.kits[tp][mk][k.ref] !== undefined) k.preco = p.kits[tp][mk][k.ref];
+              var saved = p.kits[tp][mk][k.ref];
+              if(saved === undefined) return;
+              // Compatibilidade: formato antigo guardava só o número do preço; o novo guarda {preco,custo}
+              if(typeof saved === 'number'){ k.preco = saved; }
+              else { if(saved.preco!==undefined) k.preco = saved.preco; if(saved.custo!==undefined) k.custo = saved.custo; }
             });
           });
         });
@@ -1251,6 +1299,7 @@ function abrirNovoKit() {
   document.getElementById('nk_nome').value = '';
   document.getElementById('nk_desc').value = '';
   document.getElementById('nk_preco').value = '0';
+  document.getElementById('nk_custo').value = '0';
   document.getElementById('nk_img').value = '';
   document.getElementById('mNovoKit').style.display = 'flex';
 }
@@ -1262,6 +1311,7 @@ function guardarNovoKit() {
   var nome = document.getElementById('nk_nome').value.trim();
   var desc = document.getElementById('nk_desc').value.trim();
   var preco = parseFloat(document.getElementById('nk_preco').value)||0;
+  var custo = parseFloat(document.getElementById('nk_custo').value)||0;
   var img = document.getElementById('nk_img').value.trim();
   if(!marca||!ref||!nome){alert('Preenche Marca, Referência e Nome.');return;}
   if(!DB[tipo]) DB[tipo] = {desc:'',marcas:{}};
@@ -1269,7 +1319,7 @@ function guardarNovoKit() {
   // Verificar se ref já existe
   var existe = DB[tipo].marcas[marca].kits.find(function(k){return k.ref===ref;});
   if(existe){alert('Já existe um kit com esta referência para esta marca/tipo.');return;}
-  DB[tipo].marcas[marca].kits.push({ref:ref,nome:nome,desc:desc,preco:preco,bdg:'',bc:'bdg-eco',img:img,_custom:true});
+  DB[tipo].marcas[marca].kits.push({ref:ref,nome:nome,desc:desc,preco:preco,custo:custo,bdg:'',bc:'bdg-eco',img:img,_custom:true});
   guardarPrecos();
   fecharNovoKit();
   renderPrecosTabela();
