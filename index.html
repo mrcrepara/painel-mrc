@@ -560,7 +560,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
   </div>
   <div class="card"><div class="card-body">
     <div class="sbar"><input id="matQ" placeholder="🔍 Pesquisar..." oninput="renderMat()"><select id="matCat" onchange="renderMat()"></select></div>
-    <div class="tbl-wrap"><table><thead><tr><th>Ref.</th><th>Descrição</th><th>Categoria</th><th>Un.</th><th>Custo</th><th>PVP</th><th>Stock</th><th>Mín.</th><th>Estado</th><th>Ações</th></tr></thead><tbody id="matTbl"></tbody></table></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Ref.</th><th>Descrição</th><th>Categoria</th><th>Un.</th><th>Custo</th><th>PVP</th><th>Margem</th><th>Stock</th><th>Mín.</th><th>Estado</th><th>Ações</th></tr></thead><tbody id="matTbl"></tbody></table></div>
   </div></div>
 </div>
 
@@ -2516,10 +2516,19 @@ function renderMat(){
     return na.localeCompare(nb,'pt',{numeric:true,sensitivity:'base'});
   });
   const tb=g('matTbl');if(!tb)return;
-  if(!mats.length){tb.innerHTML=eRow(10,'Nenhum material encontrado');return}
+  if(!mats.length){tb.innerHTML=eRow(11,'Nenhum material encontrado');return}
   let html='';
-  mats.forEach(m=>{html+='<tr><td><strong style="color:#fff">'+m.ref+'</strong></td><td>'+m.desc+'</td><td><span class="badge bb">'+m.cat+'</span></td><td style="color:var(--muted)">'+m.un+'</td><td style="color:var(--muted)">'+eur(m.custo)+'</td><td style="color:var(--green);font-weight:600">'+eur(m.pvp)+'</td><td style="font-weight:700;color:'+(m.stock<=m.min?'var(--amber)':'#fff')+'">'+m.stock+'</td><td style="color:var(--muted)">'+m.min+'</td><td>'+sbadge(m)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-mat" data-id="'+m.id+'">✏</button><button class="btn-xs" style="background:var(--red)" data-action="del-mat" data-id="'+m.id+'">🗑</button></td></tr>'});
+  mats.forEach(m=>{html+='<tr><td><strong style="color:#fff">'+m.ref+'</strong></td><td>'+m.desc+'</td><td><span class="badge bb">'+m.cat+'</span></td><td style="color:var(--muted)">'+m.un+'</td><td style="color:var(--muted)">'+eur(m.custo)+'</td><td style="color:var(--green);font-weight:600">'+eur(m.pvp)+'</td><td style="font-weight:700">'+margemMatLabel(m.custo,m.pvp)+'</td><td style="font-weight:700;color:'+(m.stock<=m.min?'var(--amber)':'#fff')+'">'+m.stock+'</td><td style="color:var(--muted)">'+m.min+'</td><td>'+sbadge(m)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-mat" data-id="'+m.id+'">✏</button><button class="btn-xs" style="background:var(--red)" data-action="del-mat" data-id="'+m.id+'">🗑</button></td></tr>'});
   tb.innerHTML=html;
+}
+// Calcula e formata a margem de um material (PVP vs Custo), com cor consoante o risco
+function margemMatLabel(custo, pvp){
+  custo=custo||0; pvp=pvp||0;
+  if(pvp<=0) return '<span style="color:var(--muted)">—</span>';
+  const lucro=pvp-custo, pct=(lucro/pvp)*100;
+  const cor = pct>=30 ? 'var(--green)' : (pct>=15 ? 'var(--amber)' : 'var(--red)');
+  const aviso = custo>0 && lucro<0 ? ' ⚠️' : '';
+  return '<span style="color:'+cor+'">'+pct.toFixed(0)+'%'+aviso+'</span>';
 }
 
 // ══════════════════════════════════════════════════════════
