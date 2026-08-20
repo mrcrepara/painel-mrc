@@ -2099,7 +2099,7 @@ setSaveState('saved');
       </label>
       <div id="desp_recorrente_dia" style="display:none;margin-top:8px">
         <label style="font-size:12px;color:var(--muted)">Dia do mês em que é gerada</label>
-        <input type="number" id="desp_dia_mes" min="1" max="28" value="1" style="width:80px;margin-top:4px">
+        <input type="number" id="desp_dia_mes" min="1" max="28" value="1" style="width:80px;margin-top:4px" oninput="ajustarDataDespRecorrente()">
       </div>
     </div></div>
     <div id="desp_fat_box" style="display:none;padding:10px 12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:8px;margin-top:4px">
@@ -2850,6 +2850,23 @@ function toggleDespRecorrente(){
   const cb=document.getElementById('desp_recorrente');
   const div=document.getElementById('desp_recorrente_dia');
   if(div) div.style.display=cb?.checked?'block':'none';
+  if(cb?.checked) ajustarDataDespRecorrente();
+}
+
+// Ajusta o campo de Data para o dia do mês escolhido (deste mês, ou do mês
+// seguinte se esse dia já tiver passado), para a despesa recorrente não ficar
+// registada com a data de hoje por engano.
+function ajustarDataDespRecorrente(){
+  const cb=document.getElementById('desp_recorrente');
+  if(!cb?.checked) return;
+  const diaEl=document.getElementById('desp_dia_mes');
+  const dataEl=document.getElementById('desp_data');
+  if(!diaEl||!dataEl) return;
+  const dia=Math.min(28,Math.max(1,parseInt(diaEl.value)||1));
+  const hoje=new Date();
+  let alvo=new Date(hoje.getFullYear(),hoje.getMonth(),dia);
+  if(alvo<hoje && hoje.getDate()>dia) alvo=new Date(hoje.getFullYear(),hoje.getMonth()+1,dia);
+  dataEl.value=alvo.toISOString().slice(0,10);
 }
 
 function gerarDespesasRecorrentes(){
