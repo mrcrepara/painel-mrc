@@ -175,11 +175,28 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 .btn-reset{background:var(--border);color:var(--sub);}
 .btn-expand{background:var(--surface);color:var(--text);border:1px solid var(--border);}
 .btn-newjob{background:#1e3a5f;color:#60a5fa;border:1px solid #1d4ed8;}
+.btn-hist{background:#374151;color:#F5C518;border:1px solid #4B5563;}
 .btn:hover{opacity:.82;}
+.hist-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;padding:20px 14px;overflow-y:auto;}
+.hist-overlay.open{display:block;}
+.hist-modal{max-width:640px;margin:30px auto;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.hist-modal-header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);}
+.hist-modal-title{flex:1;font-weight:700;font-size:.95rem;}
+.hist-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted);line-height:1;}
+.hist-close:hover{color:var(--red);}
+.hist-list{padding:8px;max-height:70vh;overflow-y:auto;}
+.hist-item{display:flex;align-items:center;gap:10px;padding:11px 10px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.hist-item:hover{background:var(--surface2);}
+.hist-item:last-child{border-bottom:none;}
+.hist-info{flex:1;min-width:0;}
+.hist-cliente{font-weight:600;font-size:.85rem;}
+.hist-meta{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hist-pct{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;color:var(--yellow);flex-shrink:0;}
+.hist-empty{padding:24px;text-align:center;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.78rem;}
 @media print{
   body{background:#fff!important;color:#111;padding:12px;}
-  .tab-bar-wrap,.room-bar,.actions,.sig-actions,.item-note-btn,.btn-add-panel,.btn-del-panel,.btn-add-room,.btn-del-room,.global-prog,.save-indicator,.header-sub{display:none!important;}
-  .panel{display:block!important;}.room-panel{display:block!important;}
+  .tab-bar-wrap,.room-bar,.actions,.sig-actions,.item-note-btn,.btn-add-panel,.btn-del-panel,.btn-add-room,.btn-del-room,.global-prog,.save-indicator,.header-sub,.hist-overlay{display:none!important;}
+  .panel{display:none!important;}.panel.active{display:block!important;}.room-panel{display:block!important;}
   .section{border:1px solid #ccc;break-inside:avoid;background:#fff!important;}
   .section-body{display:block!important;}
   .section-header{background:#f5f5f5!important;}
@@ -275,8 +292,21 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 <div class="actions">
   <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMIR / PDF</button>
   <button class="btn btn-newjob" onclick="novaVisita()">🆕 Nova Visita</button>
+  <button class="btn btn-hist" onclick="openHistorico()">📂 Histórico</button>
   <button class="btn btn-expand" id="btnExpand" onclick="toggleAllSections()">EXPANDIR TUDO</button>
   <button class="btn btn-reset" onclick="resetAll()">↺ REINICIAR TUDO</button>
+</div>
+
+<div class="hist-overlay" id="histOverlay">
+  <div class="hist-modal">
+    <div class="hist-modal-header">
+      <div class="hist-modal-title">📂 Histórico de Visitas</div>
+      <button class="hist-close" onclick="closeHistorico()">✕</button>
+    </div>
+    <div class="hist-list" id="histList">
+      <div class="hist-empty">A carregar...</div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -353,6 +383,7 @@ const SECTIONS = [
 //  STATE
 // ═══════════════════════════════════════
 const LS_KEY = 'mrc_checklist_v2';
+const HIST_LS_KEY = 'mrc_checklist_v2_hist';
 let panels = [];
 let activePanelId = null;
 let activeRoomIds = {};
@@ -363,33 +394,39 @@ let allExpanded = false;
 let panelCounter = 0;
 let roomCounter  = 0;
 let saveTimer    = null;
+let futurasState = {}; // "pId-rId" -> [{tag, text}]
+let _histCache = [];
 
 // ═══════════════════════════════════════
 //  PERSISTENCE
 // ═══════════════════════════════════════
+function buildSnapshot(){
+  collectDOMInputs();
+  return {
+    panels, activePanelId, activeRoomIds,
+    checkState, notesState, panelMeta, futurasState,
+    panelCounter, roomCounter,
+    global: {
+      cliente: document.getElementById('gCliente').value,
+      morada:  document.getElementById('gMorada').value,
+      tecnico: document.getElementById('gTecnico').value,
+      data:    document.getElementById('gData').value,
+    },
+    sig: {
+      name:      document.getElementById('sigName').value,
+      nif:       document.getElementById('sigNif').value,
+      stampTxt:  document.getElementById('sigStampTxt').textContent,
+      confirmed: document.getElementById('btnConfirmSig').classList.contains('confirmed'),
+      imgData:   window._sigGetDataURL ? window._sigGetDataURL() : null,
+    }
+  };
+}
+
 function saveAll(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(()=>{
     setSaveState('saving');
-    collectDOMInputs();
-    const data = {
-      panels, activePanelId, activeRoomIds,
-      checkState, notesState, panelMeta, futurasState,
-      panelCounter, roomCounter,
-      global: {
-        cliente: document.getElementById('gCliente').value,
-        morada:  document.getElementById('gMorada').value,
-        tecnico: document.getElementById('gTecnico').value,
-        data:    document.getElementById('gData').value,
-      },
-      sig: {
-        name:      document.getElementById('sigName').value,
-        nif:       document.getElementById('sigNif').value,
-        stampTxt:  document.getElementById('sigStampTxt').textContent,
-        confirmed: document.getElementById('btnConfirmSig').classList.contains('confirmed'),
-        imgData:   window._sigGetDataURL ? window._sigGetDataURL() : null,
-      }
-    };
+    const data = buildSnapshot();
     // Save to localStorage (offline backup)
     try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); localStorage.setItem(LS_KEY+'_ts', String(Date.now())); }catch(e){}
     // Save to Firebase
@@ -462,8 +499,17 @@ function applyData(d){
       document.getElementById('sigStatus').className   = 'sig-status ok';
       const btn = document.getElementById('btnConfirmSig');
       btn.classList.add('confirmed'); btn.textContent = '✔ Assinatura Confirmada';
+    } else {
+      document.getElementById('sigStampTxt').textContent = '';
+      document.getElementById('sigStamp').classList.remove('visible');
+      document.getElementById('sigStatus').textContent = 'Aguarda assinatura';
+      document.getElementById('sigStatus').className   = 'sig-status';
+      const btn = document.getElementById('btnConfirmSig');
+      btn.classList.remove('confirmed'); btn.textContent = '✔ Confirmar Assinatura';
     }
+    if(window._sigClearCanvas) window._sigClearCanvas();
     if(d.sig.imgData) window._sigRestoreDataURL = d.sig.imgData;
+    else window._sigRestoreDataURL = null;
   }
   return panels.length > 0;
 }
@@ -526,6 +572,109 @@ function setSaveState(state){
 // auto-save on any input change
 document.addEventListener('input', saveAll);
 document.addEventListener('change', saveAll);
+
+// ═══════════════════════════════════════
+//  HISTÓRICO DE VISITAS
+// ═══════════════════════════════════════
+function archiveVisita(){
+  const snap = buildSnapshot();
+  const temAlgo = (snap.global.cliente||'').trim() || Object.values(checkState).some(v=>v);
+  if(!temAlgo) return; // nada a arquivar
+
+  const total = panels.reduce((a,p)=>a+getPanelTotal(p.id),0);
+  const done  = panels.reduce((a,p)=>a+getPanelDone(p.id),0);
+  const pct   = total?Math.round(done/total*100):0;
+
+  const entry = {
+    ts: Date.now(),
+    cliente: snap.global.cliente || '(sem nome)',
+    morada:  snap.global.morada || '',
+    tecnico: snap.global.tecnico || '',
+    data:    snap.global.data || '',
+    quadros: panels.map(p=>p.name).join(', '),
+    pct: pct,
+    snapshot: snap
+  };
+
+  // localStorage (offline)
+  try{
+    const list = JSON.parse(localStorage.getItem(HIST_LS_KEY)||'[]');
+    list.unshift(entry);
+    while(list.length>50) list.pop();
+    localStorage.setItem(HIST_LS_KEY, JSON.stringify(list));
+  }catch(e){}
+
+  // Firebase
+  if(window._ckDb){
+    window._ckAuthReady.then(function(){
+      window._ckDb.collection('mrc_checklist_historico').add({
+        ts: entry.ts, cliente: entry.cliente, morada: entry.morada,
+        tecnico: entry.tecnico, data: entry.data, quadros: entry.quadros,
+        pct: entry.pct, value: JSON.stringify(snap)
+      }).catch(()=>{});
+    });
+  }
+}
+
+function openHistorico(){
+  document.getElementById('histOverlay').classList.add('open');
+  loadHistoricoList();
+}
+function closeHistorico(){
+  document.getElementById('histOverlay').classList.remove('open');
+}
+
+function renderHistList(items){
+  const el = document.getElementById('histList');
+  if(!items.length){ el.innerHTML='<div class="hist-empty">Sem visitas arquivadas.</div>'; return; }
+  el.innerHTML = items.map((it,i)=>{
+    const d = new Date(it.ts);
+    const dstr = d.toLocaleDateString('pt-PT')+' '+d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+    return `
+    <div class="hist-item" onclick="abrirVisitaHistorico(${i})">
+      <div class="hist-info">
+        <div class="hist-cliente">${escH(it.cliente||'(sem nome)')}</div>
+        <div class="hist-meta">${dstr}${it.morada?' · '+escH(it.morada):''}${it.quadros?' · '+escH(it.quadros):''}</div>
+      </div>
+      <div class="hist-pct">${it.pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+function loadHistoricoList(){
+  document.getElementById('histList').innerHTML = '<div class="hist-empty">A carregar...</div>';
+  // local first (instant / offline fallback)
+  let local = [];
+  try{ local = JSON.parse(localStorage.getItem(HIST_LS_KEY)||'[]'); }catch(e){}
+  _histCache = local;
+  renderHistList(local);
+
+  if(window._ckDb){
+    window._ckAuthReady.then(function(){
+      window._ckDb.collection('mrc_checklist_historico').orderBy('ts','desc').limit(50).get()
+        .then(snap=>{
+          const remote = [];
+          snap.forEach(doc=>{
+            const d = doc.data();
+            let snapshot = null;
+            try{ snapshot = JSON.parse(d.value); }catch(e){}
+            remote.push({ts:d.ts, cliente:d.cliente, morada:d.morada, tecnico:d.tecnico, data:d.data, quadros:d.quadros, pct:d.pct, snapshot});
+          });
+          if(remote.length){ _histCache = remote; renderHistList(remote); }
+        }).catch(()=>{});
+    });
+  }
+}
+
+function abrirVisitaHistorico(i){
+  const it = _histCache[i];
+  if(!it || !it.snapshot) return;
+  if(!confirm('Abrir esta visita antiga vai substituir o que está atualmente no ecrã.\n(Se tiveres trabalho por guardar aqui, perde-se.)\nContinuar?')) return;
+  applyData(it.snapshot);
+  renderAll();
+  closeHistorico();
+  setSaveState('saved');
+}
 
 // ═══════════════════════════════════════
 //  PANEL / ROOM CREATION
@@ -657,8 +806,6 @@ function buildSectionsHTML(pId,rId){
 // ═══════════════════════════════════════
 //  INTERVENÇÕES FUTURAS
 // ═══════════════════════════════════════
-let futurasState = {}; // "pId-rId" -> [{tag, text}]
-
 function getFuturas(pId,rId){ return futurasState[pId+'-'+rId] || []; }
 
 function buildFuturasHTML(pId,rId){
@@ -879,7 +1026,8 @@ function resetAll(){
   renderAll(); saveAll();
 }
 function novaVisita(){
-  if(!confirm('Iniciar nova visita?\nLimpa todos os checks, notas e assinatura.\nOs quadros e divisões mantêm-se.'))return;
+  if(!confirm('Iniciar nova visita?\nA visita atual fica guardada no Histórico (📂).\nOs quadros e divisões mantêm-se.'))return;
+  archiveVisita();
   Object.keys(checkState).forEach(k=>delete checkState[k]);
   Object.keys(notesState).forEach(k=>delete notesState[k]);
   Object.keys(futurasState).forEach(k=>delete futurasState[k]);
