@@ -290,7 +290,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 </div>
 
 <div class="actions">
-  <button class="btn btn-print" onclick="window.print()">🖨️ IMPRIMIR / PDF</button>
+  <button class="btn btn-print" onclick="printChecklist()">🖨️ IMPRIMIR / PDF</button>
   <button class="btn btn-newjob" onclick="novaVisita()">🆕 Nova Visita</button>
   <button class="btn btn-hist" onclick="openHistorico()">📂 Histórico</button>
   <button class="btn btn-expand" id="btnExpand" onclick="toggleAllSections()">EXPANDIR TUDO</button>
@@ -1127,6 +1127,33 @@ window.confirmSig=function(){
 //  UTILS
 // ═══════════════════════════════════════
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ═══════════════════════════════════════
+//  IMPRESSÃO — remove mesmo do ecrã (não só via CSS)
+//  tudo o que não é o quadro/divisão ativos, imprime, e repõe.
+//  Isto garante que funciona mesmo em tablets/telemóveis que
+//  ignoram as regras @media print.
+// ═══════════════════════════════════════
+function printChecklist(){
+  const removed = [];
+  document.querySelectorAll('.panel:not(.active), .room-panel:not(.active)').forEach(el=>{
+    removed.push({el, next: el.nextSibling, parent: el.parentNode});
+    el.remove();
+  });
+  let done = false;
+  function restore(){
+    if(done) return; done = true;
+    removed.reverse().forEach(({el,next,parent})=>{
+      if(next && next.parentNode===parent) parent.insertBefore(el,next);
+      else parent.appendChild(el);
+    });
+    window.removeEventListener('afterprint',restore);
+  }
+  window.addEventListener('afterprint',restore);
+  window.print();
+  // rede de segurança: alguns browsers móveis não disparam 'afterprint'
+  setTimeout(restore,3000);
+}
 
 // ═══════════════════════════════════════
 //  INIT
