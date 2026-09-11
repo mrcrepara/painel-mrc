@@ -1395,11 +1395,15 @@ function fillFatSel(){
   const s=document.getElementById('rec_fat');if(s)s.innerHTML=opts;
 }
 
+function autoGrow(el){if(!el)return;el.style.height='auto';el.style.height=Math.max(el.scrollHeight,el.dataset.minh||0)+'px'}
+document.addEventListener('input',function(e){if(e.target&&e.target.tagName==='TEXTAREA')autoGrow(e.target)});
+
 function clearForm(id){
   document.getElementById(id).querySelectorAll('input:not([readonly]):not([type=file]),textarea').forEach(el=>{
     if(el.type==='number')el.value='0';
     else if(el.type==='date')el.value=td();
     else el.value='';
+    if(el.tagName==='TEXTAREA'){el.style.height='';autoGrow(el)}
   });
   if(id==='mDesp')window._despEditData=null;
   if(id==='mFat'){
@@ -1430,7 +1434,7 @@ function fillForm(id,d){
     mDesl:{desl_cli:'cli_id',desl_dest:'dest',desl_rep:'rep',desl_km:'km',desl_preco:'preco',desl_total:'total',desl_data:'data',desl_obs:'obs'},
   };
   const m=maps[id]||{};
-  Object.entries(m).forEach(([elId,key])=>{const el=document.getElementById(elId);if(el&&d[key]!==undefined)el.value=d[key]});
+  Object.entries(m).forEach(([elId,key])=>{const el=document.getElementById(elId);if(el&&d[key]!==undefined){el.value=d[key];if(el.tagName==='TEXTAREA')autoGrow(el)}});
   if(id==='mFat'){
     calcFatModal();
     // Restore partial payment
