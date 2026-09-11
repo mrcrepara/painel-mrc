@@ -1131,7 +1131,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
 <div class="ov" id="mRec" style="z-index:999999"><div class="modal">
   <div class="mhdr"><h3 id="mRecT">+ Registar Recebimento</h3><button class="mclose" onclick="closeM('mRec')">✕</button></div>
   <div class="mbody">
-    <div class="fg"><label>Cliente *</label><select id="rec_cli"></select></div>
+    <div class="fg"><label>Cliente *</label><select id="rec_cli" onchange="fillFatSel()"></select></div>
     <div class="fg"><label>Fatura (opç.)</label><select id="rec_fat"></select></div>
     <div class="fg"><label>Valor (€) *</label><input type="number" id="rec_val" value="0" step="0.01"></div>
     <div class="fg"><label>Forma de Pagamento</label><select id="rec_forma"><option>Transferência Bancária</option><option>Numerário</option><option>MB Way</option><option>Cheque</option><option>Multibanco</option></select></div>
@@ -1388,7 +1388,9 @@ function fillCliSel(){
   if(document.getElementById('mFat')&&document.getElementById('mFat').classList.contains('open'))setTimeout(fatCliChange,50);
 }
 function fillFatSel(){
-  const fats=ld('fat').filter(f=>f.est!=='Paga');
+  const cliId=gv('rec_cli');
+  let fats=ld('fat').filter(f=>f.est!=='Paga');
+  if(cliId)fats=fats.filter(f=>f.cli_id===cliId);
   const opts='<option value="">— Sem fatura associada —</option>'+fats.map(f=>'<option value="'+f.id+'">'+f.num+' — '+f.cli+' ('+eur(fatTot(f))+')</option>').join('');
   const s=document.getElementById('rec_fat');if(s)s.innerHTML=opts;
 }
