@@ -1051,7 +1051,7 @@ tbody td{padding:9px 12px;vertical-align:middle}
       <div style="font-size:11px;font-weight:700;color:#A78BFA;text-transform:uppercase;margin-bottom:4px">📋 OS selecionada</div>
       <div id="fat_os_info" style="font-size:12px;color:var(--muted)"></div>
     </div>
-    <div class="fg"><label>Descrição do Serviço *</label><textarea id="fat_desc" placeholder="Descrição do serviço prestado"></textarea></div>
+    <div class="fg"><label>Descrição do Serviço *</label><textarea id="fat_desc" placeholder="Descrição do serviço prestado" rows="4" style="min-height:110px"></textarea></div>
 
     <!-- LISTA DE MATERIAIS -->
     <div style="margin-bottom:13px">
@@ -1822,7 +1822,7 @@ function renderFat(){
     const totalCell=parcial
       ?'<span style="color:var(--green);font-weight:700">'+eur(tot)+'</span><br><span style="font-size:11px;color:#F97316">Pago: '+eur(pago)+' | Falta: '+eur(Math.max(0,tot-pago))+'</span>'
       :'<span style="color:var(--green);font-weight:700">'+eur(tot)+'</span>';
-    html+='<tr><td><strong style="color:#fff">'+(f.num||'—')+'</strong></td><td style="color:var(--muted)">'+f.data+'</td><td>'+f.cli+'</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(f.desc||'—')+'</td><td>'+totalCell+'</td><td>'+ebadge(f.est)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-fat" data-id="'+f.id+'">✏</button><button class="btn-xs" style="background:var(--green)" data-action="paga-fat" data-id="'+f.id+'">✓</button>'+(parcial||f.hist_pag?.length?'<button class="btn-xs" style="background:#F97316" data-action="hist-pag" data-id="'+f.id+'">💰</button>':'')+'<button class="btn-xs" style="background:#8B5CF6" data-action="print-fat" data-id="'+f.id+'">🖨</button><button class="btn-xs" style="background:#0EA5E9" data-action="print-recibo" data-id="'+f.id+'">🧾</button><button class="btn-xs" style="background:var(--red)" data-action="del-fat" data-id="'+f.id+'">🗑</button></td></tr>';
+    html+='<tr><td><strong style="color:#fff">'+(f.num||'—')+'</strong></td><td style="color:var(--muted)">'+f.data+'</td><td>'+f.cli+'</td><td style="max-width:220px;white-space:normal;word-break:break-word" title="'+(f.desc||'').replace(/"/g,'&quot;')+'">'+(f.desc||'—')+'</td><td>'+totalCell+'</td><td>'+ebadge(f.est)+'</td><td class="td-acts"><button class="btn-xs" style="background:var(--blue)" data-action="edit-fat" data-id="'+f.id+'">✏</button><button class="btn-xs" style="background:var(--green)" data-action="paga-fat" data-id="'+f.id+'">✓</button>'+(parcial||f.hist_pag?.length?'<button class="btn-xs" style="background:#F97316" data-action="hist-pag" data-id="'+f.id+'">💰</button>':'')+'<button class="btn-xs" style="background:#8B5CF6" data-action="print-fat" data-id="'+f.id+'">🖨</button><button class="btn-xs" style="background:#0EA5E9" data-action="print-recibo" data-id="'+f.id+'">🧾</button><button class="btn-xs" style="background:var(--red)" data-action="del-fat" data-id="'+f.id+'">🗑</button></td></tr>';
   });
   tb.innerHTML=html;
 }
