@@ -1868,8 +1868,9 @@ function calcular() {
       ...(mCaboAlarme>0?[{cat:'Segurança & Vigilância', desc:'Cabo alarme 4×0.22mm² (detectores/teclado)', qty:mCaboAlarme, pu:0.45*mat_m, unit:'m'}]:[]),
     ]:[]),
     {cat:'Caixas & Acessórios', desc:'Caixas de derivação', qty:Math.ceil((tot.tomadas+tot.luzes+tot.interruptores)*0.3), pu:PRECO_MAT.caixasDerivacao},
-    {cat:'Cabos', desc:'Cabo H07V-K 2.5mm² (circuitos tomadas)', qty:tot.cabo25, pu:PRECO_MAT.cabo25, unit:'m'},
-    {cat:'Cabos', desc:'Cabo H07V-K 1.5mm² (circuitos iluminação)', qty:tot.cabo15, pu:PRECO_MAT.cabo15, unit:'m'},
+    // Cabo por cor (fase / neutro / terra) — total dividido pelos 3 condutores
+    ...[['castanho (fase)'],['azul (neutro)'],['verde/amarelo (terra)']].map(c=>({cat:'Cabos', desc:`Cabo H07V-K 2.5mm² ${c[0]} — tomadas`, qty:Math.ceil(tot.cabo25/3), pu:PRECO_MAT.cabo25, unit:'m'})),
+    ...[['castanho (fase)'],['azul (neutro)'],['verde/amarelo (terra)']].map(c=>({cat:'Cabos', desc:`Cabo H07V-K 1.5mm² ${c[0]} — iluminação`, qty:Math.ceil(tot.cabo15/3), pu:PRECO_MAT.cabo15, unit:'m'})),
     {cat:'Canalização', desc:'Tubo VD rígido Ø20mm (interiores embutido)', qty:Math.ceil(tot.tubo20*0.6), pu:PRECO_MAT.tubo20, unit:'m'},
     {cat:'Canalização', desc:'Tubo VD rígido Ø25mm (garagem/exterior embutido)', qty:Math.max(Math.ceil(tot.tubo25*0.5),0), pu:PRECO_MAT.tubo25, unit:'m'},
     {cat:'Canalização', desc:'Tubo corrugado Ø20mm (lajes/paredes)', qty:Math.ceil(tot.tubo20*0.4), pu:PRECO_MAT.tuboCor20, unit:'m'},
