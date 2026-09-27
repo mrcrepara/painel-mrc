@@ -230,6 +230,15 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
       <div class="fg"><label>Tubo Corrugado Ø20 /metro (€)</label><input type="number" id="p_tubocor" value="0.35" step="0.05" oninput="calcular()"></div>
       <div class="fg"><label>Armário ATI (€)</label><input type="number" id="p_ati" value="170" step="5" oninput="calcular()"></div>
       </div>
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">🪟 ESTORES ELÉTRICOS &amp; SANCAS</div>
+      <div class="frow">
+        <div class="fg"><label>Motor estore — custo (€/un)</label><input type="number" id="p_estore_motor" value="65" step="1" oninput="calcular()"></div>
+        <div class="fg"><label>Instalação estore c/ motor MO (€/un)</label><input type="number" id="p_estore_mo" value="45" step="1" oninput="calcular()"></div>
+        <div class="fg"><label>Só ligação estore MO (€/un)</label><input type="number" id="p_estore_lig" value="20" step="1" oninput="calcular()"></div>
+        <div class="fg"><label>Sanca — material (€/m)</label><input type="number" id="p_sanca_mat" value="12" step="0.5" oninput="calcular()"></div>
+        <div class="fg"><label>Sanca — execução MO (€/m)</label><input type="number" id="p_sanca_mo" value="20" step="0.5" oninput="calcular()"></div>
+        <div class="fg"><label>Fita LED sanca — custo (€/m)</label><input type="number" id="p_fita_led" value="6" step="0.5" oninput="calcular()"></div>
+      </div>
       <div class="frow" style="margin-top:8px">
         <div class="fg"><label>IVA (%)</label><input type="number" id="p_iva" value="23" step="1" oninput="calcular()"></div>
         <div class="fg"><label>Margem Material (%)</label><input type="number" id="p_margem" value="20" step="5" oninput="calcular()"></div>
@@ -693,6 +702,32 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
         </div>
         <div id="equipPreview" style="font-size:11px;color:var(--teal);margin-top:8px;font-family:'DM Mono',monospace;line-height:1.6"></div>
       </div>
+      <div style="background:rgba(59,139,235,.06);border:1px solid rgba(59,139,235,.25);border-radius:10px;padding:12px;margin-top:4px">
+        <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:8px;font-family:'DM Mono',monospace;letter-spacing:1px">🪟 JANELAS — ESTORES ELÉTRICOS &amp; SANCAS</div>
+        <div class="frow">
+          <div class="fg"><label>Estores elétricos (un.)</label><input type="number" id="f_estores" value="0" min="0" step="1" oninput="previewDiv()"></div>
+          <div class="fg"><label>Motor</label>
+            <select id="f_estore_motor" onchange="previewDiv()">
+              <option value="com">Fornecer + instalar motor</option>
+              <option value="lig">Só ligação (motor já existe)</option>
+            </select>
+          </div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label>Comando</label>
+            <select id="f_estore_cmd" onchange="previewDiv()">
+              <option value="int">Interruptor de estore (subir/descer)</option>
+              <option value="radio">Motor rádio + comando</option>
+              <option value="smart">Módulo smart (Wi-Fi/app)</option>
+            </select>
+          </div>
+          <div class="fg"><label>Sanca nas janelas (metros)</label><input type="number" id="f_sanca_m" value="0" min="0" step="0.5" oninput="previewDiv()"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;text-transform:none;letter-spacing:0;color:var(--text);margin-top:4px">
+          <input type="checkbox" id="f_sanca_led" onchange="previewDiv()" style="width:auto;accent-color:var(--blue)"> 💡 Fita LED na sanca (com driver)
+        </label>
+        <div id="janelaPreview" style="font-size:11px;color:var(--blue);margin-top:8px;font-family:'DM Mono',monospace;line-height:1.6"></div>
+      </div>
       <div class="fg"><label>Notas</label><input id="f_notas" placeholder="Observações específicas..."></div>
     </div>
     <div class="mfoot">
@@ -829,7 +864,8 @@ const gf = id => parseFloat(document.getElementById(id)?.value)||0;
 const gi = id => parseInt(document.getElementById(id)?.value)||0;
 
 function toast(msg,t='g'){
-  const el=document.getElementById('toast');
+  let el=document.getElementById('toast');
+  if(!el){ el=document.createElement('div'); el.id='toast'; el.className='toast'; document.body.appendChild(el); }
   el.textContent=msg;
   el.style.borderColor=t==='r'?'var(--red)':t==='a'?'var(--orange)':'var(--yellow)';
   el.classList.add('show');
@@ -1044,6 +1080,7 @@ function renderDivs() {
       <div>
         <div class="div-nome">${d.nome}</div>
         <div class="div-m2">${d.m2}m² · 📐${d.dist||5}m QS · 🔌${c.tomadas} tomadas · 💡${c.luzes} luzes · ⚡${(d.int_simples||0)+(d.int_comut||0)+(d.int_inver||0)||c.interruptores} cmd.${(d.led_tipo&&d.led_tipo!=='normal')?' · 💡LED '+({'2700':'🟠','3000':'🟡','4000':'⚪','5000':'🌤','6000':'🔵'}[d.led_cor||'4000']||'')+(d.led_cor||'4000')+'K':''}${(d.tmista||d.trvsat||d.tv||d.rj45)?' · 📡ATI'+(d.tmista?' '+d.tmista+'×mista':''):''}${d.camaras?' · 🔒CAM':''}</div>
+        ${(d.estores||d.sanca_m)?`<div style="font-size:11px;color:var(--blue);margin-top:2px">🪟 ${d.estores?d.estores+' estore(s) elétrico(s)':''}${d.estores&&d.sanca_m?' · ':''}${d.sanca_m?d.sanca_m+'m sanca'+(d.sanca_led?' c/ LED':''):''}</div>`:''}
         ${d.notas?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${d.notas}</div>`:''}
       </div>
       <span class="div-tipo-badge">${TIPO_NOME[d.tipo]||d.tipo}</span>
@@ -1259,6 +1296,38 @@ function calcular() {
     if(nC>0) ledMatItems.push({cat:'Iluminação LED',desc:`Carril de encastrar — ${d.nome}`,qty:nC,pu:18*mat_m,unit:'m'});
   });
 
+  // Estores elétricos & sancas
+  let totEstores=0, totEstMotor=0, totEstLig=0, totEstInt=0, totEstRadio=0, totEstSmart=0;
+  let totSanca=0, totFitaLED=0, totDriversSanca=0;
+  const janMatItems=[];
+  _divs.forEach(d=>{
+    const nE=d.estores||0;
+    if(nE>0){
+      totEstores+=nE;
+      if((d.estore_motor||'com')==='lig') totEstLig+=nE; else totEstMotor+=nE;
+      const cmd=d.estore_cmd||'int';
+      if(cmd==='radio') totEstRadio+=nE; else if(cmd==='smart') totEstSmart+=nE; else totEstInt+=nE;
+    }
+    const sm=d.sanca_m||0;
+    if(sm>0){
+      totSanca+=sm;
+      if(d.sanca_led){ totFitaLED+=sm; totDriversSanca+=Math.ceil(sm/8); }
+    }
+  });
+  if(totEstMotor>0) janMatItems.push({cat:'Estores Elétricos',desc:'Motor tubular para estore (c/ fins de curso)',qty:totEstMotor,pu:(gf('p_estore_motor')||65)*mat_m});
+  if(totEstInt>0) janMatItems.push({cat:'Estores Elétricos',desc:'Interruptor de estore (subir/descer)',qty:totEstInt,pu:12*mat_m});
+  if(totEstRadio>0) janMatItems.push({cat:'Estores Elétricos',desc:'Emissor/comando rádio p/ estore',qty:totEstRadio,pu:25*mat_m});
+  if(totEstSmart>0) janMatItems.push({cat:'Estores Elétricos',desc:'Módulo smart estore (Wi-Fi/app)',qty:totEstSmart,pu:35*mat_m});
+  if(totEstores>0){
+    janMatItems.push({cat:'Estores Elétricos',desc:'Cabo H05VV-F 4G1.5mm² (alimentação motor)',qty:totEstores*5,pu:1.10*mat_m,unit:'m'});
+    janMatItems.push({cat:'Estores Elétricos',desc:'Caixa de aparelhagem + ligadores',qty:totEstores,pu:2.50*mat_m});
+  }
+  if(totSanca>0) janMatItems.push({cat:'Sancas',desc:'Sanca nas janelas (pladur/perfis/massa)',qty:totSanca,pu:(gf('p_sanca_mat')||0)*mat_m,unit:'m'});
+  if(totFitaLED>0){
+    janMatItems.push({cat:'Sancas',desc:'Fita LED 24V p/ sanca',qty:totFitaLED,pu:(gf('p_fita_led')||6)*mat_m,unit:'m'});
+    janMatItems.push({cat:'Sancas',desc:'Driver/fonte 24V p/ fita LED',qty:totDriversSanca,pu:25*mat_m,unit:'un.'});
+  }
+
   const PRECO_MAT = {
     tomada: 4.50 * mat_m, tomadaIP: 8 * mat_m,
     interruptor: 3.80 * mat_m, interruptorDuplo: 6.50 * mat_m,
@@ -1333,6 +1402,7 @@ function calcular() {
     {cat:'Canalização', desc:'Tubo corrugado Ø20mm (lajes/paredes)', qty:Math.ceil(tot.tubo20*0.4), pu:PRECO_MAT.tuboCor20, unit:'m'},
     {cat:'Canalização', desc:'Tubo corrugado Ø25mm (garagem/exterior proteção)', qty:Math.ceil(Math.max(tot.tubo25*0.5,0)), pu:PRECO_MAT.tuboCor25, unit:'m'},
     ...ledMatItems,
+    ...janMatItems,
     {cat:'Iluminação LED', desc:'Cabo 1.5mm² (circuito focos LED)', qty:totalCabo15LED, pu:PRECO_MAT.cabo15, unit:'m'},
   ].filter(i=>i.qty>0);
 
@@ -1351,7 +1421,9 @@ function calcular() {
   const moSwitch = totIntSimples*p.inter + totComut*p.inter*1.5 + totInver*p.inter*2;
   const moATI = (totTV+totRJ45+totRJ11) * 18; // 18€ por ponto ATI
   const moVig = totCamaras*35 + totDetec*20 + totTeclados*30 + (temVig?80:0); // instalação sistema
-  const totalMO = maoItems.reduce((s,i)=>s+i.total,0) + moQuadro + moLED + moEquip + moSwitch + moATI + moVig;
+  const moEstores = totEstMotor*gf('p_estore_mo') + totEstLig*gf('p_estore_lig');
+  const moSanca = totSanca*gf('p_sanca_mo') + totDriversSanca*p.luz;
+  const totalMO = maoItems.reduce((s,i)=>s+i.total,0) + moQuadro + moLED + moEquip + moSwitch + moATI + moVig + moEstores + moSanca;
 
   // Cabos MO
   const caborMetros = tot.cabo25 + tot.cabo15 + tot.cabo6 + tot.tubo20 + tot.tubo25;
@@ -1375,6 +1447,8 @@ function calcular() {
     (temVig ? kpi('Câmaras/Det.', totCamaras+totDetec, 'un.', 'red') : '') +
     kpi('Circuitos', nCircuitos+totCircDed, 'un.', 'green') +
     (totCircDed>0 ? kpi('Circ. Dedicados', totCircDed, 'un.', 'orange') : '') +
+    (totEstores>0 ? kpi('Estores', totEstores, 'un.', 'blue') : '') +
+    (totSanca>0 ? kpi('Sanca', totSanca, 'm', 'teal') : '') +
     kpi('Total s/IVA', eur(aposDesc).replace(' €',''), '€', 'red');
 
   // ── Tabela Materiais ──
@@ -1406,6 +1480,8 @@ function calcular() {
   if(moSwitch>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Comando iluminação (${totIntSimples} simples · ${totComut} comut. · ${totInver} inv.)</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moSwitch)}</td></tr>`;
   if(moATI>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">ATI — Telecomunicações (${totTV+totRJ45+totRJ11} pontos × 18€)</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moATI)}</td></tr>`;
   if(moVig>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Segurança & Vigilância (${totCamaras} câmaras + instalação)</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moVig)}</td></tr>`;
+  if(moEstores>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Estores elétricos (${totEstMotor} c/ motor × ${eur(gf('p_estore_mo'))}${totEstLig?' · '+totEstLig+' só ligação × '+eur(gf('p_estore_lig')):''})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moEstores)}</td></tr>`;
+  if(moSanca>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Sancas nas janelas (${totSanca}m × ${eur(gf('p_sanca_mo'))}${totDriversSanca?' + ligação fita LED':''})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moSanca)}</td></tr>`;
   if(totalFocosLED>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Focos LED (${totalFocosLED} focos × ${eur(p.luz)})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moLED)}</td></tr>`;
   html2 += `<tr style="background:rgba(245,200,66,.08)"><td colspan="4" style="font-weight:800;color:#fff">TOTAL MÃO DE OBRA</td><td style="font-weight:800;color:var(--yellow);font-family:'DM Mono',monospace">${eur(totalMO)}</td></tr>`;
   document.getElementById('tblMao').querySelector('tbody').innerHTML = html2;
@@ -1418,8 +1494,8 @@ function calcular() {
   const cabo6Total = Math.max(tot.cabo6, tot6Ded);
   html3 += `<tr><td>Cabo H07V-K 2.5mm² (tomadas + circuitos ded.)</td><td style="font-family:'DM Mono',monospace">${cabo25Total}m</td><td style="font-family:'DM Mono',monospace">${eur(p.cabo)}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow)">${eur(tot.cabo25*p.cabo)}</td></tr>`;
   html3 += `<tr><td>Cabo H07V-K 1.5mm² (iluminação)</td><td style="font-family:'DM Mono',monospace">${cabo15Total}m</td><td style="font-family:'DM Mono',monospace">${eur(p.cabo)}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow)">${eur(tot.cabo15*p.cabo)}</td></tr>`;
-    html3 += `<tr><td>Cabo H07V-K 4mm² (forno/termo/AC grande)</td><td style="font-family:'DM Mono',monospace">${cabo4Total}m</td><td style="font-family:'DM Mono',monospace">${eur(p.cabo*1.5)}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow)">${eur(cabo4Total*p.cabo*1.5)}</td></tr>\`;
-  if(cabo6Total>0) html3 += \`<tr><td>Cabo H07V-K 6mm² (placa indução)</td><td style="font-family:'DM Mono',monospace">${cabo6Total}m</td><td style="font-family:'DM Mono',monospace">${eur(p.cabo*2)}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow)">${eur(tot.cabo6*p.cabo*2)}</td></tr>`;
+  if(cabo4Total>0) html3 += `<tr><td>Cabo H07V-K 4mm² (forno/termo/AC grande)</td><td style="font-family:'DM Mono',monospace">${cabo4Total}m</td><td style="font-family:'DM Mono',monospace">${eur(p.cabo*1.5)}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow)">${eur(cabo4Total*p.cabo*1.5)}</td></tr>`;
+  if(cabo6Total>0) html3 += `<tr><td>Cabo H07V-K 6mm² (placa indução)</td><td style="font-family:'DM Mono',monospace">${cabo6Total}m</td><td style="font-family:'DM Mono',monospace">${eur(p.cabo*2)}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow)">${eur(tot.cabo6*p.cabo*2)}</td></tr>`;
   if(mCaboRede>0) html3 += `<tr><td>Cabo UTP Cat.6 (rede dados/internet)</td><td style="font-family:'DM Mono',monospace">${mCaboRede}m</td><td style="font-family:'DM Mono',monospace">${eur(p.cabo*0.55)}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow)">${eur(mCaboRede*p.cabo*0.55)}</td></tr>`;
   if(mCaboCoax>0) html3 += `<tr><td>Cabo coaxial RG6 (TV)</td><td style="font-family:'DM Mono',monospace">${mCaboCoax}m</td><td style="font-family:'DM Mono',monospace">${eur(p.cabo*0.65)}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow)">${eur(mCaboCoax*p.cabo*0.65)}</td></tr>`;
   if(mCaboCoaxCCTV>0) html3 += `<tr><td>Cabo coaxial RG59 (câmaras CCTV)</td><td style="font-family:'DM Mono',monospace">${mCaboCoaxCCTV}m</td><td style="font-family:'DM Mono',monospace">${eur(p.cabo*0.45)}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow)">${eur(mCaboCoaxCCTV*p.cabo*0.45)}</td></tr>`;
@@ -1638,6 +1714,17 @@ function previewDiv() {
   let atiInfo = (nTMista||nTRVSAT||nTV||nTVterm||nRJ45||nRJ11||nTPC25) ? `<br>📡 ATI: ${nTMista?nTMista+' mista ':''}${nTRVSAT?nTRVSAT+' R+TV+SAT ':''}${nTV?nTV+' TV ':''}${nTVterm?nTVterm+' TV-term ':''}${nRJ45?nRJ45+' RJ45 ':''}${nRJ11?nRJ11+' RJ11 ':''}${nTPC25?nTPC25+'m TPC':''}` : '';
   let vigInfo = (nCam||nDet||nTec) ? `<br>🔒 Seg: ${nCam?nCam+' câmaras ':''}${nDet?nDet+' detectores ':''}${nTec?nTec+' teclado(s)':''}` : '';
 
+  const nEst = parseInt(document.getElementById('f_estores')?.value)||0;
+  const nSanca = parseFloat(document.getElementById('f_sanca_m')?.value)||0;
+  const jpEl = document.getElementById('janelaPreview');
+  if(jpEl){
+    const motTxt = (document.getElementById('f_estore_motor')?.value==='lig') ? 'só ligação' : 'c/ motor';
+    const cmdTxt = {int:'interruptor',radio:'rádio',smart:'smart'}[document.getElementById('f_estore_cmd')?.value||'int'];
+    const ledOn = document.getElementById('f_sanca_led')?.checked;
+    jpEl.innerHTML = (nEst ? `🪟 ${nEst} estore(s) elétrico(s) · ${motTxt} · comando ${cmdTxt}` : '') +
+      (nEst && nSanca ? '<br>' : '') +
+      (nSanca ? `📏 ${nSanca}m de sanca${ledOn ? ' + '+nSanca+'m fita LED ('+Math.ceil(nSanca/8)+' driver)' : ''}` : '');
+  }
   document.getElementById('previewCalc').innerHTML =
     `🔌 ${Math.max(0,c.tomadas+tomExtra)} tomadas &nbsp;|&nbsp; ⚡ ${Math.max(0,c.interruptores+intExtra)} interruptores &nbsp;|&nbsp; 💡 ${Math.max(0,c.luzes+luzExtra)} pontos de luz${ledInfo}<br>
      🔵 ${c.cabo25}m cabo 2.5mm² &nbsp;|&nbsp; 🔴 ${c.cabo15}m cabo 1.5mm² ${c.cabo6?'| ⚫ '+c.cabo6+'m cabo 6mm²':''}<br>
@@ -1690,6 +1777,11 @@ function abrirModal(div) {
   document.getElementById('f_camaras').value = div ? (div.camaras||0) : 0;
   document.getElementById('f_detec').value = div ? (div.detec||0) : 0;
   document.getElementById('f_teclado').value = div ? (div.teclado||0) : 0;
+  document.getElementById('f_estores').value = div ? (div.estores||0) : 0;
+  document.getElementById('f_estore_motor').value = div ? (div.estore_motor||'com') : 'com';
+  document.getElementById('f_estore_cmd').value = div ? (div.estore_cmd||'int') : 'int';
+  document.getElementById('f_sanca_m').value = div ? (div.sanca_m||0) : 0;
+  document.getElementById('f_sanca_led').checked = div ? (div.sanca_led||false) : false;
   document.getElementById('nomeCustom').style.display = 'none';
   previewDiv();
   document.getElementById('modal').classList.add('open');
@@ -1746,7 +1838,12 @@ function guardarDiv() {
     dist_vig: parseFloat(document.getElementById('f_dist_vig')?.value)||0,
     eq_ev: document.getElementById('f_eq_ev')?.checked||false,
     ev_tipo: document.getElementById('f_ev_tipo')?.value||'tri',
-    ev_marca: document.getElementById('f_ev_marca')?.value||'smart'
+    ev_marca: document.getElementById('f_ev_marca')?.value||'smart',
+    estores: parseInt(document.getElementById('f_estores')?.value)||0,
+    estore_motor: document.getElementById('f_estore_motor')?.value||'com',
+    estore_cmd: document.getElementById('f_estore_cmd')?.value||'int',
+    sanca_m: parseFloat(document.getElementById('f_sanca_m')?.value)||0,
+    sanca_led: document.getElementById('f_sanca_led')?.checked||false
   };
   if (_editId) {
     const i = _divs.findIndex(d=>d.id===_editId);
@@ -1770,6 +1867,7 @@ function resetPrecos() {
   document.getElementById('p_iva').value=23;
   document.getElementById('p_margem').value=20;
   document.getElementById('p_desc').value=0;
+  [['p_estore_motor',65],['p_estore_mo',45],['p_estore_lig',20],['p_sanca_mat',12],['p_sanca_mo',20],['p_fita_led',6]].forEach(function(a){ var el=document.getElementById(a[0]); if(el) el.value=a[1]; });
   calcular(); toast('Preços reposto para valores padrão.');
 }
 
@@ -2061,7 +2159,7 @@ async function guardarOrcamento(){
 
   // Collect price inputs
   var precos = {};
-  ['p_tomada','p_interruptor','p_luz','p_disjuntor','p_quadro','p_cabo','p_tubo_vd','p_tubo_corr','p_iva','p_margem','p_desconto'].forEach(function(id){
+  ['p_tomada','p_interruptor','p_luz','p_disjuntor','p_quadro','p_cabo','p_tubo_vd','p_tubo_corr','p_iva','p_margem','p_desconto','p_estore_motor','p_estore_mo','p_estore_lig','p_sanca_mat','p_sanca_mo','p_fita_led'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) precos[id] = el.value;
   });
