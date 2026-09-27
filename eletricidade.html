@@ -713,8 +713,57 @@ firebase.initializeApp({
   appId:"1:4766445522:web:ffd8567ff468e24810620b"
 });
 const _db = firebase.firestore();
-// Login anónimo automático (necessário p/ as regras de segurança do Firestore)
-const _authReady = firebase.auth().signInAnonymously().catch(e=>console.warn('FB auth:',e));
+// ── AUTENTICAÇÃO REAL (igual ao index.html) ──
+// Usa a sessão email/password já guardada no browser pelo painel.
+// Já não faz login anónimo (o painel termina sessões anónimas e as regras
+// do Firestore só aceitam utilizadores com login real).
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
+let _authResolve;
+const _authReady = new Promise(function(res){ _authResolve = res; });
+firebase.auth().onAuthStateChanged(function(user){
+  if(user && !user.isAnonymous){
+    _authResolve(user);
+    const ov = document.getElementById('mrcLoginOv');
+    if(ov) ov.style.display = 'none';
+  } else if(user && user.isAnonymous){
+    // Sessão anónima antiga — terminar e pedir login real
+    firebase.auth().signOut().catch(function(){});
+  } else {
+    _mostrarLogin();
+  }
+});
+
+function _mostrarLogin(){
+  let ov = document.getElementById('mrcLoginOv');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.id = 'mrcLoginOv';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(5,8,16,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:Inter,system-ui,sans-serif';
+    ov.innerHTML =
+      '<div style="background:#111827;border:1px solid #1f2937;border-radius:14px;padding:24px;width:100%;max-width:340px;color:#e5e7eb">'+
+      '<div style="font-size:18px;font-weight:700;margin-bottom:6px">⚡ Instalações Elétricas</div>'+
+      '<div style="font-size:13px;color:#9ca3af;margin-bottom:16px">Inicia sessão com a mesma conta do painel MRC.</div>'+
+      '<input id="mrcLgEmail" type="email" placeholder="Email" autocomplete="username" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #374151;background:#0b1220;color:#e5e7eb">'+
+      '<input id="mrcLgPass" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #374151;background:#0b1220;color:#e5e7eb">'+
+      '<button id="mrcLgBtn" style="width:100%;padding:11px;border:0;border-radius:8px;background:#10C97A;color:#000;font-weight:700;cursor:pointer">Entrar</button>'+
+      '<div id="mrcLgErr" style="color:#f87171;font-size:12px;margin-top:10px;min-height:14px"></div>'+
+      '</div>';
+    document.body.appendChild(ov);
+    const entrar = function(){
+      const em = document.getElementById('mrcLgEmail').value.trim();
+      const pw = document.getElementById('mrcLgPass').value;
+      const err = document.getElementById('mrcLgErr');
+      if(!em || !pw){ err.textContent = 'Preenche email e password.'; return; }
+      err.textContent = 'A entrar...';
+      firebase.auth().signInWithEmailAndPassword(em, pw)
+        .then(function(){ err.textContent = ''; })
+        .catch(function(e){ err.textContent = 'Email ou password incorretos.'; console.warn('Login:', e); });
+    };
+    document.getElementById('mrcLgBtn').onclick = entrar;
+    document.getElementById('mrcLgPass').addEventListener('keydown', function(e){ if(e.key==='Enter') entrar(); });
+  }
+  ov.style.display = 'flex';
+}
 let _clis = [];
 
 async function carregarClientes() {
