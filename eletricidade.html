@@ -237,6 +237,7 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
         <div class="fg"><label>Só ligação estore MO (€/un)</label><input type="number" id="p_estore_lig" value="20" step="1" oninput="calcular()"></div>
         <div class="fg"><label>Sanca — material (€/m)</label><input type="number" id="p_sanca_mat" value="12" step="0.5" oninput="calcular()"></div>
         <div class="fg"><label>Sanca — execução MO (€/m)</label><input type="number" id="p_sanca_mo" value="20" step="0.5" oninput="calcular()"></div>
+        <div class="fg"><label>Carregador USB-C 45W Efapel 21397 — custo s/ IVA (€)</label><input type="number" id="p_usbc" value="34.48" step="0.01" oninput="calcular()"></div>
         <div class="fg"><label>Fita LED sanca — custo (€/m)</label><input type="number" id="p_fita_led" value="6" step="0.5" oninput="calcular()"></div>
       </div>
       <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">🧱 DIVISÃO POR FASES DE OBRA</div>
@@ -262,6 +263,18 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
         <div class="fg"><label>MO dos pontos na 1ª fase (%)</label><input type="number" id="p_fase1_pct" value="60" min="0" max="100" step="5" oninput="calcular()"></div>
       </div>
       <div style="font-size:11px;color:var(--muted);line-height:1.5">1ª fase: tubos, caixas, enfiamento de cabos. 2ª fase: tomadas, interruptores, luzes, quadro, motores de estore e equipamentos.</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">💶 CONDIÇÕES DE PAGAMENTO</div>
+      <div class="frow">
+        <div class="fg"><label>Modo de pagamento</label>
+          <select id="p_pag_modo" onchange="calcular()">
+            <option value="fases">Adiantamento + por fases</option>
+            <option value="inicio_fim">Adiantamento + restante no fim</option>
+            <option value="nenhum">Não mostrar no orçamento</option>
+          </select>
+        </div>
+        <div class="fg"><label>Adiantamento no início da obra (%)</label><input type="number" id="p_pag_inicio" value="30" min="0" max="100" step="5" oninput="calcular()"></div>
+        <div class="fg"><label>Forma de pagamento (opcional)</label><input id="p_pag_forma" placeholder="ex: Transferência bancária / MB Way" oninput="calcular()"></div>
+      </div>
       <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">🧰 ÂMBITO DO TRABALHO</div>
       <div class="frow">
         <div class="fg"><label>Abertura e tapamento de roços</label>
@@ -556,6 +569,7 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
       </div>
       <div class="frow">
         <div class="fg"><label>Tomadas extra</label><input type="number" id="f_tom_extra" value="0" step="1" min="-10" oninput="previewDiv()"></div>
+        <div class="fg"><label>Carregador USB-C 45W (un.)</label><input type="number" id="f_usbc" value="0" step="1" min="0" oninput="previewDiv()"></div>
         <div class="fg"><label>Luzes extra</label><input type="number" id="f_luz_extra" value="0" step="1" min="-10" oninput="previewDiv()"></div>
       </div>
       <div style="background:rgba(30,34,44,.8);border:1px solid var(--border2);border-radius:10px;padding:12px;margin-top:4px">
@@ -1212,6 +1226,7 @@ function gerarDocOrcamento(modo){
     const c = calcDivComExtras(d);
     const it = [];
     if(c.tomadas) it.push(c.tomadas+' tomadas');
+    if(d.usbc) it.push(d.usbc+' carregador(es) USB-C');
     if(c.interruptores) it.push(c.interruptores+' comandos');
     if(c.luzes) it.push(c.luzes+' pontos de luz');
     if(d.estores) it.push(d.estores+' estore(s) elétrico(s)');
@@ -1282,6 +1297,7 @@ ${fasesHtml}
 <h2>Material</h2>
 <table>${comPrecos?'<tr class="hd"><td>Descrição</td><td class="n">Qtd</td><td class="n">P. unit.</td><td class="n">Total</td></tr>':'<tr class="hd"><td>Descrição</td><td class="n">Qtd</td></tr>'}${matHtml}</table>
 ${resumoHtml}
+${(!soMat && D.pagamento && D.pagamento.length)?`<h2>Condições de pagamento (c/ IVA)</h2><table class="res" style="max-width:100%">${D.pagamento.map(x=>`<tr><td><b>${_esc(x.quando)}</b><br><small>${_esc(x.desc)}</small></td><td class="n"><b>${e(x.valor)}</b></td></tr>`).join('')}</table>${D.pagForma?`<p style="font-size:11px;color:#555">Forma de pagamento: ${_esc(D.pagForma)}</p>`:''}`:''}
 ${soMat?'':`<div class="notas">* Orçamento elaborado de acordo com o RTIEBT (Regulamento Técnico das Instalações Elétricas de Baixa Tensão).<br>
 * Valores de material sujeitos a alteração conforme disponibilidade e preços de mercado.<br>
 ${D.rocosInc?'':'* Não inclui abertura e tapamento de roços, trabalhos de pladur, massas nem pinturas (a cargo do cliente ou empreiteiro).<br>'}
@@ -1422,6 +1438,7 @@ function _gerarPdfNativo(){
   _divs.forEach(d => {
     const c = calcDivComExtras(d); const it = [];
     if(c.tomadas) it.push(pl(c.tomadas,'tomada','tomadas'));
+    if(d.usbc) it.push(pl(d.usbc,'carregador USB-C','carregadores USB-C'));
     if(c.interruptores) it.push(pl(c.interruptores,'comando','comandos'));
     if(c.luzes) it.push(pl(c.luzes,'ponto de luz','pontos de luz'));
     if(d.estores) it.push(pl(d.estores,'estore elétrico','estores elétricos'));
@@ -1513,6 +1530,19 @@ function _gerarPdfNativo(){
   rect(xr, y, 240, 28, [0.94,0.96,1]); cs += `${col(AZUL)} RG 1.5 w ${xr} ${(PH-y-28).toFixed(2)} 240 28 re S\n`;
   txt(xr+8, y+18.5, 'TOTAL COM IVA', 11, true, AZUL); txt(PW-MR-8, y+18.5, e(D.total), 13, true, AZUL, 'r');
   y += 48;
+
+  // ── Condições de pagamento ──
+  if(D.pagamento && D.pagamento.length){
+    garante(D.pagamento.length*30 + 50);
+    seccao('Condições de pagamento (c/ IVA)');
+    D.pagamento.forEach(x => {
+      txt(ML+4, y+13, x.quando, 9, true); txt(ML+4, y+25, x.desc, 7.5, false, CINZA);
+      txt(PW-MR-4, y+13, e(x.valor), 9.5, true, PRETO, 'r');
+      y += 31; linha(ML, y, PW-MR);
+    });
+    if(D.pagForma){ y += 6; txt(ML+4, y+8, 'Forma de pagamento: '+D.pagForma, 8.5, false, CINZA); y += 12; }
+    y += 18;
+  }
 
   // ── Notas e assinaturas ──
   const notas = ['* Orçamento elaborado de acordo com o RTIEBT (Regulamento Técnico das Instalações Elétricas de Baixa Tensão).',
@@ -1641,9 +1671,10 @@ function calcular() {
   _divs.forEach(d => {
     const c = calcDivComExtras(d);
     const dist = d.dist || 5;
-    const nCircTom = c.tomadas ? Math.max(1, Math.ceil(c.tomadas/8)) : 0;
+    const nTomPts = c.tomadas + (d.usbc||0);
+    const nCircTom = nTomPts ? Math.max(1, Math.ceil(nTomPts/8)) : 0;
     const nCircLuz = (c.luzes || c.interruptores) ? 1 : 0;
-    const percTom = nCircTom*dist + c.tomadas*2.5;
+    const percTom = nCircTom*dist + nTomPts*2.5;
     const percLuz = nCircLuz*dist + (c.luzes + c.interruptores)*2;
     tot.cabo25 += Math.ceil(percTom * 3 * 1.05);
     tot.cabo15 += Math.ceil(percLuz * 3 * 1.05);
@@ -1797,6 +1828,10 @@ function calcular() {
     if(nC>0) ledMatItems.push({cat:'Iluminação LED',desc:`Carril de encastrar — ${d.nome}`,qty:nC,pu:18*mat_m,unit:'m'});
   });
 
+  // Carregadores USB-C
+  const totUSBC = _divs.reduce((s,d)=>s+(d.usbc||0),0);
+  const usbcMatItems = totUSBC>0 ? [{cat:'Tomadas & Interruptores', desc:'Carregador USB Tipo C Power Delivery 45W (Efapel 21397)', qty:totUSBC, pu:gf('p_usbc')*mat_m, unit:'un.'}] : [];
+
   // Estores elétricos & sancas
   let totEstores=0, totEstMotor=0, totEstLig=0, totEstInt=0, totEstRadio=0, totEstSmart=0;
   let totSanca=0, totFitaLED=0, totDriversSanca=0;
@@ -1923,6 +1958,7 @@ function calcular() {
     {cat:'Canalização', desc:'Tubo corrugado Ø25mm (garagem/exterior proteção)', qty:Math.ceil(Math.max(tot.tubo25*0.5,0)), pu:PRECO_MAT.tuboCor25, unit:'m'},
     ...ledMatItems,
     ...janMatItems,
+    ...usbcMatItems,
     {cat:'Iluminação LED', desc:'Cabo 1.5mm² (circuito focos LED)', qty:totalCabo15LED, pu:PRECO_MAT.cabo15, unit:'m'},
   ].filter(i=>i.qty>0);
 
@@ -1943,7 +1979,8 @@ function calcular() {
   const moVig = totCamaras*35 + totDetec*20 + totTeclados*30 + (temVig?80:0); // instalação sistema
   const moEstores = totEstMotor*gf('p_estore_mo') + totEstLig*gf('p_estore_lig');
   const moSanca = (_sancaMRC ? totSanca*gf('p_sanca_mo') : 0) + totDriversSanca*p.luz;
-  const totalMO = maoItems.reduce((s,i)=>s+i.total,0) + moQuadro + moLED + moEquip + moSwitch + moATI + moVig + moEstores + moSanca;
+  const moUSBC = totUSBC * p.tomada;
+  const totalMO = moUSBC + maoItems.reduce((s,i)=>s+i.total,0) + moQuadro + moLED + moEquip + moSwitch + moATI + moVig + moEstores + moSanca;
 
   // Cabos MO
   const caborMetros = tot.tubo20 + tot.tubo25; // enfiamento + tubagem por metro de percurso
@@ -1962,7 +1999,7 @@ function calcular() {
   const ehFase1 = it => /^(cabo|tubo|caixa|armário ati|sanca nas janelas)/i.test(it.desc||'');
   const matF1 = matItems.filter(ehFase1).reduce((s,i)=>s+i.qty*i.pu,0);
   const matF2 = totalMat - matF1;
-  const moPontos = maoItems.reduce((s,i)=>s+i.total,0) + moLED + moEquip + moSwitch + moATI + moVig;
+  const moPontos = moUSBC + maoItems.reduce((s,i)=>s+i.total,0) + moLED + moEquip + moSwitch + moATI + moVig;
   const moSancaExec = _sancaMRC ? totSanca*gf('p_sanca_mo') : 0;
   const moF1 = moPontos*f1pct + moSancaExec + totalCaboMO;
   const moF2 = moPontos*(1-f1pct) + moQuadro + moEstores + (moSanca - moSancaExec);
@@ -1997,6 +2034,33 @@ function calcular() {
   }).filter(x => x.mat+x.mo > 0.005);
   const extrasTotal = extrasList.reduce((s,x)=>s+x.total,0);
   const baseTotal = total - extrasTotal;
+  // ── Condições de pagamento ──
+  const pagModo = document.getElementById('p_pag_modo')?.value || 'fases';
+  const pagPct = Math.min(100, Math.max(0, gf('p_pag_inicio')));
+  const pagForma = (document.getElementById('p_pag_forma')?.value || '').trim();
+  const _r2 = v => Math.round(v*100)/100;
+  let pagamento = [];
+  if(pagModo !== 'nenhum' && total > 0){
+    const adiant = _r2(total*pagPct/100);
+    if(pagModo === 'fases' && faseOn){
+      const f1Rest = Math.max(0, _r2(f1Total - adiant));
+      const f2Val = _r2(total - adiant - f1Rest);
+      if(adiant>0) pagamento.push({quando:'Adjudicação / início da obra', desc:`Adiantamento de ${pagPct}%`, valor:adiant});
+      if(f1Rest>0) pagamento.push({quando:'Conclusão da 1ª fase', desc:'Restante da infraestrutura (tubagem, caixas e cabos)', valor:f1Rest});
+      pagamento.push({quando:'Conclusão da obra', desc:'2ª fase — aparelhagem e iluminação', valor:f2Val});
+    } else {
+      if(adiant>0) pagamento.push({quando:'Adjudicação / início da obra', desc:`Adiantamento de ${pagPct}%`, valor:adiant});
+      pagamento.push({quando:'Conclusão da obra', desc:`Restante (${100-pagPct}%)`, valor:_r2(total-adiant)});
+    }
+  }
+  const htmlPag = !pagamento.length ? '' : `
+    <div style="border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:8px;font-family:'DM Mono',monospace">💶 CONDIÇÕES DE PAGAMENTO (c/ IVA)</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        ${pagamento.map(x=>`<tr><td style="padding:6px 12px"><b>${x.quando}</b><div style="font-size:11px;color:var(--muted)">${x.desc}</div></td><td class="print-preco" style="padding:6px 12px;text-align:right;font-family:'DM Mono',monospace;font-weight:700">${eur(x.valor)}</td></tr>`).join('')}
+      </table>
+      ${pagForma?`<div style="font-size:12px;color:var(--muted);margin-top:8px">Forma de pagamento: ${pagForma.replace(/[<>&]/g,'')}</div>`:''}
+    </div>`;
   const htmlTipos = !extrasList.length ? '' : `
     <div style="border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:8px;font-family:'DM Mono',monospace">RESUMO POR TIPO DE TRABALHO (c/ IVA)</div>
@@ -2057,6 +2121,7 @@ function calcular() {
   if(moSwitch>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Comando iluminação (${totIntSimples} simples · ${totComut} comut. · ${totInver} inv.)</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moSwitch)}</td></tr>`;
   if(moATI>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">ATI — Telecomunicações (${totTV+totRJ45+totRJ11} pontos × 18€)</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moATI)}</td></tr>`;
   if(moVig>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Segurança & Vigilância (${totCamaras} câmaras + instalação)</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moVig)}</td></tr>`;
+  if(moUSBC>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Carregadores USB-C 45W (${totUSBC} × ${eur(p.tomada)})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moUSBC)}</td></tr>`;
   if(moEstores>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Estores elétricos (${[totEstMotor?totEstMotor+' c/ motor × '+eur(gf('p_estore_mo')):'', totEstLig?totEstLig+' só ligação × '+eur(gf('p_estore_lig')):''].filter(Boolean).join(' · ')})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moEstores)}</td></tr>`;
   if(moSanca>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">${_sancaMRC?`Sancas nas janelas (${totSanca}m × ${eur(gf('p_sanca_mo'))})${totDriversSanca?' + ligação fita LED':''}`:`Ligação da fita LED das sancas (${totDriversSanca} driver${totDriversSanca>1?'s':''})`}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moSanca)}</td></tr>`;
   if(totalFocosLED>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Focos LED (${totalFocosLED} focos × ${eur(p.luz)})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moLED)}</td></tr>`;
@@ -2135,6 +2200,7 @@ function calcular() {
       </div>
       <div class="total-val">${eur(total)}</div>
     </div>
+    <div style="margin-top:16px">${htmlPag}</div>
     <div style="margin-top:16px;font-size:11px;color:var(--muted);line-height:1.8;border-top:1px solid var(--border);padding-top:12px">
       * Orçamento elaborado de acordo com o RTIEBT (Regulamento Técnico das Instalações Elétricas de Baixa Tensão).<br>
       * Valores de material sujeitos a alteração conforme disponibilidade e preços de mercado.<br>
@@ -2154,7 +2220,7 @@ function calcular() {
       </div>
     </div>`;
   window._orcDoc = {cli, morada, ref, data, m2Total, matItems, totalMat, totalMO, totalCaboMO, subtotal,
-    desc:p.desc, descVal, iva:p.iva, ivaVal, total, faseOn, matF1, matF2, moF1, moF2, f1Total, f2Total, totSanca, totEstores, extrasList, extrasTotal, baseTotal, rocosInc:_rocosInc, sancaMRC:_sancaMRC};
+    desc:p.desc, descVal, iva:p.iva, ivaVal, total, faseOn, matF1, matF2, moF1, moF2, f1Total, f2Total, totSanca, totEstores, extrasList, extrasTotal, baseTotal, rocosInc:_rocosInc, sancaMRC:_sancaMRC, pagamento, pagForma};
   if(typeof autoSaveSession === "function") autoSaveSession();
   // Update bottom bar
   var barMat = document.getElementById('barMat');
@@ -2321,6 +2387,7 @@ function abrirModal(div) {
   document.getElementById('f_m2').value = div ? div.m2 : 15;
   document.getElementById('f_tipo').value = div ? div.tipo : 'sala';
   document.getElementById('f_tom_extra').value = div ? (div.tom_extra||0) : 0;
+  document.getElementById('f_usbc').value = div ? (div.usbc||0) : 0;
   document.getElementById('f_int_extra').value = div ? (div.int_extra||0) : 0;
   document.getElementById('f_luz_extra').value = div ? (div.luz_extra||0) : 0;
   document.getElementById('f_notas').value = div ? (div.notas||'') : '';
@@ -2387,6 +2454,7 @@ function guardarDiv() {
   const obj = {
     nome, m2, tipo: gv('f_tipo'),
     tom_extra: gi('f_tom_extra'), int_extra: gi('f_int_extra'), luz_extra: gi('f_luz_extra'),
+    usbc: Math.max(0, gi('f_usbc')),
     notas: gv('f_notas'),
     led_tipo: gv('f_led_tipo')||'normal',
     led_pot: parseInt(document.getElementById('f_led_pot')?.value)||7,
