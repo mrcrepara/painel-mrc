@@ -1212,6 +1212,13 @@ function gerarDocOrcamento(modo){
       <tr><td><b>2ª Fase — Aparelhagem e iluminação</b><br><small>Quadro, tomadas, interruptores, luzes${D.totEstores?', estores':''}</small></td><td class="n">${e(D.matF2)}</td><td class="n">${e(D.moF2)}</td><td class="n"><b>${e(D.f2Total)}</b></td></tr>
     </table>` : '';
 
+  const tiposHtml = (soMat || !D.extrasList || !D.extrasList.length) ? '' : `
+    <h2>Resumo por tipo de trabalho (c/ IVA)</h2>
+    <table class="res" style="max-width:100%">
+      <tr><td><b>Instalação elétrica base</b><br><small>Quadro, cabos, tubagem, tomadas, interruptores, pontos de luz e circuitos dedicados</small></td><td class="n"><b>${e(D.baseTotal)}</b></td></tr>
+      ${D.extrasList.map(x=>`<tr><td style="padding-left:18px">+ ${_esc(x.nome)}</td><td class="n">${e(x.total)}</td></tr>`).join('')}
+      <tr class="hd"><td>Total extras</td><td class="n">${e(D.extrasTotal)}</td></tr>
+    </table>`;
   const resumoHtml = soMat ? (comPrecos ? `<div class="tot"><span>Total material</span><span>${e(D.totalMat)}</span></div>` : '') : `
     <h2>Resumo</h2>
     <table class="res">
@@ -1255,6 +1262,7 @@ function gerarDocOrcamento(modo){
 <h1>${titulo}</h1>
 <small>${_divs.length} divisões · ${D.m2Total} m²</small>
 ${soMat?'':`<h2>Trabalhos por divisão</h2><table>${divHtml}</table>`}
+${tiposHtml}
 ${fasesHtml}
 <h2>Material</h2>
 <table>${comPrecos?'<tr class="hd"><td>Descrição</td><td class="n">Qtd</td><td class="n">P. unit.</td><td class="n">Total</td></tr>':'<tr class="hd"><td>Descrição</td><td class="n">Qtd</td></tr>'}${matHtml}</table>
@@ -1411,6 +1419,24 @@ function _gerarPdfNativo(){
     y += h; linha(ML, y, PW-MR);
   });
   y += 18;
+
+  // ── Resumo por tipo de trabalho ──
+  if(D.extrasList && D.extrasList.length){
+    seccao('Resumo por tipo de trabalho (c/ IVA)');
+    garante(34);
+    txt(ML+4, y+13, 'Instalação elétrica base', 9, true);
+    txt(ML+4, y+25, 'Quadro, cabos, tubagem, tomadas, interruptores, pontos de luz e circuitos dedicados', 7.5, false, CINZA);
+    txt(PW-MR-4, y+13, e(D.baseTotal), 9, true, PRETO, 'r');
+    y += 32; linha(ML, y, PW-MR);
+    D.extrasList.forEach(x => {
+      garante(18);
+      txt(ML+16, y+12, '+ '+x.nome, 9, false, PRETO); txt(PW-MR-4, y+12, e(x.total), 9, false, PRETO, 'r');
+      y += 17; linha(ML, y, PW-MR);
+    });
+    garante(20); rect(ML, y, CW, 18, CLARO);
+    txt(ML+4, y+12.5, 'Total extras', 9, true); txt(PW-MR-4, y+12.5, e(D.extrasTotal), 9, true, AZUL, 'r');
+    y += 36;
+  }
 
   // ── Fases ──
   if(D.faseOn){
@@ -1935,6 +1961,31 @@ function calcular() {
           ${faseRow('Total da fase c/ IVA',tot,true)}
         </table>
       </div>`;
+  // ── Instalação base vs extras ──
+  const _EXTRAS = [
+    ['Estores Elétricos','Estores elétricos', moEstores],
+    ['Sancas','Sancas com iluminação LED', moSanca],
+    ['Iluminação LED','Iluminação LED (focos encastrados)', moLED],
+    ['ATI — Telecomunicações','Telecomunicações (ATI, TV e rede)', moATI],
+    ['Segurança & Vigilância','Segurança e vigilância', moVig],
+    ['Carregador VE / Wallbox','Carregador de veículo elétrico', nEV*120]
+  ];
+  const fatTot = fatDesc*fatIva;
+  const extrasList = _EXTRAS.map(x => {
+    const mat = matItems.filter(i=>i.cat===x[0]).reduce((s,i)=>s+i.qty*i.pu,0);
+    return {nome:x[1], mat, mo:x[2]||0, total:(mat+(x[2]||0))*fatTot};
+  }).filter(x => x.mat+x.mo > 0.005);
+  const extrasTotal = extrasList.reduce((s,x)=>s+x.total,0);
+  const baseTotal = total - extrasTotal;
+  const htmlTipos = !extrasList.length ? '' : `
+    <div style="border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:8px;font-family:'DM Mono',monospace">RESUMO POR TIPO DE TRABALHO (c/ IVA)</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr><td style="padding:7px 12px;font-weight:700">Instalação elétrica base<div style="font-size:11px;color:var(--muted);font-weight:400">Quadro, cabos, tubagem, tomadas, interruptores, pontos de luz e circuitos dedicados</div></td><td class="print-preco" style="padding:7px 12px;text-align:right;font-family:'DM Mono',monospace;font-weight:700">${eur(baseTotal)}</td></tr>
+        ${extrasList.map(x=>`<tr><td style="padding:6px 12px 6px 24px;color:var(--muted)">+ ${x.nome}</td><td class="print-preco" style="padding:6px 12px;text-align:right;font-family:'DM Mono',monospace">${eur(x.total)}</td></tr>`).join('')}
+        <tr style="background:rgba(245,200,66,.08)"><td style="padding:7px 12px;font-weight:700">Total extras</td><td class="print-preco" style="padding:7px 12px;text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:var(--yellow)">${eur(extrasTotal)}</td></tr>
+      </table>
+    </div>`;
   const htmlFases = !faseOn ? '' : `
     <div style="margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:8px;font-family:'DM Mono',monospace">EXECUÇÃO POR FASES</div>
@@ -2055,6 +2106,7 @@ function calcular() {
         <tr class="print-iva"><td style="padding:8px 12px;color:var(--muted)">IVA ${p.iva}%</td><td class="print-preco" style="padding:8px 12px;text-align:right;font-family:'DM Mono',monospace;color:var(--muted)">${eur(ivaVal)}</td></tr>
       </table>
     </div>
+    ${htmlTipos}
     ${htmlFases}
     <div class="total-box print-total">
       <div>
@@ -2081,7 +2133,7 @@ function calcular() {
       </div>
     </div>`;
   window._orcDoc = {cli, morada, ref, data, m2Total, matItems, totalMat, totalMO, totalCaboMO, subtotal,
-    desc:p.desc, descVal, iva:p.iva, ivaVal, total, faseOn, matF1, matF2, moF1, moF2, f1Total, f2Total, totSanca, totEstores};
+    desc:p.desc, descVal, iva:p.iva, ivaVal, total, faseOn, matF1, matF2, moF1, moF2, f1Total, f2Total, totSanca, totEstores, extrasList, extrasTotal, baseTotal};
   if(typeof autoSaveSession === "function") autoSaveSession();
   // Update bottom bar
   var barMat = document.getElementById('barMat');
