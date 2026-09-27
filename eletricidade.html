@@ -1294,15 +1294,6 @@ function _descarregar(blob, nome){
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
-function _carregarHtml2pdf(){
-  if(window.html2pdf) return Promise.resolve();
-  return new Promise((res, rej) => {
-    const sc = document.createElement('script');
-    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-    sc.onload = () => res(); sc.onerror = () => rej(new Error('sem ligação'));
-    document.head.appendChild(sc);
-  });
-}
 
 function _textoWhatsApp(){
   const D = window._orcDoc;
@@ -1314,29 +1305,224 @@ function _textoWhatsApp(){
   return t;
 }
 
-async function _gerarPdfBlob(html){
-  let pdfBlob = null;
+// ══════════════════════════════════════
+// GERADOR DE PDF PRÓPRIO (sem bibliotecas externas, funciona offline)
+// ══════════════════════════════════════
+const _PDF_W = {"Helvetica":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,556,556,0,222,556,333,1000,556,556,333,1000,667,333,1000,0,611,0,0,222,222,333,333,350,556,1000,333,1000,500,333,944,0,500,667,556,333,556,556,556,556,260,556,333,737,370,556,584,556,737,333,400,584,556,556,333,556,537,278,333,556,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500],"Helvetica-Bold":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,556,556,0,278,556,500,1000,556,556,333,1000,667,333,1000,0,611,0,0,278,278,500,500,350,556,1000,333,1000,556,333,944,0,500,667,556,333,556,556,556,556,280,556,333,737,370,556,584,556,737,333,400,584,556,556,333,611,556,278,333,556,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556]};
+function _pdfCh(c){
+  const k = c.charCodeAt(0);
+  const map = {'€':0x80,'‚':0x82,'„':0x84,'…':0x85,'•':0x95,'–':0x96,'—':0x97,'‘':0x91,'’':0x92,'“':0x93,'”':0x94,'™':0x99};
+  if(map[c]!==undefined) return String.fromCharCode(map[c]);
+  if(k>=32 && k<256) return c; // (0x80–0x9F já convertidos para WinAnsi)
+  if(k===9) return ' ';
+  return '';
+}
+function _pdfStr(s){ return Array.from(String(s==null?'':s)).map(_pdfCh).join(''); }
+function _pdfW(s, size, bold){
+  const t = _PDF_W[bold?'Helvetica-Bold':'Helvetica'];
+  let w = 0; for(let i=0;i<s.length;i++) w += t[s.charCodeAt(i)] || 556;
+  return w*size/1000;
+}
+function _pdfWrap(s, size, bold, maxW){
+  s = _pdfStr(s);
+  const words = s.split(' '); const lines = []; let cur = '';
+  words.forEach(w => {
+    const tst = cur ? cur+' '+w : w;
+    if(_pdfW(tst,size,bold) <= maxW || !cur) cur = tst; else { lines.push(cur); cur = w; }
+  });
+  if(cur) lines.push(cur);
+  return lines.length ? lines : [''];
+}
+function _pdfEsc(s){ return s.replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)'); }
+
+function _gerarPdfNativo(){
+  const D = window._orcDoc;
+  if(!D || !_divs.length) throw new Error('sem dados');
+  const PW=595.28, PH=841.89, ML=40, MR=40, TOP=40, BOT=50, CW=PW-ML-MR;
+  const AZUL=[0.102,0.227,0.42], CINZA=[0.4,0.4,0.4], PRETO=[0.13,0.13,0.13], CLARO=[0.93,0.95,0.98];
+  const pages = []; let cs = ''; let y = TOP;
+  const col = c => c.map(v=>v.toFixed(3)).join(' ');
+  const novaPag = () => { if(cs) pages.push(cs); cs=''; y = TOP; };
+  const garante = h => { if(y + h > PH - BOT) novaPag(); };
+  const txt = (x, yy, s, size, bold, c, align) => {
+    s = _pdfStr(s);
+    let xx = x; const w = _pdfW(s,size,bold);
+    if(align==='r') xx = x - w; else if(align==='c') xx = x - w/2;
+    cs += `BT /${bold?'F2':'F1'} ${size} Tf ${col(c||PRETO)} rg ${xx.toFixed(2)} ${(PH-yy).toFixed(2)} Td (${_pdfEsc(s)}) Tj ET\n`;
+  };
+  const rect = (x, yy, w, h, c) => { cs += `${col(c)} rg ${x.toFixed(2)} ${(PH-yy-h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f\n`; };
+  const linha = (x1, yy, x2, c, lw) => { cs += `${col(c||[0.85,0.85,0.85])} RG ${lw||0.5} w ${x1.toFixed(2)} ${(PH-yy).toFixed(2)} m ${x2.toFixed(2)} ${(PH-yy).toFixed(2)} l S\n`; };
+  const e = v => eur(v).replace(/\u00a0/g,' ');
+
+  // Logótipo (JPEG em base64 já existente na página)
+  let img = null;
   try {
-    await _carregarHtml2pdf();
-    const cont = document.createElement('div');
-    cont.style.cssText = 'position:fixed;left:-10000px;top:0;width:780px;background:#fff';
-    cont.innerHTML = html.replace(/[\s\S]*<body>/,'').replace(/<\/body>[\s\S]*/,'').replace(/<div class="barra">[\s\S]*?<\/div>/,'')
-      + '<style>' + (html.match(/<style>([\s\S]*?)<\/style>/)||['',''])[1].replace(/body\{/g,'.pdfroot{') + '</style>';
-    cont.className = 'pdfroot';
-    document.body.appendChild(cont);
-    pdfBlob = await html2pdf().set({
-      margin: 10, filename: _nomeFicheiro('pdf'),
-      image: {type:'jpeg', quality:0.95},
-      html2canvas: {scale:2, backgroundColor:'#ffffff'},
-      jsPDF: {unit:'mm', format:'a4', orientation:'portrait'},
-      pagebreak: {mode:['css','legacy'], avoid:'tr'}
-    }).from(cont).outputPdf('blob');
-    cont.remove();
-  } catch(e){
-    console.warn('PDF:', e);
-    const c = document.querySelector('.pdfroot'); if(c) c.remove();
+    const src = (document.querySelector('header .logo img')||{}).src || '';
+    const m = src.match(/^data:image\/jpe?g;base64,(.*)$/);
+    if(m){
+      const bin = atob(m[1]); const b = new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) b[i]=bin.charCodeAt(i);
+      let i=2, w=0, h=0, nc=3;
+      while(i < b.length){
+        if(b[i]!==0xFF){ i++; continue; }
+        const mk=b[i+1]; const len=(b[i+2]<<8)|b[i+3];
+        if(mk>=0xC0 && mk<=0xCF && mk!==0xC4 && mk!==0xC8 && mk!==0xCC){ h=(b[i+5]<<8)|b[i+6]; w=(b[i+7]<<8)|b[i+8]; nc=b[i+9]; break; }
+        i += 2+len;
+      }
+      if(w && h) img = {bytes:b, w, h, nc};
+    }
+  } catch(err){ img = null; }
+
+  // ── Cabeçalho ──
+  let xNome = ML;
+  if(img){ const ih=42, iw=ih*img.w/img.h; cs += `q ${iw.toFixed(2)} 0 0 ${ih} ${ML} ${(PH-y-ih).toFixed(2)} cm /Im1 Do Q\n`; xNome = ML+iw+8; }
+  txt(xNome, y+16, 'MRC — Reparação de Equipamentos', 11.5, true, AZUL);
+  txt(xNome, y+30, 'Elétricos e Eletrónicos', 11.5, true, AZUL);
+  txt(ML, y+56, 'NIF: 202438481  ·  Tel: 914441852', 9, false, CINZA);
+  const dataPt = String(D.data).split('-').reverse().join('/');
+  txt(PW-MR, y+12, D.cli, 11, true, PRETO, 'r');
+  let yc = y+26;
+  _pdfWrap(D.morada, 9, false, 220).forEach(l => { txt(PW-MR, yc, l, 9, false, CINZA, 'r'); yc += 12; });
+  txt(PW-MR, yc, 'Ref: '+D.ref+'  ·  '+dataPt, 9, false, CINZA, 'r');
+  y = Math.max(y+64, yc+10);
+  rect(ML, y, CW, 2.5, AZUL); y += 24;
+  txt(ML, y, 'ORÇAMENTO — INSTALAÇÃO ELÉTRICA', 15, true, AZUL); y += 14;
+  txt(ML, y, `${_divs.length} divisões · ${D.m2Total} m²`, 8.5, false, CINZA); y += 22;
+
+  const seccao = t => { garante(40); txt(ML, y, t.toUpperCase(), 10.5, true, AZUL); y += 10; };
+
+  // ── Trabalhos por divisão ──
+  seccao('Trabalhos por divisão');
+  const pl = (n, s, p) => n+' '+(n===1?s:p);
+  _divs.forEach(d => {
+    const c = calcDivComExtras(d); const it = [];
+    if(c.tomadas) it.push(pl(c.tomadas,'tomada','tomadas'));
+    if(c.interruptores) it.push(pl(c.interruptores,'comando','comandos'));
+    if(c.luzes) it.push(pl(c.luzes,'ponto de luz','pontos de luz'));
+    if(d.estores) it.push(pl(d.estores,'estore elétrico','estores elétricos'));
+    if(d.sanca_m) it.push(d.sanca_m+' m de sanca'+(d.sanca_led?' c/ LED':''));
+    const ln = _pdfWrap(it.join(' · '), 8.5, false, CW-200);
+    const nm = _pdfWrap(d.nome, 9, true, 125);
+    const h = Math.max(ln.length, nm.length)*11 + 7;
+    garante(h);
+    nm.forEach((l,i)=>txt(ML+2, y+11+i*11, l, 9, true));
+    txt(ML+185, y+11, (d.m2||0)+' m²', 8.5, false, PRETO, 'r');
+    ln.forEach((l,i)=>txt(ML+195, y+11+i*11, l, 8.5));
+    y += h; linha(ML, y, PW-MR);
+  });
+  y += 18;
+
+  // ── Fases ──
+  if(D.faseOn){
+    seccao('Execução por fases');
+    garante(20); rect(ML, y, CW, 18, CLARO);
+    txt(ML+4, y+12, 'Fase', 8.5, true); txt(ML+330, y+12, 'Material', 8.5, true, PRETO, 'r');
+    txt(ML+420, y+12, 'Mão de obra', 8.5, true, PRETO, 'r'); txt(PW-MR-4, y+12, 'Total c/ IVA', 8.5, true, PRETO, 'r');
+    y += 18;
+    [['1ª Fase — Infraestrutura','Roços, tubagem, caixas, enfiamento de cabos'+(D.totSanca?', sancas':''),D.matF1,D.moF1,D.f1Total],
+     ['2ª Fase — Aparelhagem e iluminação','Quadro, tomadas, interruptores, luzes'+(D.totEstores?', estores':''),D.matF2,D.moF2,D.f2Total]].forEach(f=>{
+      garante(34);
+      txt(ML+4, y+13, f[0], 9, true); txt(ML+4, y+25, f[1], 7.5, false, CINZA);
+      txt(ML+330, y+13, e(f[2]), 9, false, PRETO, 'r'); txt(ML+420, y+13, e(f[3]), 9, false, PRETO, 'r');
+      txt(PW-MR-4, y+13, e(f[4]), 9, true, PRETO, 'r');
+      y += 32; linha(ML, y, PW-MR);
+    });
+    y += 18;
   }
-  return pdfBlob;
+
+  // ── Material ──
+  seccao('Material');
+  const cabMat = () => {
+    rect(ML, y, CW, 17, CLARO);
+    txt(ML+4, y+12, 'Descrição', 8.5, true); txt(ML+375, y+12, 'Qtd', 8.5, true, PRETO, 'r');
+    txt(ML+450, y+12, 'P. unit.', 8.5, true, PRETO, 'r'); txt(PW-MR-4, y+12, 'Total', 8.5, true, PRETO, 'r');
+    y += 17;
+  };
+  garante(40); cabMat();
+  const cats = {}; D.matItems.forEach(i => { (cats[i.cat] = cats[i.cat] || []).push(i); });
+  Object.keys(cats).forEach(cat => {
+    garante(34);
+    if(y===TOP) cabMat();
+    rect(ML, y, CW, 15, AZUL); txt(ML+4, y+10.5, cat, 8.5, true, [1,1,1]); y += 15;
+    cats[cat].forEach(i => {
+      const ln = _pdfWrap(i.desc, 8.5, false, 320);
+      const h = ln.length*10.5 + 6;
+      if(y + h > PH - BOT){ novaPag(); cabMat(); }
+      ln.forEach((l,k)=>txt(ML+4, y+10.5+k*10.5, l, 8.5));
+      const q = (Math.round(i.qty*100)/100).toLocaleString('pt-PT')+' '+(i.unit||'un.');
+      txt(ML+375, y+10.5, q, 8.5, false, PRETO, 'r');
+      txt(ML+450, y+10.5, e(i.pu), 8.5, false, PRETO, 'r');
+      txt(PW-MR-4, y+10.5, e(i.qty*i.pu), 8.5, false, PRETO, 'r');
+      y += h; linha(ML, y, PW-MR);
+    });
+  });
+  y += 18;
+
+  // ── Resumo ──
+  const res = [['Material',e(D.totalMat)],['Mão de obra',e(D.totalMO)],['Cabos & canalização (MO)',e(D.totalCaboMO)],['Subtotal',e(D.subtotal)]];
+  if(D.desc>0) res.push(['Desconto '+D.desc+'%','-'+e(D.descVal)]);
+  res.push(['IVA '+D.iva+'%',e(D.ivaVal)]);
+  garante(res.length*16 + 70);
+  seccao('Resumo');
+  const xr = PW-MR-240;
+  res.forEach(r => { txt(xr, y+11, r[0], 9); txt(PW-MR-4, y+11, r[1], 9, false, PRETO, 'r'); y += 16; linha(xr, y, PW-MR); });
+  y += 8;
+  rect(xr, y, 240, 28, [0.94,0.96,1]); cs += `${col(AZUL)} RG 1.5 w ${xr} ${(PH-y-28).toFixed(2)} 240 28 re S\n`;
+  txt(xr+8, y+18.5, 'TOTAL COM IVA', 11, true, AZUL); txt(PW-MR-8, y+18.5, e(D.total), 13, true, AZUL, 'r');
+  y += 48;
+
+  // ── Notas e assinaturas ──
+  const notas = ['* Orçamento elaborado de acordo com o RTIEBT (Regulamento Técnico das Instalações Elétricas de Baixa Tensão).',
+    '* Valores de material sujeitos a alteração conforme disponibilidade e preços de mercado.',
+    '* Orçamento válido por 30 dias a partir da data de emissão.',
+    '* Os valores incluem mão de obra e material. IVA à taxa legal em vigor.'];
+  garante(notas.length*11 + 80);
+  linha(ML, y, PW-MR); y += 14;
+  notas.forEach(n => { _pdfWrap(n, 7.5, false, CW).forEach(l => { txt(ML, y, l, 7.5, false, CINZA); y += 10.5; }); });
+  y += 40;
+  linha(ML, y, ML+180, [0.5,0.5,0.5]); linha(PW-MR-180, y, PW-MR, [0.5,0.5,0.5]);
+  txt(ML+90, y+12, 'O Cliente', 8.5, false, CINZA, 'c'); txt(PW-MR-90, y+12, 'Rui Veloso · MRC', 8.5, false, CINZA, 'c');
+  pages.push(cs);
+
+  // Rodapé com numeração
+  const nP = pages.length;
+  for(let k=0;k<nP;k++){
+    const s = _pdfStr(`MRC · Ref. ${D.ref} · Página ${k+1} de ${nP}`);
+    pages[k] += `BT /F1 7.5 Tf ${col(CINZA)} rg ${(PW/2 - _pdfW(s,7.5,false)/2).toFixed(2)} 25 Td (${_pdfEsc(s)}) Tj ET\n`;
+  }
+
+  // ── Montagem do ficheiro PDF ──
+  const partes = []; const offs = []; let pos = 0;
+  const add = x => { const u = (typeof x==='string') ? Uint8Array.from(x, ch=>ch.charCodeAt(0)&255) : x; partes.push(u); pos += u.length; };
+  const obj = (n, body) => { offs[n] = pos; add(`${n} 0 obj\n`); if(Array.isArray(body)) body.forEach(add); else add(body); add('\nendobj\n'); };
+  add('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+  const firstPage = img ? 6 : 5;
+  const kids = []; for(let k=0;k<nP;k++) kids.push(`${firstPage+k*2} 0 R`);
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, `<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${nP} >>`);
+  obj(3, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+  obj(4, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+  if(img){
+    const csp = img.nc===1?'/DeviceGray':img.nc===4?'/DeviceCMYK /Decode [1 0 1 0 1 0 1 0]':'/DeviceRGB';
+    obj(5, [`<< /Type /XObject /Subtype /Image /Width ${img.w} /Height ${img.h} /ColorSpace ${csp} /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.bytes.length} >>\nstream\n`, img.bytes, '\nendstream']);
+  }
+  const res2 = `<< /Font << /F1 3 0 R /F2 4 0 R >>${img?' /XObject << /Im1 5 0 R >>':''} >>`;
+  for(let k=0;k<nP;k++){
+    const pn = firstPage+k*2, cn = pn+1;
+    obj(pn, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources ${res2} /Contents ${cn} 0 R >>`);
+    obj(cn, `<< /Length ${pages[k].length} >>\nstream\n${pages[k]}\nendstream`);
+  }
+  const nObj = firstPage + nP*2;
+  const xref = pos;
+  let xrefTxt = `xref\n0 ${nObj}\n0000000000 65535 f \n`;
+  for(let n=1;n<nObj;n++) xrefTxt += String(offs[n]||0).padStart(10,'0')+' 00000 n \n';
+  add(xrefTxt + `trailer\n<< /Size ${nObj} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(partes, {type:'application/pdf'});
+}
+
+async function _gerarPdfBlob(){
+  try { return _gerarPdfNativo(); }
+  catch(e){ console.warn('PDF:', e); return null; }
 }
 
 async function descarregarPDF(){
@@ -1348,7 +1534,7 @@ async function descarregarPDF(){
     _descarregar(pdfBlob, _nomeFicheiro('pdf'));
     toast('PDF descarregado ✅');
   } else {
-    toast('Sem ligação — abre o documento e escolhe "Guardar como PDF"','a');
+    toast('Não foi possível gerar o PDF — abre o documento e escolhe "Guardar como PDF"','a');
     imprimirOrc('completo');
   }
 }
@@ -1373,7 +1559,7 @@ async function enviarOrcamento(){
     return;
   }
   // Sem PDF (sem internet): envia o resumo por WhatsApp e abre o documento para imprimir
-  toast('Sem ligação para gerar PDF — a enviar resumo','a');
+  toast('Não foi possível gerar o PDF — a enviar resumo','a');
   window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
 }
 
