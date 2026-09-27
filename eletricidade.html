@@ -174,7 +174,7 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
   <div class="hlinks" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <button onclick="guardarOrcamento()" style="padding:7px 14px;background:#10C97A;color:#000;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">💾 Guardar</button>
     <button onclick="carregarOrcamento()" style="padding:7px 14px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">📂 Carregar</button>
-    <button onclick="exportarOrcamentoJSON()" style="padding:7px 14px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">⬇ Exportar</button>
+    <button onclick="descarregarPDF()" style="padding:7px 14px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">⬇ PDF</button>
     <a href="index.html" style="padding:7px 14px;color:rgba(255,255,255,.6);font-size:13px;text-decoration:none">← Sistema MRC</a>
   </div>
 </header>
@@ -246,6 +246,18 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
             <option value="nao">Não — orçamento único</option>
             <option value="sim">Sim — 1ª fase + 2ª fase</option>
           </select>
+        </div>
+        <div class="fg"><label>Quadro elétrico</label>
+          <select id="p_quadro_mod" onchange="calcular()">
+            <option value="auto">Automático</option>
+            <option value="12">12 módulos (1 fila)</option>
+            <option value="24">24 módulos (2 filas)</option>
+            <option value="36">36 módulos (3 filas)</option>
+            <option value="48">48 módulos (4 filas)</option>
+            <option value="60">60 módulos (5 filas)</option>
+            <option value="72">72 módulos (6 filas)</option>
+          </select>
+          <div id="quadroInfo" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
         </div>
         <div class="fg"><label>MO dos pontos na 1ª fase (%)</label><input type="number" id="p_fase1_pct" value="60" min="0" max="100" step="5" oninput="calcular()"></div>
       </div>
@@ -321,11 +333,12 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
           <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn btn-green btn-sm" onclick="guardarOrcamento()" style="background:#10C97A;color:#000;font-weight:700">💾 Guardar</button>
           <button class="btn btn-ghost btn-sm" onclick="carregarOrcamento()">📂 Carregar</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportarOrcamentoJSON()">⬇ Exportar</button>
+          <button class="btn btn-blue btn-sm" onclick="descarregarPDF()">⬇ Descarregar PDF</button>
           <button class="btn btn-blue btn-sm" onclick="imprimirOrc('completo')">🖨 Imprimir / PDF</button>
           <button class="btn btn-sm" style="background:#25D366;color:#000;font-weight:700" onclick="enviarOrcamento()">📲 Enviar ao cliente</button>
           <button class="btn btn-ghost btn-sm" onclick="imprimirOrc('semprecos')">📋 Lista Material s/Preços</button>
           <button class="btn btn-ghost btn-sm" onclick="imprimirOrc('somentemat')">📦 Só Material c/Preços</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportarOrcamentoJSON()" title="Ficheiro de cópia de segurança (não é para o cliente)">🗄 Cópia de segurança</button>
         </div>
         </div>
       </div>
@@ -1290,10 +1303,7 @@ function _textoWhatsApp(){
   return t;
 }
 
-async function enviarOrcamento(){
-  const html = gerarDocOrcamento('completo');
-  if(!html) return;
-  toast('A gerar PDF...');
+async function _gerarPdfBlob(html){
   let pdfBlob = null;
   try {
     await _carregarHtml2pdf();
@@ -1313,7 +1323,30 @@ async function enviarOrcamento(){
     cont.remove();
   } catch(e){
     console.warn('PDF:', e);
+    const c = document.querySelector('.pdfroot'); if(c) c.remove();
   }
+  return pdfBlob;
+}
+
+async function descarregarPDF(){
+  const html = gerarDocOrcamento('completo');
+  if(!html) return;
+  toast('A gerar PDF...');
+  const pdfBlob = await _gerarPdfBlob(html);
+  if(pdfBlob){
+    _descarregar(pdfBlob, _nomeFicheiro('pdf'));
+    toast('PDF descarregado ✅');
+  } else {
+    toast('Sem ligação — abre o documento e escolhe "Guardar como PDF"','a');
+    imprimirOrc('completo');
+  }
+}
+
+async function enviarOrcamento(){
+  const html = gerarDocOrcamento('completo');
+  if(!html) return;
+  toast('A gerar PDF...');
+  const pdfBlob = await _gerarPdfBlob(html);
 
   const texto = _textoWhatsApp();
   if(pdfBlob){
@@ -1539,16 +1572,30 @@ function calcular() {
     luzes: 12 * mat_m, // inclui suporte
     disjuntor10: 8 * mat_m, disjuntor16: 9 * mat_m, disjuntor20: 10 * mat_m,
     diferencial: 35 * mat_m, diferencial30: 45 * mat_m,
-    quadro12: 45 * mat_m, quadro24: 75 * mat_m, quadro36: 120 * mat_m,
+    quadro12: 45 * mat_m, quadro24: 75 * mat_m, quadro36: 120 * mat_m, quadro48: 160 * mat_m, quadro60: 200 * mat_m, quadro72: 240 * mat_m,
     cabo15: 0.85 * mat_m, cabo25: 1.20 * mat_m, cabo6: 2.80 * mat_m,
     tubo20: (gf('p_tubovd')||0.45) * mat_m, tubo25: ((gf('p_tubovd')||0.45)*1.4) * mat_m, tuboCor20: (gf('p_tubocor')||0.35) * mat_m, tuboCor25: ((gf('p_tubocor')||0.35)*1.5) * mat_m,
     caixasDerivacao: 1.50 * mat_m
   };
 
   // Material total
-  const quadroPreco = nDisjuntores <= 12 ? PRECO_MAT.quadro12 : nDisjuntores <= 24 ? PRECO_MAT.quadro24 : PRECO_MAT.quadro36;
+  // Módulos ocupados: disjuntores (1 mód.), diferenciais 2P (2 mód.), circuitos dedicados, + 20% reserva
+  const nDif30 = Math.max(1,_divs.filter(d=>d.tipo==='banho').length);
+  const modOcup = Math.ceil(tot.tomadas/8) + Math.ceil(tot.luzes/10) + Math.max(1,tot.disjuntores_esp)
+                + totCircDed + 2 /*dif. geral*/ + nDif30*2;
+  const modNec = Math.ceil(modOcup*1.2);
+  const tamanhos = [12,24,36,48,60,72];
+  const quadroAuto = tamanhos.find(t=>t>=modNec) || 72;
+  const selQ = document.getElementById('p_quadro_mod')?.value || 'auto';
+  const quadroMod = selQ==='auto' ? quadroAuto : parseInt(selQ);
+  const qInfo = document.getElementById('quadroInfo');
+  if(qInfo){
+    qInfo.innerHTML = `${modOcup} módulos ocupados (+20% reserva = ${modNec}) · sugerido: <b>${quadroAuto}</b>` +
+      (selQ!=='auto' && quadroMod<modOcup ? ' <span style="color:var(--red)">⚠ quadro escolhido é pequeno</span>' : '');
+  }
+  const quadroPreco = PRECO_MAT['quadro'+quadroMod];
   const matItems = [
-    {cat:'Quadro Elétrico', desc:`Quadro ${nDisjuntores<=12?'12':'24'} módulos`, qty:1, pu:quadroPreco},
+    {cat:'Quadro Elétrico', desc:`Quadro ${quadroMod} módulos (${quadroMod/12} fila${quadroMod>12?'s':''})`, qty:1, pu:quadroPreco},
     {cat:'Quadro Elétrico', desc:'Disjuntor diferencial 300mA (geral)', qty:1, pu:PRECO_MAT.diferencial},
     {cat:'Quadro Elétrico', desc:'Disjuntor diferencial 30mA (zonas húmidas)', qty:Math.max(1,_divs.filter(d=>d.tipo==='banho').length), pu:PRECO_MAT.diferencial30},
     {cat:'Quadro Elétrico', desc:'Disjuntores 16A (circuito tomadas)', qty:Math.ceil(tot.tomadas/8), pu:PRECO_MAT.disjuntor16},
