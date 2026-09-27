@@ -261,7 +261,22 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
         </div>
         <div class="fg"><label>MO dos pontos na 1ª fase (%)</label><input type="number" id="p_fase1_pct" value="60" min="0" max="100" step="5" oninput="calcular()"></div>
       </div>
-      <div style="font-size:11px;color:var(--muted);line-height:1.5">1ª fase: roços, tubos, caixas, enfiamento de cabos, sancas. 2ª fase: tomadas, interruptores, luzes, quadro, motores de estore e equipamentos.</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.5">1ª fase: tubos, caixas, enfiamento de cabos. 2ª fase: tomadas, interruptores, luzes, quadro, motores de estore e equipamentos.</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">🧰 ÂMBITO DO TRABALHO</div>
+      <div class="frow">
+        <div class="fg"><label>Abertura e tapamento de roços</label>
+          <select id="p_rocos" onchange="calcular()">
+            <option value="nao">Não incluído (a cargo de outros)</option>
+            <option value="sim">Incluído no orçamento</option>
+          </select>
+        </div>
+        <div class="fg"><label>Sanca (pladur, perfis, massas)</label>
+          <select id="p_sanca_exec" onchange="calcular()">
+            <option value="outros">Feita por outros — só a parte elétrica (LED)</option>
+            <option value="mrc">Incluída no orçamento</option>
+          </select>
+        </div>
+      </div>
       <div class="frow" style="margin-top:8px">
         <div class="fg"><label>IVA (%)</label><input type="number" id="p_iva" value="23" step="1" oninput="calcular()"></div>
         <div class="fg"><label>Margem Material (%)</label><input type="number" id="p_margem" value="20" step="5" oninput="calcular()"></div>
@@ -1208,7 +1223,7 @@ function gerarDocOrcamento(modo){
     <h2>Execução por fases</h2>
     <table>
       <tr class="hd"><td>Fase</td><td class="n">Material</td><td class="n">Mão de obra</td><td class="n">Total c/ IVA</td></tr>
-      <tr><td><b>1ª Fase — Infraestrutura</b><br><small>Roços, tubagem, caixas, enfiamento de cabos${D.totSanca?', sancas':''}</small></td><td class="n">${e(D.matF1)}</td><td class="n">${e(D.moF1)}</td><td class="n"><b>${e(D.f1Total)}</b></td></tr>
+      <tr><td><b>1ª Fase — Infraestrutura</b><br><small>${D.rocosInc?'Roços, t':'T'}ubagem, caixas, enfiamento de cabos${D.totSanca&&D.sancaMRC?', sancas':''}</small></td><td class="n">${e(D.matF1)}</td><td class="n">${e(D.moF1)}</td><td class="n"><b>${e(D.f1Total)}</b></td></tr>
       <tr><td><b>2ª Fase — Aparelhagem e iluminação</b><br><small>Quadro, tomadas, interruptores, luzes${D.totEstores?', estores':''}</small></td><td class="n">${e(D.matF2)}</td><td class="n">${e(D.moF2)}</td><td class="n"><b>${e(D.f2Total)}</b></td></tr>
     </table>` : '';
 
@@ -1269,6 +1284,8 @@ ${fasesHtml}
 ${resumoHtml}
 ${soMat?'':`<div class="notas">* Orçamento elaborado de acordo com o RTIEBT (Regulamento Técnico das Instalações Elétricas de Baixa Tensão).<br>
 * Valores de material sujeitos a alteração conforme disponibilidade e preços de mercado.<br>
+${D.rocosInc?'':'* Não inclui abertura e tapamento de roços, trabalhos de pladur, massas nem pinturas (a cargo do cliente ou empreiteiro).<br>'}
+${D.totSanca&&!D.sancaMRC&&D.rocosInc?'* A execução das sancas em pladur não está incluída; inclui apenas a instalação elétrica e a fita LED.<br>':''}
 * Orçamento válido por <b>30 dias</b> a partir da data de emissão.<br>
 * Os valores incluem mão de obra e material. IVA à taxa legal em vigor.</div>
 <div class="ass"><div>O Cliente</div><div>Rui Veloso · MRC</div></div>`}
@@ -1445,7 +1462,7 @@ function _gerarPdfNativo(){
     txt(ML+4, y+12, 'Fase', 8.5, true); txt(ML+330, y+12, 'Material', 8.5, true, PRETO, 'r');
     txt(ML+420, y+12, 'Mão de obra', 8.5, true, PRETO, 'r'); txt(PW-MR-4, y+12, 'Total c/ IVA', 8.5, true, PRETO, 'r');
     y += 18;
-    [['1ª Fase — Infraestrutura','Roços, tubagem, caixas, enfiamento de cabos'+(D.totSanca?', sancas':''),D.matF1,D.moF1,D.f1Total],
+    [['1ª Fase — Infraestrutura',(D.rocosInc?'Roços, t':'T')+'ubagem, caixas, enfiamento de cabos'+(D.totSanca&&D.sancaMRC?', sancas':''),D.matF1,D.moF1,D.f1Total],
      ['2ª Fase — Aparelhagem e iluminação','Quadro, tomadas, interruptores, luzes'+(D.totEstores?', estores':''),D.matF2,D.moF2,D.f2Total]].forEach(f=>{
       garante(34);
       txt(ML+4, y+13, f[0], 9, true); txt(ML+4, y+25, f[1], 7.5, false, CINZA);
@@ -1500,6 +1517,8 @@ function _gerarPdfNativo(){
   // ── Notas e assinaturas ──
   const notas = ['* Orçamento elaborado de acordo com o RTIEBT (Regulamento Técnico das Instalações Elétricas de Baixa Tensão).',
     '* Valores de material sujeitos a alteração conforme disponibilidade e preços de mercado.',
+    ...(D.rocosInc ? [] : ['* Não inclui abertura e tapamento de roços, trabalhos de pladur, massas nem pinturas (a cargo do cliente ou empreiteiro).']),
+    ...(D.totSanca && !D.sancaMRC && D.rocosInc ? ['* A execução das sancas em pladur não está incluída; inclui apenas a instalação elétrica e a fita LED.'] : []),
     '* Orçamento válido por 30 dias a partir da data de emissão.',
     '* Os valores incluem mão de obra e material. IVA à taxa legal em vigor.'];
   garante(notas.length*11 + 80);
@@ -1804,7 +1823,9 @@ function calcular() {
     janMatItems.push({cat:'Estores Elétricos',desc:'Cabo H05VV-F 4G1.5mm² (alimentação motor)',qty:totEstores*5,pu:1.10*mat_m,unit:'m'});
     janMatItems.push({cat:'Estores Elétricos',desc:'Caixa de aparelhagem + ligadores',qty:totEstores,pu:2.50*mat_m});
   }
-  if(totSanca>0) janMatItems.push({cat:'Sancas',desc:'Sanca nas janelas (pladur/perfis/massa)',qty:totSanca,pu:(gf('p_sanca_mat')||0)*mat_m,unit:'m'});
+  const _sancaMRC = (document.getElementById('p_sanca_exec')?.value === 'mrc');
+  const _rocosInc = (document.getElementById('p_rocos')?.value === 'sim');
+  if(totSanca>0 && _sancaMRC) janMatItems.push({cat:'Sancas',desc:'Sanca nas janelas (pladur/perfis/massa)',qty:totSanca,pu:(gf('p_sanca_mat')||0)*mat_m,unit:'m'});
   if(totFitaLED>0){
     janMatItems.push({cat:'Sancas',desc:'Fita LED 24V p/ sanca',qty:totFitaLED,pu:(gf('p_fita_led')||6)*mat_m,unit:'m'});
     janMatItems.push({cat:'Sancas',desc:'Driver/fonte 24V p/ fita LED',qty:totDriversSanca,pu:25*mat_m,unit:'un.'});
@@ -1921,7 +1942,7 @@ function calcular() {
   const moATI = (totTV+totRJ45+totRJ11) * 18; // 18€ por ponto ATI
   const moVig = totCamaras*35 + totDetec*20 + totTeclados*30 + (temVig?80:0); // instalação sistema
   const moEstores = totEstMotor*gf('p_estore_mo') + totEstLig*gf('p_estore_lig');
-  const moSanca = totSanca*gf('p_sanca_mo') + totDriversSanca*p.luz;
+  const moSanca = (_sancaMRC ? totSanca*gf('p_sanca_mo') : 0) + totDriversSanca*p.luz;
   const totalMO = maoItems.reduce((s,i)=>s+i.total,0) + moQuadro + moLED + moEquip + moSwitch + moATI + moVig + moEstores + moSanca;
 
   // Cabos MO
@@ -1942,7 +1963,7 @@ function calcular() {
   const matF1 = matItems.filter(ehFase1).reduce((s,i)=>s+i.qty*i.pu,0);
   const matF2 = totalMat - matF1;
   const moPontos = maoItems.reduce((s,i)=>s+i.total,0) + moLED + moEquip + moSwitch + moATI + moVig;
-  const moSancaExec = totSanca*gf('p_sanca_mo');
+  const moSancaExec = _sancaMRC ? totSanca*gf('p_sanca_mo') : 0;
   const moF1 = moPontos*f1pct + moSancaExec + totalCaboMO;
   const moF2 = moPontos*(1-f1pct) + moQuadro + moEstores + (moSanca - moSancaExec);
   const fatDesc = 1 - p.desc/100, fatIva = 1 + p.iva/100;
@@ -1963,7 +1984,7 @@ function calcular() {
   // ── Instalação base vs extras ──
   const _EXTRAS = [
     ['Estores Elétricos','Estores elétricos', moEstores],
-    ['Sancas','Sancas com iluminação LED', moSanca],
+    ['Sancas', _sancaMRC?'Sancas com iluminação LED':'Iluminação LED das sancas', moSanca],
     ['Iluminação LED','Iluminação LED (focos encastrados)', moLED],
     ['ATI — Telecomunicações','Telecomunicações (ATI, TV e rede)', moATI],
     ['Segurança & Vigilância','Segurança e vigilância', moVig],
@@ -1988,7 +2009,7 @@ function calcular() {
   const htmlFases = !faseOn ? '' : `
     <div style="margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:8px;font-family:'DM Mono',monospace">EXECUÇÃO POR FASES</div>
-      ${faseBox('1ª Fase — Infraestrutura','Abertura de roços, tubagem, caixas de aparelhagem e derivação, enfiamento de cabos'+(totSanca?', execução das sancas nas janelas':'')+'.',matF1,moF1,f1Total)}
+      ${faseBox('1ª Fase — Infraestrutura',(_rocosInc?'Abertura de roços, t':'T')+'ubagem, caixas de aparelhagem e derivação, enfiamento de cabos'+(totSanca&&_sancaMRC?', execução das sancas nas janelas':'')+'.',matF1,moF1,f1Total)}
       ${faseBox('2ª Fase — Aparelhagem e iluminação','Montagem e ligação do quadro elétrico, tomadas, interruptores, pontos de luz'+(totEstores?', motores e comandos dos estores':'')+(totFitaLED?', fita LED das sancas':'')+'.',matF2,moF2,f2Total)}
     </div>`;
 
@@ -2036,8 +2057,8 @@ function calcular() {
   if(moSwitch>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Comando iluminação (${totIntSimples} simples · ${totComut} comut. · ${totInver} inv.)</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moSwitch)}</td></tr>`;
   if(moATI>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">ATI — Telecomunicações (${totTV+totRJ45+totRJ11} pontos × 18€)</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moATI)}</td></tr>`;
   if(moVig>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Segurança & Vigilância (${totCamaras} câmaras + instalação)</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moVig)}</td></tr>`;
-  if(moEstores>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Estores elétricos (${totEstMotor} c/ motor × ${eur(gf('p_estore_mo'))}${totEstLig?' · '+totEstLig+' só ligação × '+eur(gf('p_estore_lig')):''})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moEstores)}</td></tr>`;
-  if(moSanca>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Sancas nas janelas (${totSanca}m × ${eur(gf('p_sanca_mo'))}${totDriversSanca?' + ligação fita LED':''})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moSanca)}</td></tr>`;
+  if(moEstores>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Estores elétricos (${[totEstMotor?totEstMotor+' c/ motor × '+eur(gf('p_estore_mo')):'', totEstLig?totEstLig+' só ligação × '+eur(gf('p_estore_lig')):''].filter(Boolean).join(' · ')})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moEstores)}</td></tr>`;
+  if(moSanca>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">${_sancaMRC?`Sancas nas janelas (${totSanca}m × ${eur(gf('p_sanca_mo'))})${totDriversSanca?' + ligação fita LED':''}`:`Ligação da fita LED das sancas (${totDriversSanca} driver${totDriversSanca>1?'s':''})`}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moSanca)}</td></tr>`;
   if(totalFocosLED>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Focos LED (${totalFocosLED} focos × ${eur(p.luz)})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moLED)}</td></tr>`;
   html2 += `<tr style="background:rgba(245,200,66,.08)"><td colspan="4" style="font-weight:800;color:#fff">TOTAL MÃO DE OBRA</td><td style="font-weight:800;color:var(--yellow);font-family:'DM Mono',monospace">${eur(totalMO)}</td></tr>`;
   document.getElementById('tblMao').querySelector('tbody').innerHTML = html2;
@@ -2117,6 +2138,7 @@ function calcular() {
     <div style="margin-top:16px;font-size:11px;color:var(--muted);line-height:1.8;border-top:1px solid var(--border);padding-top:12px">
       * Orçamento elaborado de acordo com o RTIEBT (Regulamento Técnico das Instalações Elétricas de Baixa Tensão).<br>
       * Valores de material sujeitos a alteração conforme disponibilidade e preços de mercado.<br>
+      ${_rocosInc?'':'* Não inclui abertura e tapamento de roços, trabalhos de pladur, massas nem pinturas (a cargo do cliente ou empreiteiro).<br>'}
       * Orçamento válido por <strong>30 dias</strong> a partir da data de emissão.<br>
       * Os valores incluem mão de obra e material. IVA à taxa legal em vigor.<br><br>
       <div style="display:flex;justify-content:space-between;margin-top:20px;flex-wrap:wrap;gap:20px">
@@ -2132,7 +2154,7 @@ function calcular() {
       </div>
     </div>`;
   window._orcDoc = {cli, morada, ref, data, m2Total, matItems, totalMat, totalMO, totalCaboMO, subtotal,
-    desc:p.desc, descVal, iva:p.iva, ivaVal, total, faseOn, matF1, matF2, moF1, moF2, f1Total, f2Total, totSanca, totEstores, extrasList, extrasTotal, baseTotal};
+    desc:p.desc, descVal, iva:p.iva, ivaVal, total, faseOn, matF1, matF2, moF1, moF2, f1Total, f2Total, totSanca, totEstores, extrasList, extrasTotal, baseTotal, rocosInc:_rocosInc, sancaMRC:_sancaMRC};
   if(typeof autoSaveSession === "function") autoSaveSession();
   // Update bottom bar
   var barMat = document.getElementById('barMat');
