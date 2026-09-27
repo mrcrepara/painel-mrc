@@ -1245,9 +1245,9 @@ function gerarDocOrcamento(modo){
   const fasesHtml = (D.faseOn && !soMat) ? `
     <h2>Execução por fases</h2>
     <table>
-      <tr class="hd"><td>Fase</td><td class="n">Material</td><td class="n">Mão de obra</td><td class="n">Total c/ IVA</td></tr>
-      <tr><td><b>1ª Fase — Infraestrutura</b><br><small>${D.rocosInc?'Roços, t':'T'}ubagem, caixas, enfiamento de cabos${D.totSanca&&D.sancaMRC?', sancas':''}</small></td><td class="n">${e(D.matF1)}</td><td class="n">${e(D.moF1)}</td><td class="n"><b>${e(D.f1Total)}</b></td></tr>
-      <tr><td><b>2ª Fase — Aparelhagem e iluminação</b><br><small>Quadro, tomadas, interruptores, luzes${D.totEstores?', estores':''}</small></td><td class="n">${e(D.matF2)}</td><td class="n">${e(D.moF2)}</td><td class="n"><b>${e(D.f2Total)}</b></td></tr>
+      ${comPrecos?`<tr class="hd"><td>Fase</td><td class="n">Material</td><td class="n">Mão de obra</td><td class="n">Total c/ IVA</td></tr>`:`<tr class="hd"><td>Fase</td><td class="n">Total s/ IVA</td><td class="n">Total c/ IVA</td></tr>`}
+      <tr><td><b>1ª Fase — Infraestrutura</b><br><small>${D.rocosInc?'Roços, t':'T'}ubagem, caixas, enfiamento de cabos${D.totSanca&&D.sancaMRC?', sancas':''}</small></td>${comPrecos?`<td class="n">${e(D.matF1)}</td><td class="n">${e(D.moF1)}</td>`:`<td class="n">${e((D.matF1+D.moF1)*(1-D.desc/100))}</td>`}<td class="n"><b>${e(D.f1Total)}</b></td></tr>
+      <tr><td><b>2ª Fase — Aparelhagem e iluminação</b><br><small>Quadro, tomadas, interruptores, luzes${D.totEstores?', estores':''}</small></td>${comPrecos?`<td class="n">${e(D.matF2)}</td><td class="n">${e(D.moF2)}</td>`:`<td class="n">${e((D.matF2+D.moF2)*(1-D.desc/100))}</td>`}<td class="n"><b>${e(D.f2Total)}</b></td></tr>
     </table>` : '';
 
   const tiposHtml = (soMat || !D.extrasList || !D.extrasList.length) ? '' : `
@@ -1260,9 +1260,9 @@ function gerarDocOrcamento(modo){
   const resumoHtml = soMat ? (comPrecos ? `<div class="tot"><span>Total material</span><span>${e(D.totalMat)}</span></div>` : '') : `
     <h2>Resumo</h2>
     <table class="res">
-      <tr><td>Material</td><td class="n">${e(D.totalMat)}</td></tr>
+      ${comPrecos?`<tr><td>Material</td><td class="n">${e(D.totalMat)}</td></tr>
       <tr><td>Mão de obra</td><td class="n">${e(D.totalMO)}</td></tr>
-      <tr><td>Cabos &amp; canalização (MO)</td><td class="n">${e(D.totalCaboMO)}</td></tr>
+      <tr><td>Cabos &amp; canalização (MO)</td><td class="n">${e(D.totalCaboMO)}</td></tr>`:''}
       <tr><td><b>Total sem IVA</b></td><td class="n"><b>${e(D.subtotal)}</b></td></tr>
       ${D.desc>0?`<tr><td>Desconto ${D.desc}%</td><td class="n">-${e(D.descVal)}</td></tr>`:''}
       <tr><td>IVA ${D.iva}%</td><td class="n">${e(D.ivaVal)}</td></tr>
@@ -1485,14 +1485,17 @@ function _gerarPdfNativo(matPrecos){
   if(D.faseOn){
     seccao('Execução por fases');
     garante(20); rect(ML, y, CW, 18, CLARO);
-    txt(ML+4, y+12, 'Fase', 8.5, true); txt(ML+330, y+12, 'Material', 8.5, true, PRETO, 'r');
-    txt(ML+420, y+12, 'Mão de obra', 8.5, true, PRETO, 'r'); txt(PW-MR-4, y+12, 'Total c/ IVA', 8.5, true, PRETO, 'r');
+    txt(ML+4, y+12, 'Fase', 8.5, true);
+    if(matPrecos){ txt(ML+330, y+12, 'Material', 8.5, true, PRETO, 'r'); txt(ML+420, y+12, 'Mão de obra', 8.5, true, PRETO, 'r'); }
+    else txt(ML+420, y+12, 'Total s/ IVA', 8.5, true, PRETO, 'r');
+    txt(PW-MR-4, y+12, 'Total c/ IVA', 8.5, true, PRETO, 'r');
     y += 18;
     [['1ª Fase — Infraestrutura',(D.rocosInc?'Roços, t':'T')+'ubagem, caixas, enfiamento de cabos'+(D.totSanca&&D.sancaMRC?', sancas':''),D.matF1,D.moF1,D.f1Total],
      ['2ª Fase — Aparelhagem e iluminação','Quadro, tomadas, interruptores, luzes'+(D.totEstores?', estores':''),D.matF2,D.moF2,D.f2Total]].forEach(f=>{
       garante(34);
       txt(ML+4, y+13, f[0], 9, true); txt(ML+4, y+25, f[1], 7.5, false, CINZA);
-      txt(ML+330, y+13, e(f[2]), 9, false, PRETO, 'r'); txt(ML+420, y+13, e(f[3]), 9, false, PRETO, 'r');
+      if(matPrecos){ txt(ML+330, y+13, e(f[2]), 9, false, PRETO, 'r'); txt(ML+420, y+13, e(f[3]), 9, false, PRETO, 'r'); }
+      else txt(ML+420, y+13, e((f[2]+f[3])*(1-D.desc/100)), 9, false, PRETO, 'r');
       txt(PW-MR-4, y+13, e(f[4]), 9, true, PRETO, 'r');
       y += 32; linha(ML, y, PW-MR);
     });
@@ -1531,7 +1534,7 @@ function _gerarPdfNativo(matPrecos){
   y += 18;
 
   // ── Resumo ──
-  const res = [['Material',e(D.totalMat)],['Mão de obra',e(D.totalMO)],['Cabos & canalização (MO)',e(D.totalCaboMO)],['Total sem IVA',e(D.subtotal)]];
+  const res = matPrecos ? [['Material',e(D.totalMat)],['Mão de obra',e(D.totalMO)],['Cabos & canalização (MO)',e(D.totalCaboMO)],['Total sem IVA',e(D.subtotal)]] : [['Total sem IVA',e(D.subtotal)]];
   if(D.desc>0) res.push(['Desconto '+D.desc+'%','-'+e(D.descVal)]);
   res.push(['IVA '+D.iva+'%',e(D.ivaVal)]);
   garante(res.length*16 + 70);
