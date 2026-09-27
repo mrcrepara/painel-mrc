@@ -793,6 +793,17 @@ firebase.auth().onAuthStateChanged(function(user){
   }
 });
 
+// Espera pela sessão no máximo 'ms'; se não houver login, mostra o ecrã de login em vez de ficar parado
+async function _esperarLogin(ms){
+  const ok = await Promise.race([_authReady.then(()=>true), new Promise(r=>setTimeout(()=>r(false), ms||8000))]);
+  if(!ok){
+    if(typeof toast==='function') toast('Sessão não iniciada — entra com a conta do painel','a');
+    _mostrarLogin();
+    throw new Error('sem sessão');
+  }
+  return true;
+}
+
 function _mostrarLogin(){
   let ov = document.getElementById('mrcLoginOv');
   if(!ov){
@@ -828,7 +839,7 @@ let _clis = [];
 
 async function carregarClientes() {
   try {
-    await _authReady;
+    await _esperarLogin();
     const doc = await _db.collection('mrc_dados').doc('m3_cli').get();
     _clis = doc.exists ? JSON.parse(doc.data().value || '[]') : [];
     const sel = document.getElementById('cli_sel');
@@ -2478,7 +2489,7 @@ async function guardarOrcamento(){
 
   // Try Firestore
   try {
-    await _authReady;
+    await _esperarLogin();
     await _db.collection('eletro_orcamentos').doc(nome).set(dados);
     savedOk = true;
   } catch(e){ console.warn('Firestore error:', e.message); }
@@ -2504,12 +2515,15 @@ async function carregarOrcamento(){
 
   // Firestore
   try {
-    await _authReady;
+    await _esperarLogin();
     var snap = await _db.collection('eletro_orcamentos').orderBy('data','desc').get();
     snap.forEach(function(doc){
       todos.push(doc.data());
     });
-  } catch(e){ console.warn('Firestore load error:', e.message); }
+  } catch(e){
+    console.warn('Firestore load error:', e.message);
+    if(e.message!=='sem sessão') alert('Não foi possível ler os orçamentos da nuvem:\n' + e.message + '\n\nA mostrar só os guardados neste aparelho.');
+  }
 
   // localStorage
   try {
@@ -2592,7 +2606,7 @@ async function carregarOrcamento(){
     delBtn.onclick = (function(o, r){ return async function(e){
       e.stopPropagation();
       if(!confirm('Apagar: ' + o.nome + '?')) return;
-      try { await _authReady; await _db.collection('eletro_orcamentos').doc(o.nome).delete(); } catch(ex){}
+      try { await _esperarLogin(); await _db.collection('eletro_orcamentos').doc(o.nome).delete(); } catch(ex){}
       try {
         var l = JSON.parse(localStorage.getItem('eletro_orcamentos')||'[]');
         localStorage.setItem('eletro_orcamentos', JSON.stringify(l.filter(function(x){ return x.nome!==o.nome; })));
