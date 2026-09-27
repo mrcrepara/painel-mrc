@@ -322,7 +322,8 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
           <button class="btn btn-green btn-sm" onclick="guardarOrcamento()" style="background:#10C97A;color:#000;font-weight:700">💾 Guardar</button>
           <button class="btn btn-ghost btn-sm" onclick="carregarOrcamento()">📂 Carregar</button>
           <button class="btn btn-ghost btn-sm" onclick="exportarOrcamentoJSON()">⬇ Exportar</button>
-          <button class="btn btn-blue btn-sm" onclick="imprimirOrc('completo')">🖨 Orçamento Completo</button>
+          <button class="btn btn-blue btn-sm" onclick="imprimirOrc('completo')">🖨 Imprimir / PDF</button>
+          <button class="btn btn-sm" style="background:#25D366;color:#000;font-weight:700" onclick="enviarOrcamento()">📲 Enviar ao cliente</button>
           <button class="btn btn-ghost btn-sm" onclick="imprimirOrc('semprecos')">📋 Lista Material s/Preços</button>
           <button class="btn btn-ghost btn-sm" onclick="imprimirOrc('somentemat')">📦 Só Material c/Preços</button>
         </div>
@@ -863,6 +864,16 @@ window.addEventListener('load', function() {
 
 // ── State ────────────────────────────────────────────────
 let _divs = [];
+var _precos = {}, _moEntradas = [];
+function coletarPrecos(){
+  var o = {};
+  document.querySelectorAll('[id^="p_"]').forEach(function(el){ if(el.id) o[el.id] = el.value; });
+  return o;
+}
+function aplicarPrecos(o){
+  if(!o) return;
+  Object.keys(o).forEach(function(id){ var el=document.getElementById(id); if(el && id.indexOf('p_')===0) el.value=o[id]; });
+}
 let _editId = null;
 let _tab = 'materiais';
 let _ilumCustom = JSON.parse(localStorage.getItem('mrc_ilum_catalogo')||'[]');
@@ -1129,14 +1140,197 @@ function atualizarNormaEV() {
     `📋 Norma: IEC 61851-1 · Mode 3 · Type 2 · RTIEBT`;
 }
 
+// ══════════════════════════════════════
+// DOCUMENTO DO ORÇAMENTO (impressão / PDF / envio)
+// ══════════════════════════════════════
+function _esc(t){ return String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function gerarDocOrcamento(modo){
+  calcular();
+  const D = window._orcDoc;
+  if(!D || !_divs.length){ toast('Adiciona divisões primeiro','a'); return null; }
+  modo = modo || 'completo';
+  const comPrecos = modo !== 'semprecos';
+  const soMat = (modo === 'somentemat' || modo === 'semprecos');
+  const logo = (document.querySelector('header .logo img')||{}).src || '';
+  const e = v => eur(v);
+
+  // Material agrupado por categoria
+  const cats = {};
+  D.matItems.forEach(i => { (cats[i.cat] = cats[i.cat] || []).push(i); });
+  let matHtml = '';
+  Object.keys(cats).forEach(c => {
+    matHtml += `<tr class="cat"><td colspan="${comPrecos?4:2}">${_esc(c)}</td></tr>`;
+    cats[c].forEach(i => {
+      const un = i.unit || 'un.';
+      const q = (Math.round(i.qty*100)/100).toLocaleString('pt-PT');
+      matHtml += `<tr><td>${_esc(i.desc)}</td><td class="n">${q} ${_esc(un)}</td>${comPrecos?`<td class="n">${e(i.pu)}</td><td class="n">${e(i.qty*i.pu)}</td>`:''}</tr>`;
+    });
+  });
+
+  // Descrição por divisão
+  const divHtml = _divs.map(d => {
+    const c = calcDivComExtras(d);
+    const it = [];
+    if(c.tomadas) it.push(c.tomadas+' tomadas');
+    if(c.interruptores) it.push(c.interruptores+' comandos');
+    if(c.luzes) it.push(c.luzes+' pontos de luz');
+    if(d.estores) it.push(d.estores+' estore(s) elétrico(s)');
+    if(d.sanca_m) it.push(d.sanca_m+' m de sanca'+(d.sanca_led?' c/ LED':''));
+    return `<tr><td><b>${_esc(d.nome)}</b></td><td class="n">${d.m2||0} m²</td><td>${it.join(' · ')}</td></tr>`;
+  }).join('');
+
+  const fasesHtml = (D.faseOn && !soMat) ? `
+    <h2>Execução por fases</h2>
+    <table>
+      <tr class="hd"><td>Fase</td><td class="n">Material</td><td class="n">Mão de obra</td><td class="n">Total c/ IVA</td></tr>
+      <tr><td><b>1ª Fase — Infraestrutura</b><br><small>Roços, tubagem, caixas, enfiamento de cabos${D.totSanca?', sancas':''}</small></td><td class="n">${e(D.matF1)}</td><td class="n">${e(D.moF1)}</td><td class="n"><b>${e(D.f1Total)}</b></td></tr>
+      <tr><td><b>2ª Fase — Aparelhagem e iluminação</b><br><small>Quadro, tomadas, interruptores, luzes${D.totEstores?', estores':''}</small></td><td class="n">${e(D.matF2)}</td><td class="n">${e(D.moF2)}</td><td class="n"><b>${e(D.f2Total)}</b></td></tr>
+    </table>` : '';
+
+  const resumoHtml = soMat ? (comPrecos ? `<div class="tot"><span>Total material</span><span>${e(D.totalMat)}</span></div>` : '') : `
+    <h2>Resumo</h2>
+    <table class="res">
+      <tr><td>Material</td><td class="n">${e(D.totalMat)}</td></tr>
+      <tr><td>Mão de obra</td><td class="n">${e(D.totalMO)}</td></tr>
+      <tr><td>Cabos &amp; canalização (MO)</td><td class="n">${e(D.totalCaboMO)}</td></tr>
+      <tr><td>Subtotal</td><td class="n">${e(D.subtotal)}</td></tr>
+      ${D.desc>0?`<tr><td>Desconto ${D.desc}%</td><td class="n">-${e(D.descVal)}</td></tr>`:''}
+      <tr><td>IVA ${D.iva}%</td><td class="n">${e(D.ivaVal)}</td></tr>
+    </table>
+    <div class="tot"><span>TOTAL COM IVA</span><span>${e(D.total)}</span></div>`;
+
+  const titulo = soMat ? 'LISTA DE MATERIAL' : 'ORÇAMENTO — INSTALAÇÃO ELÉTRICA';
+  return `<!DOCTYPE html><html lang="pt"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orçamento ${_esc(D.ref)} — ${_esc(D.cli)}</title>
+<style>
+  *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;color:#222;margin:0;padding:24px;font-size:12px;background:#fff}
+  .doc{max-width:780px;margin:0 auto}
+  .top{display:flex;justify-content:space-between;gap:16px;border-bottom:3px solid #1a3a6b;padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap}
+  .top img{height:54px;margin-right:10px;vertical-align:middle}
+  .emp b{font-size:14px;color:#1a3a6b} .cli{text-align:right}
+  h1{font-size:17px;color:#1a3a6b;margin:6px 0 2px} h2{font-size:13px;color:#1a3a6b;margin:18px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+  table{width:100%;border-collapse:collapse} td{padding:5px 6px;border-bottom:1px solid #e3e3e3;vertical-align:top}
+  .n{text-align:right;white-space:nowrap} .cat td{background:#1a3a6b;color:#fff;font-weight:700;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .hd td{font-weight:700;background:#eef2fa;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .res{max-width:360px;margin-left:auto}
+  .tot{display:flex;justify-content:space-between;max-width:360px;margin:8px 0 0 auto;padding:10px 12px;border:2px solid #1a3a6b;font-size:16px;font-weight:800;color:#1a3a6b;background:#f0f4ff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .notas{margin-top:20px;font-size:10.5px;color:#555;line-height:1.7;border-top:1px solid #ddd;padding-top:10px}
+  .ass{display:flex;justify-content:space-between;margin-top:36px;gap:20px} .ass div{border-top:1px solid #999;padding-top:4px;width:200px;text-align:center;font-size:11px}
+  .barra{position:sticky;top:0;background:#1a3a6b;padding:10px;margin:-24px -24px 16px;display:flex;gap:8px;justify-content:center}
+  .barra button{padding:9px 16px;border:0;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px}
+  small{color:#666}
+  @media print{ .barra{display:none} body{padding:0} @page{margin:14mm} tr{page-break-inside:avoid} }
+</style></head><body><div class="doc">
+<div class="barra"><button onclick="window.print()">🖨 Imprimir / Guardar PDF</button><button onclick="window.close()" style="background:#ddd">Fechar</button></div>
+<div class="top">
+  <div class="emp">${logo?`<img src="${logo}">`:''}<b>MRC — Reparação de Equipamentos Elétricos e Eletrónicos</b><br>NIF: 202438481 · Tel: 914441852</div>
+  <div class="cli"><b>${_esc(D.cli)}</b><br>${_esc(D.morada)}<br>Ref: ${_esc(D.ref)} · ${_esc(String(D.data).split('-').reverse().join('/'))}</div>
+</div>
+<h1>${titulo}</h1>
+<small>${_divs.length} divisões · ${D.m2Total} m²</small>
+${soMat?'':`<h2>Trabalhos por divisão</h2><table>${divHtml}</table>`}
+${fasesHtml}
+<h2>Material</h2>
+<table>${comPrecos?'<tr class="hd"><td>Descrição</td><td class="n">Qtd</td><td class="n">P. unit.</td><td class="n">Total</td></tr>':'<tr class="hd"><td>Descrição</td><td class="n">Qtd</td></tr>'}${matHtml}</table>
+${resumoHtml}
+${soMat?'':`<div class="notas">* Orçamento elaborado de acordo com o RTIEBT (Regulamento Técnico das Instalações Elétricas de Baixa Tensão).<br>
+* Valores de material sujeitos a alteração conforme disponibilidade e preços de mercado.<br>
+* Orçamento válido por <b>30 dias</b> a partir da data de emissão.<br>
+* Os valores incluem mão de obra e material. IVA à taxa legal em vigor.</div>
+<div class="ass"><div>O Cliente</div><div>Rui Veloso · MRC</div></div>`}
+</div></body></html>`;
+}
+
 function imprimirOrc(modo) {
-  window._printModo = modo || 'completo';
-  mudarTab('orcamento');
-  setTimeout(() => {
-    document.body.setAttribute('data-print', window._printModo);
-    window.print();
-    setTimeout(() => document.body.removeAttribute('data-print'), 1000);
-  }, 300);
+  const html = gerarDocOrcamento(modo);
+  if(!html) return;
+  const w = window.open('', '_blank');
+  if(!w){
+    // Pop-up bloqueado: descarrega o documento para abrir e imprimir
+    _descarregar(new Blob([html],{type:'text/html'}), _nomeFicheiro('html'));
+    toast('Pop-up bloqueado — documento descarregado','a');
+    return;
+  }
+  w.document.open(); w.document.write(html); w.document.close();
+  w.onload = () => setTimeout(() => { try{ w.focus(); w.print(); }catch(e){} }, 300);
+}
+
+function _nomeFicheiro(ext){
+  const D = window._orcDoc || {};
+  const base = ('Orcamento_' + (D.ref && D.ref!=='—' ? D.ref : '') + '_' + (D.cli||'cliente'))
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9_-]+/g,'_').replace(/_+/g,'_');
+  return base + '.' + ext;
+}
+function _descarregar(blob, nome){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = nome;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+function _carregarHtml2pdf(){
+  if(window.html2pdf) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    sc.onload = () => res(); sc.onerror = () => rej(new Error('sem ligação'));
+    document.head.appendChild(sc);
+  });
+}
+
+function _textoWhatsApp(){
+  const D = window._orcDoc;
+  let t = `*Orçamento — Instalação Elétrica*\nMRC — Reparação de Equipamentos Elétricos\n\nCliente: ${D.cli}\nObra: ${D.morada}\nRef: ${D.ref} · ${String(D.data).split('-').reverse().join('/')}\n${_divs.length} divisões · ${D.m2Total} m²\n\n`;
+  if(D.faseOn){
+    t += `1ª Fase (infraestrutura): ${eur(D.f1Total)}\n2ª Fase (aparelhagem e iluminação): ${eur(D.f2Total)}\n`;
+  }
+  t += `*Total com IVA: ${eur(D.total)}*\n\nOrçamento válido por 30 dias.\nRui Veloso · 914441852`;
+  return t;
+}
+
+async function enviarOrcamento(){
+  const html = gerarDocOrcamento('completo');
+  if(!html) return;
+  toast('A gerar PDF...');
+  let pdfBlob = null;
+  try {
+    await _carregarHtml2pdf();
+    const cont = document.createElement('div');
+    cont.style.cssText = 'position:fixed;left:-10000px;top:0;width:780px;background:#fff';
+    cont.innerHTML = html.replace(/[\s\S]*<body>/,'').replace(/<\/body>[\s\S]*/,'').replace(/<div class="barra">[\s\S]*?<\/div>/,'')
+      + '<style>' + (html.match(/<style>([\s\S]*?)<\/style>/)||['',''])[1].replace(/body\{/g,'.pdfroot{') + '</style>';
+    cont.className = 'pdfroot';
+    document.body.appendChild(cont);
+    pdfBlob = await html2pdf().set({
+      margin: 10, filename: _nomeFicheiro('pdf'),
+      image: {type:'jpeg', quality:0.95},
+      html2canvas: {scale:2, backgroundColor:'#ffffff'},
+      jsPDF: {unit:'mm', format:'a4', orientation:'portrait'},
+      pagebreak: {mode:['css','legacy'], avoid:'tr'}
+    }).from(cont).outputPdf('blob');
+    cont.remove();
+  } catch(e){
+    console.warn('PDF:', e);
+  }
+
+  const texto = _textoWhatsApp();
+  if(pdfBlob){
+    const file = new File([pdfBlob], _nomeFicheiro('pdf'), {type:'application/pdf'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try { await navigator.share({files:[file], title:'Orçamento MRC', text:texto}); return; }
+      catch(e){ if(e && e.name==='AbortError') return; }
+    }
+    // Sem partilha nativa (ex.: computador): descarrega o PDF e abre o WhatsApp com o resumo
+    _descarregar(pdfBlob, _nomeFicheiro('pdf'));
+    toast('PDF descarregado — anexa-o na conversa');
+    window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
+    return;
+  }
+  // Sem PDF (sem internet): envia o resumo por WhatsApp e abre o documento para imprimir
+  toast('Sem ligação para gerar PDF — a enviar resumo','a');
+  window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
 }
 
 function calcular() {
@@ -1617,6 +1811,8 @@ function calcular() {
         </div>
       </div>
     </div>`;
+  window._orcDoc = {cli, morada, ref, data, m2Total, matItems, totalMat, totalMO, totalCaboMO, subtotal,
+    desc:p.desc, descVal, iva:p.iva, ivaVal, total, faseOn, matF1, matF2, moF1, moF2, f1Total, f2Total, totSanca, totEstores};
   if(typeof autoSaveSession === "function") autoSaveSession();
   // Update bottom bar
   var barMat = document.getElementById('barMat');
@@ -2203,16 +2399,13 @@ async function guardarOrcamento(){
 
   // Collect price inputs
   var precos = {};
-  ['p_tomada','p_interruptor','p_luz','p_disjuntor','p_quadro','p_cabo','p_tubo_vd','p_tubo_corr','p_iva','p_margem','p_desconto','p_estore_motor','p_estore_mo','p_estore_lig','p_sanca_mat','p_sanca_mo','p_fita_led','p_fases','p_fase1_pct'].forEach(function(id){
-    var el = document.getElementById(id);
-    if(el) precos[id] = el.value;
-  });
+  Object.assign(precos, coletarPrecos());
 
   // Get client info
-  var clienteEl = document.getElementById('clienteNome');
-  var moradaEl = document.getElementById('clienteMorada');
-  var dataEl = document.getElementById('dataOrc');
-  var refEl = document.getElementById('refOrc');
+  var clienteEl = document.getElementById('cli_nome');
+  var moradaEl = document.getElementById('cli_morada');
+  var dataEl = document.getElementById('orc_data');
+  var refEl = document.getElementById('orc_ref');
   var fasesEl = document.getElementById('nFases');
   var tipoInstEl = document.getElementById('tipoInst');
 
@@ -2335,10 +2528,10 @@ async function carregarOrcamento(){
       }
 
       // Restore client info
-      if(o.cliente){ var c=document.getElementById('clienteNome'); if(c) c.value=o.cliente; }
-      if(o.morada){ var m=document.getElementById('clienteMorada'); if(m) m.value=o.morada; }
-      if(o.dataOrc){ var d=document.getElementById('dataOrc'); if(d) d.value=o.dataOrc; }
-      if(o.ref){ var r=document.getElementById('refOrc'); if(r) r.value=o.ref; }
+      if(o.cliente){ var c=document.getElementById('cli_nome'); if(c) c.value=o.cliente; }
+      if(o.morada){ var m=document.getElementById('cli_morada'); if(m) m.value=o.morada; }
+      if(o.dataOrc){ var d=document.getElementById('orc_data'); if(d) d.value=o.dataOrc; }
+      if(o.ref){ var r=document.getElementById('orc_ref'); if(r) r.value=o.ref; }
 
       renderDivs();
       setTimeout(function(){ if(typeof calcular==='function') calcular(); }, 100);
@@ -2379,9 +2572,9 @@ function exportarOrcamentoJSON(){
   var dados = {
     nome: 'Orcamento ' + new Date().toLocaleDateString('pt-PT'),
     data: new Date().toISOString(),
-    cliente: (document.getElementById('clienteNome')||{}).value || '',
+    cliente: (document.getElementById('cli_nome')||{}).value || '',
     divs: _divs || [],
-    precos: _precos || {},
+    precos: coletarPrecos(),
     mo: _moEntradas || []
   };
 
@@ -2402,9 +2595,9 @@ function autoSaveSession(){
   try {
     var dados = {
       divs: _divs || [],
-      precos: _precos || {},
+      precos: coletarPrecos(),
       mo: _moEntradas || [],
-      cliente: (document.getElementById('clienteNome')||{}).value || '',
+      cliente: (document.getElementById('cli_nome')||{}).value || '',
       ts: new Date().toISOString()
     };
     localStorage.setItem('eletro_autosave', JSON.stringify(dados));
@@ -2421,11 +2614,11 @@ function restaurarSessao(){
     if(!dados.divs || !dados.divs.length) return false;
 
     _divs = dados.divs || [];
-    _precos = dados.precos || {};
+    _precos = dados.precos || {}; aplicarPrecos(_precos);
     _moEntradas = dados.mo || [];
 
     if(dados.cliente){
-      var cliEl = document.getElementById('clienteNome');
+      var cliEl = document.getElementById('cli_nome');
       if(cliEl) cliEl.value = dados.cliente;
     }
     renderDivs();
@@ -2444,7 +2637,7 @@ function saveDivs(){
   try {
     localStorage.setItem('eletro_divs_session', JSON.stringify({
       divs: _divs,
-      precos: _precos || {},
+      precos: coletarPrecos(),
       mo: _moEntradas || [],
       ts: new Date().toISOString()
     }));
