@@ -239,6 +239,17 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
         <div class="fg"><label>Sanca — execução MO (€/m)</label><input type="number" id="p_sanca_mo" value="20" step="0.5" oninput="calcular()"></div>
         <div class="fg"><label>Fita LED sanca — custo (€/m)</label><input type="number" id="p_fita_led" value="6" step="0.5" oninput="calcular()"></div>
       </div>
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">🧱 DIVISÃO POR FASES DE OBRA</div>
+      <div class="frow">
+        <div class="fg"><label>Orçamento por fases</label>
+          <select id="p_fases" onchange="calcular()">
+            <option value="nao">Não — orçamento único</option>
+            <option value="sim">Sim — 1ª fase + 2ª fase</option>
+          </select>
+        </div>
+        <div class="fg"><label>MO dos pontos na 1ª fase (%)</label><input type="number" id="p_fase1_pct" value="60" min="0" max="100" step="5" oninput="calcular()"></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.5">1ª fase: roços, tubos, caixas, enfiamento de cabos, sancas. 2ª fase: tomadas, interruptores, luzes, quadro, motores de estore e equipamentos.</div>
       <div class="frow" style="margin-top:8px">
         <div class="fg"><label>IVA (%)</label><input type="number" id="p_iva" value="23" step="1" oninput="calcular()"></div>
         <div class="fg"><label>Margem Material (%)</label><input type="number" id="p_margem" value="20" step="5" oninput="calcular()"></div>
@@ -1436,6 +1447,38 @@ function calcular() {
   const ivaVal = aposDesc * (p.iva/100);
   const total = aposDesc + ivaVal;
 
+  // ── Divisão por fases (1ª = infraestrutura / 2ª = aparelhagem e acabamentos) ──
+  const faseOn = (document.getElementById('p_fases')?.value === 'sim');
+  const f1pct = Math.min(100, Math.max(0, gf('p_fase1_pct'))) / 100;
+  const ehFase1 = it => /^(cabo|tubo|caixa|armário ati|sanca nas janelas)/i.test(it.desc||'');
+  const matF1 = matItems.filter(ehFase1).reduce((s,i)=>s+i.qty*i.pu,0);
+  const matF2 = totalMat - matF1;
+  const moPontos = maoItems.reduce((s,i)=>s+i.total,0) + moLED + moEquip + moSwitch + moATI + moVig;
+  const moSancaExec = totSanca*gf('p_sanca_mo');
+  const moF1 = moPontos*f1pct + moSancaExec + totalCaboMO;
+  const moF2 = moPontos*(1-f1pct) + moQuadro + moEstores + (moSanca - moSancaExec);
+  const fatDesc = 1 - p.desc/100, fatIva = 1 + p.iva/100;
+  const f1Total = (matF1+moF1)*fatDesc*fatIva;
+  const f2Total = (matF2+moF2)*fatDesc*fatIva;
+  const faseRow = (lbl,val,bold) => `<tr><td style="padding:6px 12px;${bold?'font-weight:700':'color:var(--muted)'}">${lbl}</td><td class="print-preco" style="padding:6px 12px;text-align:right;font-family:'DM Mono',monospace;${bold?'font-weight:800;color:var(--yellow)':''}">${eur(val)}</td></tr>`;
+  const faseBox = (tit,desc,mat,mo,tot) => `
+      <div style="border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">
+        <div style="font-size:15px;font-weight:800;color:var(--text)">${tit}</div>
+        <div style="font-size:12px;color:var(--muted);margin:4px 0 10px;line-height:1.5">${desc}</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          ${faseRow('Material',mat)}${faseRow('Mão de obra',mo)}
+          ${p.desc>0?faseRow('Desconto '+p.desc+'%',-(mat+mo)*p.desc/100):''}
+          ${faseRow('IVA '+p.iva+'%',(mat+mo)*fatDesc*p.iva/100)}
+          ${faseRow('Total da fase c/ IVA',tot,true)}
+        </table>
+      </div>`;
+  const htmlFases = !faseOn ? '' : `
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:8px;font-family:'DM Mono',monospace">EXECUÇÃO POR FASES</div>
+      ${faseBox('1ª Fase — Infraestrutura','Abertura de roços, tubagem, caixas de aparelhagem e derivação, enfiamento de cabos'+(totSanca?', execução das sancas nas janelas':'')+'.',matF1,moF1,f1Total)}
+      ${faseBox('2ª Fase — Aparelhagem e iluminação','Montagem e ligação do quadro elétrico, tomadas, interruptores, pontos de luz'+(totEstores?', motores e comandos dos estores':'')+(totFitaLED?', fita LED das sancas':'')+'.',matF2,moF2,f2Total)}
+    </div>`;
+
   // ── KPI ──
   document.getElementById('kpiGrid').innerHTML =
     kpi('Tomadas', tot.tomadas, 'un.', 'yellow') +
@@ -1549,9 +1592,10 @@ function calcular() {
         <tr class="print-iva"><td style="padding:8px 12px;color:var(--muted)">IVA ${p.iva}%</td><td class="print-preco" style="padding:8px 12px;text-align:right;font-family:'DM Mono',monospace;color:var(--muted)">${eur(ivaVal)}</td></tr>
       </table>
     </div>
+    ${htmlFases}
     <div class="total-box print-total">
       <div>
-        <div class="total-label">TOTAL COM IVA</div>
+        <div class="total-label">TOTAL COM IVA${faseOn?' (1ª + 2ª fase)':''}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:2px">${_divs.length} divisões · ${m2Total}m²</div>
       </div>
       <div class="total-val">${eur(total)}</div>
@@ -1867,7 +1911,7 @@ function resetPrecos() {
   document.getElementById('p_iva').value=23;
   document.getElementById('p_margem').value=20;
   document.getElementById('p_desc').value=0;
-  [['p_estore_motor',65],['p_estore_mo',45],['p_estore_lig',20],['p_sanca_mat',12],['p_sanca_mo',20],['p_fita_led',6]].forEach(function(a){ var el=document.getElementById(a[0]); if(el) el.value=a[1]; });
+  [['p_estore_motor',65],['p_estore_mo',45],['p_estore_lig',20],['p_sanca_mat',12],['p_sanca_mo',20],['p_fita_led',6],['p_fase1_pct',60]].forEach(function(a){ var el=document.getElementById(a[0]); if(el) el.value=a[1]; });
   calcular(); toast('Preços reposto para valores padrão.');
 }
 
@@ -2159,7 +2203,7 @@ async function guardarOrcamento(){
 
   // Collect price inputs
   var precos = {};
-  ['p_tomada','p_interruptor','p_luz','p_disjuntor','p_quadro','p_cabo','p_tubo_vd','p_tubo_corr','p_iva','p_margem','p_desconto','p_estore_motor','p_estore_mo','p_estore_lig','p_sanca_mat','p_sanca_mo','p_fita_led'].forEach(function(id){
+  ['p_tomada','p_interruptor','p_luz','p_disjuntor','p_quadro','p_cabo','p_tubo_vd','p_tubo_corr','p_iva','p_margem','p_desconto','p_estore_motor','p_estore_mo','p_estore_lig','p_sanca_mat','p_sanca_mo','p_fita_led','p_fases','p_fase1_pct'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) precos[id] = el.value;
   });
