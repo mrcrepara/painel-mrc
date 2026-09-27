@@ -1587,6 +1587,28 @@ function calcular() {
     Object.keys(tot).forEach(k => tot[k] += (c[k]||0));
   });
 
+  // ── Cabos e tubos dos circuitos normais, por percurso real ──
+  // Cada circuito leva 3 condutores (fase, neutro, terra). Percurso = ida do quadro à divisão
+  // (uma por circuito) + troço entre pontos dentro da divisão (2,5 m/tomada, 2 m/luz ou comando). +5% de folga.
+  // Disjuntores "especiais" só contam quando não há já um circuito dedicado para esse equipamento.
+  const _EQ_KEYS = ['eq_ac','eq_placa','eq_forno','eq_micro','eq_mll','eq_mlr','eq_msr','eq_termo','eq_ev'];
+  tot.cabo25 = 0; tot.cabo15 = 0; tot.cabo6 = 0; tot.tubo20 = 0; tot.tubo25 = 0; tot.disjuntores_esp = 0;
+  _divs.forEach(d => {
+    const c = calcDivComExtras(d);
+    const dist = d.dist || 5;
+    const nCircTom = c.tomadas ? Math.max(1, Math.ceil(c.tomadas/8)) : 0;
+    const nCircLuz = (c.luzes || c.interruptores) ? 1 : 0;
+    const percTom = nCircTom*dist + c.tomadas*2.5;
+    const percLuz = nCircLuz*dist + (c.luzes + c.interruptores)*2;
+    tot.cabo25 += Math.ceil(percTom * 3 * 1.05);
+    tot.cabo15 += Math.ceil(percLuz * 3 * 1.05);
+    const perc = Math.ceil((percTom + percLuz) * 1.05);
+    if(d.tipo==='garagem' || d.tipo==='exterior') tot.tubo25 += perc; else tot.tubo20 += perc;
+    const espBase = d.tipo==='banho' ? 0 : (calcDiv(d.tipo, d.m2).disjuntores_esp || 0);
+    const nDedDiv = _EQ_KEYS.filter(k => d[k]).length;
+    tot.disjuntores_esp += Math.max(0, espBase - nDedDiv);
+  });
+
   // Quadro elétrico
   const nCircuitos = Math.ceil(tot.tomadas/8) + Math.ceil(tot.luzes/10) + Math.ceil(tot.disjuntores_esp) + 2;
   const nDisjuntores = nCircuitos + 2; // + diferencial geral + 1 reserva
@@ -1668,9 +1690,8 @@ function calcular() {
     const dist=d.dist||5;
     const mCabo=Math.ceil(dist*2*1.2);
     const c=calcDivComExtras(d);
-    tot25Ger+=Math.ceil(c.cabo25*1.2+(c.tomadas*mCabo*0.1));
-    tot15Ger+=Math.ceil(c.cabo15*1.2+(c.luzes*mCabo*0.08));
   });
+  tot25Ger = tot.cabo25; tot15Ger = tot.cabo15;
 
   // ATI totals
   let totTV=0, totTVterm=0, totRJ45=0, totRJ11=0, totTMista=0, totTRVSAT=0, totTPC25=0, totCamaras=0, totCamarasCCTV=0, totDetec=0, totTeclados=0, totSirenes=0;
@@ -1777,8 +1798,12 @@ function calcular() {
 
   // Material total
   // Módulos ocupados: disjuntores (1 mód.), diferenciais 2P (2 mód.), circuitos dedicados, + 20% reserva
-  const nDif30 = Math.max(1,_divs.filter(d=>d.tipo==='banho').length);
-  const modOcup = Math.ceil(tot.tomadas/8) + Math.ceil(tot.luzes/10) + Math.max(1,tot.disjuntores_esp)
+  const nBanhos = _divs.filter(d=>d.tipo==='banho').length;
+  const nDedTomada = _divs.reduce((s,d)=>s+['eq_ac','eq_micro','eq_mll','eq_mlr','eq_msr'].filter(k=>d[k]).length, 0);
+  const nCircTomTotal = _divs.reduce((s,d)=>{ const t=calcDivComExtras(d).tomadas; return s + (t?Math.ceil(t/8):0); }, 0);
+  // Todos os circuitos de tomadas (incl. casas de banho e dedicados de tomada) sob 30 mA, até 5 circuitos por diferencial
+  const nDif30 = Math.max(nBanhos?1:0, Math.ceil((nCircTomTotal + nDedTomada)/5)) || 1;
+  const modOcup = Math.ceil(tot.tomadas/8) + Math.ceil(tot.luzes/10) + tot.disjuntores_esp
                 + totCircDed + 2 /*dif. geral*/ + nDif30*2;
   const modNec = Math.ceil(modOcup*1.2);
   const tamanhos = [12,24,36,48,60,72];
@@ -1794,10 +1819,10 @@ function calcular() {
   const matItems = [
     {cat:'Quadro Elétrico', desc:`Quadro ${quadroMod} módulos (${quadroMod/12} fila${quadroMod>12?'s':''})`, qty:1, pu:quadroPreco},
     {cat:'Quadro Elétrico', desc:'Disjuntor diferencial 300mA (geral)', qty:1, pu:PRECO_MAT.diferencial},
-    {cat:'Quadro Elétrico', desc:'Disjuntor diferencial 30mA (zonas húmidas)', qty:Math.max(1,_divs.filter(d=>d.tipo==='banho').length), pu:PRECO_MAT.diferencial30},
+    {cat:'Quadro Elétrico', desc:'Interruptor diferencial 30mA (tomadas e zonas húmidas)', qty:nDif30, pu:PRECO_MAT.diferencial30},
     {cat:'Quadro Elétrico', desc:'Disjuntores 16A (circuito tomadas)', qty:Math.ceil(tot.tomadas/8), pu:PRECO_MAT.disjuntor16},
     {cat:'Quadro Elétrico', desc:'Disjuntores 10A (circuito iluminação)', qty:Math.ceil(tot.luzes/10), pu:PRECO_MAT.disjuntor10},
-    {cat:'Quadro Elétrico', desc:'Disjuntores 20A (circuitos especiais)', qty:Math.max(1,tot.disjuntores_esp), pu:PRECO_MAT.disjuntor20},
+    {cat:'Quadro Elétrico', desc:'Disjuntores 20A (circuitos especiais)', qty:tot.disjuntores_esp, pu:PRECO_MAT.disjuntor20},
     {cat:'Tomadas & Interruptores', desc:'Tomadas 16A 2P+T', qty:tot.tomadas, pu:PRECO_MAT.tomada},
     ...(totIntSimples>0?[{cat:'Comando de Iluminação', desc:'Interruptores simples (1 ponto)', qty:totIntSimples, pu:PRECO_MAT.interruptor}]:[]),
     ...(pecasComut>0?[{cat:'Comando de Iluminação', desc:'Comutadores de escada (2 peças/ponto)', qty:pecasComut, pu:4.50*mat_m}]:[]),
@@ -1821,8 +1846,8 @@ function calcular() {
       ...(totTV>0?[{cat:'ATI — Telecomunicações', desc:'Tomadas TV (IEC 169-2)', qty:totTV, pu:5.5*mat_m}]:[]),
       ...(totRJ45>0?[{cat:'ATI — Telecomunicações', desc:'Tomadas dados RJ45 Cat.6', qty:totRJ45, pu:7*mat_m}]:[]),
       ...(totRJ11>0?[{cat:'ATI — Telecomunicações', desc:'Tomadas telefone RJ11', qty:totRJ11, pu:4*mat_m}]:[]),
-      ...(totTV>0?[{cat:'ATI — Telecomunicações', desc:'Cabo coaxial RG6 (distribuição TV)', qty:mCaboCoax, pu:0.80*mat_m, unit:'m'}]:[]),
-      ...(totRJ45>0?[{cat:'ATI — Telecomunicações', desc:'Cabo UTP Cat.6 (rede dados/internet)', qty:mCaboRede, pu:0.65*mat_m, unit:'m'}]:[]),
+      ...(mCaboCoax>0?[{cat:'ATI — Telecomunicações', desc:'Cabo coaxial RG6 (distribuição TV)', qty:mCaboCoax, pu:0.80*mat_m, unit:'m'}]:[]),
+      ...(mCaboRede>0?[{cat:'ATI — Telecomunicações', desc:'Cabo UTP Cat.6 (rede dados/internet)', qty:mCaboRede, pu:0.65*mat_m, unit:'m'}]:[]),
       {cat:'ATI — Telecomunicações', desc:'Splitter/repartidor TV', qty:totTV>4?2:1, pu:12*mat_m},
       {cat:'ATI — Telecomunicações', desc:'Switch 8 portas (rede)', qty:totRJ45>0?1:0, pu:45*mat_m},
     ]:[]),
@@ -1845,7 +1870,6 @@ function calcular() {
     {cat:'Caixas & Acessórios', desc:'Caixas de derivação', qty:Math.ceil((tot.tomadas+tot.luzes+tot.interruptores)*0.3), pu:PRECO_MAT.caixasDerivacao},
     {cat:'Cabos', desc:'Cabo H07V-K 2.5mm² (circuitos tomadas)', qty:tot.cabo25, pu:PRECO_MAT.cabo25, unit:'m'},
     {cat:'Cabos', desc:'Cabo H07V-K 1.5mm² (circuitos iluminação)', qty:tot.cabo15, pu:PRECO_MAT.cabo15, unit:'m'},
-    {cat:'Cabos', desc:'Cabo H07V-K 6mm² (circuitos especiais)', qty:Math.max(tot.cabo6,6), pu:PRECO_MAT.cabo6, unit:'m'},
     {cat:'Canalização', desc:'Tubo VD rígido Ø20mm (interiores embutido)', qty:Math.ceil(tot.tubo20*0.6), pu:PRECO_MAT.tubo20, unit:'m'},
     {cat:'Canalização', desc:'Tubo VD rígido Ø25mm (garagem/exterior embutido)', qty:Math.max(Math.ceil(tot.tubo25*0.5),0), pu:PRECO_MAT.tubo25, unit:'m'},
     {cat:'Canalização', desc:'Tubo corrugado Ø20mm (lajes/paredes)', qty:Math.ceil(tot.tubo20*0.4), pu:PRECO_MAT.tuboCor20, unit:'m'},
@@ -1875,7 +1899,7 @@ function calcular() {
   const totalMO = maoItems.reduce((s,i)=>s+i.total,0) + moQuadro + moLED + moEquip + moSwitch + moATI + moVig + moEstores + moSanca;
 
   // Cabos MO
-  const caborMetros = tot.cabo25 + tot.cabo15 + tot.cabo6 + tot.tubo20 + tot.tubo25;
+  const caborMetros = tot.tubo20 + tot.tubo25; // enfiamento + tubagem por metro de percurso
   const totalCaboMO = caborMetros * p.cabo;
 
   // Subtotais
