@@ -273,6 +273,12 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
           </select>
         </div>
         <div class="fg"><label>Adiantamento no início da obra (%)</label><input type="number" id="p_pag_inicio" value="30" min="0" max="100" step="5" oninput="calcular()"></div>
+        <div class="fg"><label>Lista de material no PDF / envio</label>
+          <select id="p_mat_precos" onchange="calcular()">
+            <option value="sim">Com preços</option>
+            <option value="nao">Sem preços (só quantidades)</option>
+          </select>
+        </div>
         <div class="fg"><label>Forma de pagamento (opcional)</label><input id="p_pag_forma" placeholder="ex: Transferência bancária / MB Way" oninput="calcular()"></div>
       </div>
       <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">🧰 ÂMBITO DO TRABALHO</div>
@@ -363,6 +369,7 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
           <button class="btn btn-ghost btn-sm" onclick="carregarOrcamento()">📂 Carregar</button>
           <button class="btn btn-blue btn-sm" onclick="descarregarPDF()">⬇ Descarregar PDF</button>
           <button class="btn btn-blue btn-sm" onclick="imprimirOrc('completo')">🖨 Imprimir / PDF</button>
+          <button class="btn btn-ghost btn-sm" onclick="descarregarPDFCliente()">📄 PDF p/ cliente (material s/ preços)</button>
           <button class="btn btn-sm" style="background:#25D366;color:#000;font-weight:700" onclick="enviarOrcamento()">📲 Enviar ao cliente</button>
           <button class="btn btn-ghost btn-sm" onclick="imprimirOrc('semprecos')">📋 Lista Material s/Preços</button>
           <button class="btn btn-ghost btn-sm" onclick="imprimirOrc('somentemat')">📦 Só Material c/Preços</button>
@@ -1198,12 +1205,13 @@ function atualizarNormaEV() {
 // ══════════════════════════════════════
 function _esc(t){ return String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
+function _matComPrecos(){ return (document.getElementById('p_mat_precos')?.value || 'sim') !== 'nao'; }
 function gerarDocOrcamento(modo){
   calcular();
   const D = window._orcDoc;
   if(!D || !_divs.length){ toast('Adiciona divisões primeiro','a'); return null; }
   modo = modo || 'completo';
-  const comPrecos = modo !== 'semprecos';
+  const comPrecos = modo === 'semprecos' ? false : (modo === 'cliente' ? false : (modo === 'completo' ? _matComPrecos() : true));
   const soMat = (modo === 'somentemat' || modo === 'semprecos');
   const logo = (document.querySelector('header .logo img')||{}).src || '';
   const e = v => eur(v);
@@ -1255,7 +1263,7 @@ function gerarDocOrcamento(modo){
       <tr><td>Material</td><td class="n">${e(D.totalMat)}</td></tr>
       <tr><td>Mão de obra</td><td class="n">${e(D.totalMO)}</td></tr>
       <tr><td>Cabos &amp; canalização (MO)</td><td class="n">${e(D.totalCaboMO)}</td></tr>
-      <tr><td>Subtotal</td><td class="n">${e(D.subtotal)}</td></tr>
+      <tr><td><b>Total sem IVA</b></td><td class="n"><b>${e(D.subtotal)}</b></td></tr>
       ${D.desc>0?`<tr><td>Desconto ${D.desc}%</td><td class="n">-${e(D.descVal)}</td></tr>`:''}
       <tr><td>IVA ${D.iva}%</td><td class="n">${e(D.ivaVal)}</td></tr>
     </table>
@@ -1376,7 +1384,8 @@ function _pdfWrap(s, size, bold, maxW){
 }
 function _pdfEsc(s){ return s.replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)'); }
 
-function _gerarPdfNativo(){
+function _gerarPdfNativo(matPrecos){
+  if(matPrecos === undefined) matPrecos = _matComPrecos();
   const D = window._orcDoc;
   if(!D || !_divs.length) throw new Error('sem dados');
   const PW=595.28, PH=841.89, ML=40, MR=40, TOP=40, BOT=50, CW=PW-ML-MR;
@@ -1494,8 +1503,9 @@ function _gerarPdfNativo(){
   seccao('Material');
   const cabMat = () => {
     rect(ML, y, CW, 17, CLARO);
-    txt(ML+4, y+12, 'Descrição', 8.5, true); txt(ML+375, y+12, 'Qtd', 8.5, true, PRETO, 'r');
-    txt(ML+450, y+12, 'P. unit.', 8.5, true, PRETO, 'r'); txt(PW-MR-4, y+12, 'Total', 8.5, true, PRETO, 'r');
+    txt(ML+4, y+12, 'Descrição', 8.5, true);
+    if(matPrecos){ txt(ML+375, y+12, 'Qtd', 8.5, true, PRETO, 'r'); txt(ML+450, y+12, 'P. unit.', 8.5, true, PRETO, 'r'); txt(PW-MR-4, y+12, 'Total', 8.5, true, PRETO, 'r'); }
+    else txt(PW-MR-4, y+12, 'Quantidade', 8.5, true, PRETO, 'r');
     y += 17;
   };
   garante(40); cabMat();
@@ -1505,27 +1515,29 @@ function _gerarPdfNativo(){
     if(y===TOP) cabMat();
     rect(ML, y, CW, 15, AZUL); txt(ML+4, y+10.5, cat, 8.5, true, [1,1,1]); y += 15;
     cats[cat].forEach(i => {
-      const ln = _pdfWrap(i.desc, 8.5, false, 320);
+      const ln = _pdfWrap(i.desc, 8.5, false, matPrecos ? 320 : 420);
       const h = ln.length*10.5 + 6;
       if(y + h > PH - BOT){ novaPag(); cabMat(); }
       ln.forEach((l,k)=>txt(ML+4, y+10.5+k*10.5, l, 8.5));
       const q = (Math.round(i.qty*100)/100).toLocaleString('pt-PT')+' '+(i.unit||'un.');
-      txt(ML+375, y+10.5, q, 8.5, false, PRETO, 'r');
-      txt(ML+450, y+10.5, e(i.pu), 8.5, false, PRETO, 'r');
-      txt(PW-MR-4, y+10.5, e(i.qty*i.pu), 8.5, false, PRETO, 'r');
+      if(matPrecos){
+        txt(ML+375, y+10.5, q, 8.5, false, PRETO, 'r');
+        txt(ML+450, y+10.5, e(i.pu), 8.5, false, PRETO, 'r');
+        txt(PW-MR-4, y+10.5, e(i.qty*i.pu), 8.5, false, PRETO, 'r');
+      } else txt(PW-MR-4, y+10.5, q, 8.5, false, PRETO, 'r');
       y += h; linha(ML, y, PW-MR);
     });
   });
   y += 18;
 
   // ── Resumo ──
-  const res = [['Material',e(D.totalMat)],['Mão de obra',e(D.totalMO)],['Cabos & canalização (MO)',e(D.totalCaboMO)],['Subtotal',e(D.subtotal)]];
+  const res = [['Material',e(D.totalMat)],['Mão de obra',e(D.totalMO)],['Cabos & canalização (MO)',e(D.totalCaboMO)],['Total sem IVA',e(D.subtotal)]];
   if(D.desc>0) res.push(['Desconto '+D.desc+'%','-'+e(D.descVal)]);
   res.push(['IVA '+D.iva+'%',e(D.ivaVal)]);
   garante(res.length*16 + 70);
   seccao('Resumo');
   const xr = PW-MR-240;
-  res.forEach(r => { txt(xr, y+11, r[0], 9); txt(PW-MR-4, y+11, r[1], 9, false, PRETO, 'r'); y += 16; linha(xr, y, PW-MR); });
+  res.forEach(r => { const bd = r[0]==='Total sem IVA'; txt(xr, y+11, r[0], 9, bd); txt(PW-MR-4, y+11, r[1], 9, bd, PRETO, 'r'); y += 16; linha(xr, y, PW-MR); });
   y += 8;
   rect(xr, y, 240, 28, [0.94,0.96,1]); cs += `${col(AZUL)} RG 1.5 w ${xr} ${(PH-y-28).toFixed(2)} 240 28 re S\n`;
   txt(xr+8, y+18.5, 'TOTAL COM IVA', 11, true, AZUL); txt(PW-MR-8, y+18.5, e(D.total), 13, true, AZUL, 'r');
@@ -1598,6 +1610,12 @@ function _gerarPdfNativo(){
 async function _gerarPdfBlob(){
   try { return _gerarPdfNativo(); }
   catch(e){ console.warn('PDF:', e); return null; }
+}
+
+async function descarregarPDFCliente(){
+  if(!gerarDocOrcamento('cliente')) return;
+  try { _descarregar(_gerarPdfNativo(false), _nomeFicheiro('pdf')); toast('PDF descarregado ✅'); }
+  catch(e){ console.warn(e); imprimirOrc('cliente'); }
 }
 
 async function descarregarPDF(){
