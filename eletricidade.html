@@ -1165,6 +1165,8 @@ function renderDivs() {
   const el = document.getElementById('divList');
   const empty = document.getElementById('divEmpty');
   if (!_divs.length) { el.innerHTML=''; empty.style.display='block'; return; }
+  // Garante que cada divisão tem um identificador único (evita editar a divisão errada)
+  { const vistos = new Set(); _divs.forEach(d => { if(!d.id || vistos.has(d.id)) d.id = uid(); vistos.add(d.id); }); }
   empty.style.display='none';
   el.innerHTML = _divs.map(d => {
     const c = calcDivComExtras(d);
@@ -1172,6 +1174,7 @@ function renderDivs() {
       <div>
         <div class="div-nome">${d.nome}</div>
         <div class="div-m2">${d.m2}m² · 📐${d.dist||5}m QS · 🔌${c.tomadas} tomadas · 💡${c.luzes} luzes · ⚡${(d.int_simples||0)+(d.int_comut||0)+(d.int_inver||0)||c.interruptores} cmd.${(d.led_tipo&&d.led_tipo!=='normal')?' · 💡LED '+({'2700':'🟠','3000':'🟡','4000':'⚪','5000':'🌤','6000':'🔵'}[d.led_cor||'4000']||'')+(d.led_cor||'4000')+'K':''}${(d.tmista||d.trvsat||d.tv||d.rj45)?' · 📡ATI'+(d.tmista?' '+d.tmista+'×mista':''):''}${d.camaras?' · 🔒CAM':''}</div>
+        ${((d.tmista||0)+(d.trvsat||0)+(d.tv||0))?`<div style="font-size:11px;color:var(--teal,#2dd4bf);margin-top:2px">📺 ${(d.tmista||0)+(d.trvsat||0)+(d.tv||0)} tomada(s) TV${d.tmista?' · '+d.tmista+' c/ RJ45':''}</div>`:''}
         ${(d.estores||d.sanca_m)?`<div style="font-size:11px;color:var(--blue);margin-top:2px">🪟 ${d.estores?d.estores+' estore(s) elétrico(s)':''}${d.estores&&d.sanca_m?' · ':''}${d.sanca_m?d.sanca_m+'m sanca'+(d.sanca_led?' c/ LED':''):''}</div>`:''}
         ${d.notas?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${d.notas}</div>`:''}
       </div>
@@ -1245,6 +1248,7 @@ function gerarDocOrcamento(modo){
     const it = [];
     if(c.tomadas) it.push(c.tomadas+' tomadas');
     if(d.usbc) it.push(d.usbc+' carregador(es) USB-C');
+    { const nTV=(d.tmista||0)+(d.trvsat||0)+(d.tv||0); if(nTV) it.push(nTV+' tomada(s) TV'); }
     if(c.interruptores) it.push(c.interruptores+' comandos');
     if(c.luzes) it.push(c.luzes+' pontos de luz');
     if(d.estores) it.push(d.estores+' estore(s) elétrico(s)');
@@ -1458,6 +1462,7 @@ function _gerarPdfNativo(matPrecos){
     const c = calcDivComExtras(d); const it = [];
     if(c.tomadas) it.push(pl(c.tomadas,'tomada','tomadas'));
     if(d.usbc) it.push(pl(d.usbc,'carregador USB-C','carregadores USB-C'));
+    { const nTV=(d.tmista||0)+(d.trvsat||0)+(d.tv||0); if(nTV) it.push(pl(nTV,'tomada TV','tomadas TV')); }
     if(c.interruptores) it.push(pl(c.interruptores,'comando','comandos'));
     if(c.luzes) it.push(pl(c.luzes,'ponto de luz','pontos de luz'));
     if(d.estores) it.push(pl(d.estores,'estore elétrico','estores elétricos'));
