@@ -217,7 +217,7 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
   <!-- CONFIGURAÇÃO DE PREÇOS -->
   <div class="stitle no-print">2 — Configuração de Preços <button onclick="editarPrecos()" style="margin-left:8px;padding:3px 10px;background:var(--yellow);color:#000;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;vertical-align:middle">✏ Editar</button> <button onclick="abrirModalDisj()" style="margin-left:8px;padding:3px 10px;background:#3B8BEB;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;vertical-align:middle">⚡ Catálogo Disjuntores</button></div>
   <div class="card no-print" style="margin-bottom:20px">
-    <div class="card-hdr"><h3>💰 Mão de Obra por Ponto</h3><button class="btn btn-ghost btn-sm" onclick="resetPrecos()">↺ Reset</button></div>
+    <div class="card-hdr"><h3>💰 Mão de Obra por Ponto</h3><div style="display:flex;gap:6px"><button class="btn btn-blue btn-sm" onclick="guardarPrecosPadrao()">💾 Guardar preços</button><button class="btn btn-ghost btn-sm" onclick="resetPrecos()">↺ Repor</button></div></div>
     <div class="card-body">
       <div class="frow">
         <div class="fg"><label>Tomada (€)</label><input type="number" id="p_tomada" value="25" step="1" oninput="calcular()"></div>
@@ -230,6 +230,16 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
       <div class="fg"><label>Tubo Corrugado Ø20 /metro (€)</label><input type="number" id="p_tubocor" value="0.35" step="0.05" oninput="calcular()"></div>
       <div class="fg"><label>Armário ATI (€)</label><input type="number" id="p_ati" value="170" step="5" oninput="calcular()"></div>
       </div>
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">⚡ MATERIAL DO QUADRO — CUSTO S/ IVA (€/un.)</div>
+      <div class="frow">
+        <div class="fg"><label>Disjuntor 10A</label><input type="number" id="p_dj10" value="8" step="0.1" oninput="calcular()"></div>
+        <div class="fg"><label>Disjuntor 16A</label><input type="number" id="p_dj16" value="9" step="0.1" oninput="calcular()"></div>
+        <div class="fg"><label>Disjuntor 20A</label><input type="number" id="p_dj20" value="10" step="0.1" oninput="calcular()"></div>
+        <div class="fg"><label>Disjuntor 32A</label><input type="number" id="p_dj32" value="12" step="0.1" oninput="calcular()"></div>
+        <div class="fg"><label>Diferencial 30mA</label><input type="number" id="p_dif30" value="45" step="0.5" oninput="calcular()"></div>
+        <div class="fg"><label>Diferencial 300mA (geral)</label><input type="number" id="p_dif300" value="35" step="0.5" oninput="calcular()"></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">A tua margem de material é aplicada por cima destes valores.</div>
       <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">🪟 ESTORES ELÉTRICOS &amp; SANCAS</div>
       <div class="frow">
         <div class="fg"><label>Motor estore — custo (€/un)</label><input type="number" id="p_estore_motor" value="65" step="1" oninput="calcular()"></div>
@@ -918,8 +928,8 @@ window.addEventListener('load', function() {
   if(!document.getElementById('cli_sel') || document.getElementById('cli_sel').options.length <= 1) {
     setTimeout(carregarClientes, 500);
   }
-  // Restaurar divisoes da sessao anterior
-  setTimeout(loadDivs, 600);
+  // Restaurar o trabalho: a versão mais recente entre este aparelho e a nuvem
+  setTimeout(sincronizarSessao, 600);
 });
 
 // ── State ────────────────────────────────────────────────
@@ -1776,7 +1786,7 @@ function calcular() {
       eqMatItems.push({
         cat:'Circuitos Dedicados',
         desc:`Disjuntor ${eq.disj} — ${eq.nome}`,
-        qty:1, pu:(eq.cabo==='6'?12:eq.cabo==='4'?10:8)*mat_m2
+        qty:1, pu:(eq.disj==='32A'?(gf('p_dj32')||12):eq.disj==='20A'?(gf('p_dj20')||10):eq.disj==='10A'?(gf('p_dj10')||8):(gf('p_dj16')||9))*mat_m2
       });
     });
   });
@@ -1891,8 +1901,8 @@ function calcular() {
     tomada: 4.50 * mat_m, tomadaIP: 8 * mat_m,
     interruptor: 3.80 * mat_m, interruptorDuplo: 6.50 * mat_m,
     luzes: 12 * mat_m, // inclui suporte
-    disjuntor10: 8 * mat_m, disjuntor16: 9 * mat_m, disjuntor20: 10 * mat_m,
-    diferencial: 35 * mat_m, diferencial30: 45 * mat_m,
+    disjuntor10: (gf('p_dj10')||8) * mat_m, disjuntor16: (gf('p_dj16')||9) * mat_m, disjuntor20: (gf('p_dj20')||10) * mat_m,
+    diferencial: (gf('p_dif300')||35) * mat_m, diferencial30: (gf('p_dif30')||45) * mat_m,
     quadro12: 45 * mat_m, quadro24: 75 * mat_m, quadro36: 120 * mat_m, quadro48: 160 * mat_m, quadro60: 200 * mat_m, quadro72: 240 * mat_m,
     cabo15: 0.85 * mat_m, cabo25: 1.20 * mat_m, cabo6: 2.80 * mat_m,
     tubo20: (gf('p_tubovd')||0.45) * mat_m, tubo25: ((gf('p_tubovd')||0.45)*1.4) * mat_m, tuboCor20: (gf('p_tubocor')||0.35) * mat_m, tuboCor25: ((gf('p_tubocor')||0.35)*1.5) * mat_m,
@@ -2526,7 +2536,42 @@ function guardarDiv() {
   toast(_editId ? 'Divisão actualizada!' : 'Divisão adicionada!');
 }
 
+// ── Preços padrão (gravados pelo utilizador, iguais em todos os aparelhos) ──
+async function guardarPrecosPadrao(){
+  var o = coletarPrecos(); o._ts = new Date().toISOString();
+  try { localStorage.setItem('eletro_precos_padrao', JSON.stringify(o)); } catch(e){}
+  try {
+    await _esperarLogin(8000);
+    await _db.collection('eletro_orcamentos').doc('_precos_padrao').set(o);
+    toast('Preços guardados ✅ — ficam como padrão em todos os aparelhos');
+  } catch(e){
+    toast('Preços guardados neste aparelho (sem ligação à nuvem)','a');
+  }
+  autoSaveSession();
+}
+async function _lerPrecosPadrao(){
+  var local = null, nuvem = null;
+  try { local = JSON.parse(localStorage.getItem('eletro_precos_padrao') || 'null'); } catch(e){}
+  try {
+    await _esperarLogin(8000);
+    var d = await _db.collection('eletro_orcamentos').doc('_precos_padrao').get();
+    if(d.exists) nuvem = d.data();
+  } catch(e){}
+  var tL = local && local._ts ? new Date(local._ts).getTime() : 0;
+  var tN = nuvem && nuvem._ts ? new Date(nuvem._ts).getTime() : 0;
+  var r = tN > tL ? nuvem : local;
+  if(r === nuvem && nuvem){ try { localStorage.setItem('eletro_precos_padrao', JSON.stringify(nuvem)); } catch(e){} }
+  return r;
+}
+
 function resetPrecos() {
+  var guardados = null;
+  try { guardados = JSON.parse(localStorage.getItem('eletro_precos_padrao') || 'null'); } catch(e){}
+  if(guardados){
+    aplicarPrecos(guardados); calcular();
+    toast('Repostos os teus preços guardados ✅');
+    return;
+  }
   document.getElementById('p_tomada').value=25;
   document.getElementById('p_interruptor').value=20;
   document.getElementById('p_luz').value=20;
@@ -2538,7 +2583,7 @@ function resetPrecos() {
   document.getElementById('p_iva').value=23;
   document.getElementById('p_margem').value=20;
   document.getElementById('p_desc').value=0;
-  [['p_estore_motor',65],['p_estore_mo',45],['p_estore_lig',20],['p_sanca_mat',12],['p_sanca_mo',20],['p_fita_led',6],['p_fase1_pct',60]].forEach(function(a){ var el=document.getElementById(a[0]); if(el) el.value=a[1]; });
+  [['p_dj10',8],['p_dj16',9],['p_dj20',10],['p_dj32',12],['p_dif30',45],['p_dif300',35],['p_estore_motor',65],['p_estore_mo',45],['p_estore_lig',20],['p_sanca_mat',12],['p_sanca_mo',20],['p_fita_led',6],['p_fase1_pct',60]].forEach(function(a){ var el=document.getElementById(a[0]); if(el) el.value=a[1]; });
   calcular(); toast('Preços reposto para valores padrão.');
 }
 
@@ -2891,6 +2936,7 @@ async function carregarOrcamento(){
     await _esperarLogin();
     var snap = await _db.collection('eletro_orcamentos').orderBy('data','desc').get();
     snap.forEach(function(doc){
+      if(String(doc.id).charAt(0) === '_') return;
       todos.push(doc.data());
     });
   } catch(e){
@@ -3025,17 +3071,77 @@ function exportarOrcamentoJSON(){
 // ══════════════════════════════════════
 // AUTO-SAVE E RESTAURAR SESSAO
 // ══════════════════════════════════════
+function _dadosSessao(){
+  var g = function(id){ return (document.getElementById(id)||{}).value || ''; };
+  return {
+    divs: _divs || [],
+    precos: coletarPrecos(),
+    mo: _moEntradas || [],
+    cliente: g('cli_nome'), morada: g('cli_morada'), ref: g('orc_ref'), dataOrc: g('orc_data'),
+    ts: new Date().toISOString(),
+    aparelho: (/iPad|Tablet|Android(?!.*Mobile)/i.test(navigator.userAgent) ? 'tablet' : /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'telemóvel' : 'computador')
+  };
+}
+var _syncPronto = false, _syncTimer = null, _aplicandoSessao = false;
 function autoSaveSession(){
+  if(_aplicandoSessao || !_syncPronto) return; // não gravar antes de sincronizar ao abrir
   try {
-    var dados = {
-      divs: _divs || [],
-      precos: coletarPrecos(),
-      mo: _moEntradas || [],
-      cliente: (document.getElementById('cli_nome')||{}).value || '',
-      ts: new Date().toISOString()
-    };
+    var dados = _dadosSessao();
     localStorage.setItem('eletro_autosave', JSON.stringify(dados));
+    // Sincroniza com a nuvem (3 s depois da última alteração), só depois da sincronização inicial
+    if(_syncPronto){
+      clearTimeout(_syncTimer);
+      _syncTimer = setTimeout(function(){
+        _esperarLogin(5000).then(function(){
+          return _db.collection('eletro_orcamentos').doc('_sessao_atual').set(dados);
+        }).catch(function(e){ console.warn('Sync nuvem:', e && e.message); });
+      }, 3000);
+    }
   } catch(e){}
+}
+
+function _aplicarSessao(dados){
+  _aplicandoSessao = true;
+  try {
+    _divs = dados.divs || [];
+    _precos = dados.precos || {}; aplicarPrecos(_precos);
+    _moEntradas = dados.mo || [];
+    var set = function(id, v){ var el=document.getElementById(id); if(el && v!==undefined && v!==null) el.value = v; };
+    set('cli_nome', dados.cliente); set('cli_morada', dados.morada); set('orc_ref', dados.ref);
+    if(dados.dataOrc) set('orc_data', dados.dataOrc);
+    renderDivs();
+    if(typeof calcular === 'function') calcular();
+  } finally { _aplicandoSessao = false; }
+  try { localStorage.setItem('eletro_autosave', JSON.stringify(dados)); } catch(e){}
+}
+
+// Ao abrir: compara a sessão deste aparelho com a da nuvem e usa a mais recente
+async function sincronizarSessao(){
+  try { var pp = await _lerPrecosPadrao(); if(pp) aplicarPrecos(pp); } catch(e){}
+  var local = null;
+  try { local = JSON.parse(localStorage.getItem('eletro_autosave') || 'null'); } catch(e){}
+  var nuvem = null;
+  try {
+    await _esperarLogin(10000);
+    var doc = await _db.collection('eletro_orcamentos').doc('_sessao_atual').get();
+    if(doc.exists) nuvem = doc.data();
+  } catch(e){ console.warn('Sync inicial:', e && e.message); }
+  var tL = local && local.ts ? new Date(local.ts).getTime() : 0;
+  var tN = nuvem && nuvem.ts ? new Date(nuvem.ts).getTime() : 0;
+  var usar = (tN > tL) ? nuvem : local;
+  if(usar && usar.divs){
+    _aplicarSessao(usar);
+    if(usar.divs.length){
+      var hora = new Date(usar.ts).toLocaleString('pt-PT', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      toast(usar===nuvem && tN>tL ? ('Sincronizado com o '+(nuvem.aparelho||'outro aparelho')+' ('+hora+') ✅') : ('Trabalho restaurado ('+hora+') ✅'));
+    }
+  }
+  _syncPronto = true;
+  if(tL > tN) autoSaveSession(); // envia para a nuvem a versão local mais recente
+  ['cli_nome','cli_morada','orc_ref','orc_data'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && !el._syncLig){ el._syncLig = true; el.addEventListener('input', autoSaveSession); el.addEventListener('change', autoSaveSession); }
+  });
 }
 
 function restaurarSessao(){
