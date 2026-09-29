@@ -244,6 +244,8 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
         <div class="fg"><label>Caixa de aparelhagem</label><input type="number" id="p_cx_apar" value="0.3" step="0.05" oninput="calcular()"></div>
         <div class="fg"><label>Ligador rápido (tipo Wago)</label><input type="number" id="p_ligador" value="0.35" step="0.05" oninput="calcular()"></div>
         <div class="fg"><label>Ligadores por caixa de derivação</label><input type="number" id="p_lig_cx" value="4" step="1" min="0" oninput="calcular()"></div>
+        <div class="fg"><label>Ligadores por ponto de luz / foco / estore</label><input type="number" id="p_lig_luz" value="2" step="1" min="0" oninput="calcular()"></div>
+        <div class="fg"><label>Ligadores — quantidade manual (0 = automático)</label><input type="number" id="p_lig_manual" value="0" step="10" min="0" oninput="calcular()"></div>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:4px">A tua margem de material é aplicada por cima destes valores.</div>
       <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">🪟 ESTORES ELÉTRICOS &amp; SANCAS</div>
@@ -279,6 +281,20 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
         <div class="fg"><label>MO dos pontos na 1ª fase (%)</label><input type="number" id="p_fase1_pct" value="60" min="0" max="100" step="5" oninput="calcular()"></div>
       </div>
       <div style="font-size:11px;color:var(--muted);line-height:1.5">1ª fase: tubos, caixas, enfiamento de cabos. 2ª fase: tomadas, interruptores, luzes, quadro, motores de estore e equipamentos.</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">🚐 DESLOCAÇÕES, REFEIÇÕES E RENTABILIDADE</div>
+      <div class="frow">
+        <div class="fg"><label>Dias de trabalho previstos</label><input type="number" id="p_dias" value="10" step="1" min="0" oninput="calcular()"></div>
+        <div class="fg"><label>Km por dia (ida e volta)</label><input type="number" id="p_km_dia" value="40" step="1" min="0" oninput="calcular()"></div>
+        <div class="fg"><label>Custo por km (€)</label><input type="number" id="p_eur_km" value="0.40" step="0.01" min="0" oninput="calcular()"></div>
+        <div class="fg"><label>Refeição por dia (€)</label><input type="number" id="p_refeicao" value="10" step="0.5" min="0" oninput="calcular()"></div>
+        <div class="fg"><label>Deslocações e refeições</label>
+          <select id="p_desl_cobrar" onchange="calcular()">
+            <option value="sim">Cobrar no orçamento (linha própria)</option>
+            <option value="nao">Não cobrar (só para as minhas contas)</option>
+          </select>
+        </div>
+        <div class="fg"><label>Quanto quero ganhar por dia (€)</label><input type="number" id="p_dia_alvo" value="150" step="5" min="0" oninput="calcular()"></div>
+      </div>
       <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">💶 CONDIÇÕES DE PAGAMENTO</div>
       <div class="frow">
         <div class="fg"><label>Modo de pagamento</label>
@@ -1910,7 +1926,8 @@ function calcular() {
 
   const _nCxDeriv = Math.ceil((tot.tomadas+tot.luzes+tot.interruptores)*0.3);
   const _nCxApar = tot.tomadas + tot.interruptores + _divs.reduce((s,d)=>s+(d.usbc||0),0);
-  const _nLig = _nCxDeriv * Math.max(0, gi('p_lig_cx'));
+  const _nLig = gi('p_lig_manual') > 0 ? gi('p_lig_manual')
+    : _nCxDeriv * Math.max(0, gi('p_lig_cx')) + (tot.luzes + totalFocosLED + totEstores) * Math.max(0, gi('p_lig_luz'));
   const PRECO_MAT = {
     tomada: 4.50 * mat_m, tomadaIP: 8 * mat_m,
     interruptor: 3.80 * mat_m, interruptorDuplo: 6.50 * mat_m,
@@ -1995,7 +2012,7 @@ function calcular() {
     ]:[]),
     {cat:'Caixas & Acessórios', desc:'Caixas de derivação', qty:_nCxDeriv, pu:PRECO_MAT.caixasDerivacao},
     ...(_nCxApar>0?[{cat:'Caixas & Acessórios', desc:'Caixas de aparelhagem (tomadas e comandos)', qty:_nCxApar, pu:(gf('p_cx_apar')||0)*mat_m}]:[]),
-    ...(_nLig>0?[{cat:'Caixas & Acessórios', desc:'Ligadores rápidos (derivações)', qty:_nLig, pu:(gf('p_ligador')||0)*mat_m}]:[]),
+    ...(_nLig>0?[{cat:'Caixas & Acessórios', desc:'Ligadores rápidos (tipo Wago)', qty:_nLig, pu:(gf('p_ligador')||0)*mat_m}]:[]),
     // Cabo por cor (fase / neutro / terra) — total dividido pelos 3 condutores
     ...[['castanho (fase)'],['azul (neutro)'],['verde/amarelo (terra)']].map(c=>({cat:'Cabos', desc:`Cabo H07V-K 2.5mm² ${c[0]} — tomadas`, qty:Math.ceil(tot.cabo25/3), pu:PRECO_MAT.cabo25, unit:'m'})),
     ...[['castanho (fase)'],['azul (neutro)'],['verde/amarelo (terra)']].map(c=>({cat:'Cabos', desc:`Cabo H07V-K 1.5mm² ${c[0]} — iluminação`, qty:Math.ceil(tot.cabo15/3), pu:PRECO_MAT.cabo15, unit:'m'})),
@@ -2027,7 +2044,12 @@ function calcular() {
   const moEstores = totEstMotor*gf('p_estore_mo') + totEstLig*gf('p_estore_lig');
   const moSanca = (_sancaMRC ? totSanca*gf('p_sanca_mo') : 0) + totDriversSanca*p.luz;
   const moUSBC = totUSBC * p.tomada;
-  const totalMO = moUSBC + maoItems.reduce((s,i)=>s+i.total,0) + moQuadro + moLED + moEquip + moSwitch + moATI + moVig + moEstores + moSanca;
+  const _dias = Math.max(0, gf('p_dias'));
+  const custoDesloc = _dias * Math.max(0,gf('p_km_dia')) * Math.max(0,gf('p_eur_km'));
+  const custoRefeic = _dias * Math.max(0,gf('p_refeicao'));
+  const cobrarDesl = (document.getElementById('p_desl_cobrar')?.value || 'sim') === 'sim';
+  const moDesloc = cobrarDesl ? (custoDesloc + custoRefeic) : 0;
+  const totalMO = moDesloc + moUSBC + maoItems.reduce((s,i)=>s+i.total,0) + moQuadro + moLED + moEquip + moSwitch + moATI + moVig + moEstores + moSanca;
 
   // Cabos MO
   const caborMetros = tot.tubo20 + tot.tubo25; // enfiamento + tubagem por metro de percurso
@@ -2048,8 +2070,8 @@ function calcular() {
   const matF2 = totalMat - matF1;
   const moPontos = moUSBC + maoItems.reduce((s,i)=>s+i.total,0) + moLED + moEquip + moSwitch + moATI + moVig;
   const moSancaExec = _sancaMRC ? totSanca*gf('p_sanca_mo') : 0;
-  const moF1 = moPontos*f1pct + moSancaExec + totalCaboMO;
-  const moF2 = moPontos*(1-f1pct) + moQuadro + moEstores + (moSanca - moSancaExec);
+  const moF1 = moPontos*f1pct + moSancaExec + totalCaboMO + moDesloc/2;
+  const moF2 = moPontos*(1-f1pct) + moQuadro + moEstores + (moSanca - moSancaExec) + moDesloc/2;
   const fatDesc = 1 - p.desc/100, fatIva = 1 + p.iva/100;
   const f1Total = (matF1+moF1)*fatDesc*fatIva;
   const f2Total = (matF2+moF2)*fatDesc*fatIva;
@@ -2107,6 +2129,28 @@ function calcular() {
         ${pagamento.map(x=>`<tr><td style="padding:6px 12px"><b>${x.quando}</b><div style="font-size:11px;color:var(--muted)">${x.desc}</div></td><td class="print-preco" style="padding:6px 12px;text-align:right;font-family:'DM Mono',monospace;font-weight:700">${eur(x.valor)}</td></tr>`).join('')}
       </table>
       ${pagForma?`<div style="font-size:12px;color:var(--muted);margin-top:8px">Forma de pagamento: ${pagForma.replace(/[<>&]/g,'')}</div>`:''}
+    </div>`;
+  // ── Rentabilidade (só no ecrã, nunca no orçamento do cliente) ──
+  const lucroMat = totalMat - totalMat/mat_m;
+  const receitaTrab = totalMO + totalCaboMO;            // inclui deslocações se cobradas
+  const ganhoLiq = receitaTrab + lucroMat - custoDesloc - custoRefeic;
+  const porDia = _dias>0 ? ganhoLiq/_dias : 0;
+  const alvo = Math.max(0, gf('p_dia_alvo'));
+  const falta = _dias>0 ? Math.max(0, alvo*_dias - ganhoLiq) : 0;
+  const okRent = !_dias || porDia >= alvo;
+  const htmlRent = `
+    <div class="no-print" style="border:2px solid ${okRent?'var(--green,#10C97A)':'var(--red,#f87171)'};border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:8px;font-family:'DM Mono',monospace">📊 A MINHA RENTABILIDADE (só tu vês isto — sem IVA)</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr><td style="padding:4px 12px">Mão de obra cobrada${cobrarDesl&&moDesloc?' (inclui deslocações e refeições)':''}</td><td style="padding:4px 12px;text-align:right;font-family:'DM Mono',monospace">${eur(receitaTrab)}</td></tr>
+        <tr><td style="padding:4px 12px">Lucro no material (margem ${p.margem}%)</td><td style="padding:4px 12px;text-align:right;font-family:'DM Mono',monospace">${eur(lucroMat)}</td></tr>
+        <tr><td style="padding:4px 12px;color:var(--muted)">− Deslocações (${_dias} dias × ${gf('p_km_dia')} km)</td><td style="padding:4px 12px;text-align:right;font-family:'DM Mono',monospace;color:var(--muted)">-${eur(custoDesloc)}</td></tr>
+        <tr><td style="padding:4px 12px;color:var(--muted)">− Refeições (${_dias} dias)</td><td style="padding:4px 12px;text-align:right;font-family:'DM Mono',monospace;color:var(--muted)">-${eur(custoRefeic)}</td></tr>
+        <tr style="border-top:1px solid var(--border)"><td style="padding:6px 12px;font-weight:800">Fica para mim</td><td style="padding:6px 12px;text-align:right;font-family:'DM Mono',monospace;font-weight:800">${eur(ganhoLiq)}</td></tr>
+        <tr><td style="padding:4px 12px;font-weight:700">Por dia de trabalho</td><td style="padding:4px 12px;text-align:right;font-family:'DM Mono',monospace;font-weight:800;color:${okRent?'var(--green,#10C97A)':'var(--red,#f87171)'}">${_dias?eur(porDia):'—'}</td></tr>
+      </table>
+      <div style="font-size:12px;margin-top:8px;color:${okRent?'var(--green,#10C97A)':'var(--red,#f87171)'}">${!_dias?'Indica os dias de trabalho previstos para ver o ganho por dia.':okRent?`✅ Acima do teu objetivo de ${eur(alvo)}/dia.`:`⚠ Abaixo do teu objetivo de ${eur(alvo)}/dia — faltam ${eur(falta)} (sem IVA) neste orçamento.`}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">Não inclui impostos, segurança social nem desgaste de ferramentas.</div>
     </div>`;
   const htmlTipos = !extrasList.length ? '' : `
     <div style="border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
@@ -2172,6 +2216,7 @@ function calcular() {
   if(moEstores>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Estores elétricos (${[totEstMotor?totEstMotor+' c/ motor × '+eur(gf('p_estore_mo')):'', totEstLig?totEstLig+' só ligação × '+eur(gf('p_estore_lig')):''].filter(Boolean).join(' · ')})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moEstores)}</td></tr>`;
   if(moSanca>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">${_sancaMRC?`Sancas nas janelas (${totSanca}m × ${eur(gf('p_sanca_mo'))})${totDriversSanca?' + ligação fita LED':''}`:`Ligação da fita LED das sancas (${totDriversSanca} driver${totDriversSanca>1?'s':''})`}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moSanca)}</td></tr>`;
   if(totalFocosLED>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Focos LED (${totalFocosLED} focos × ${eur(p.luz)})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moLED)}</td></tr>`;
+  if(moDesloc>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Deslocações e refeições (${_dias} dias × ${gf('p_km_dia')} km × ${eur(gf('p_eur_km'))} + ${_dias} × ${eur(gf('p_refeicao'))})</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moDesloc)}</td></tr>`;
   html2 += `<tr style="background:rgba(245,200,66,.08)"><td colspan="4" style="font-weight:800;color:#fff">TOTAL MÃO DE OBRA</td><td style="font-weight:800;color:var(--yellow);font-family:'DM Mono',monospace">${eur(totalMO)}</td></tr>`;
   document.getElementById('tblMao').querySelector('tbody').innerHTML = html2;
 
@@ -2238,6 +2283,7 @@ function calcular() {
         <tr class="print-iva"><td style="padding:8px 12px;color:var(--muted)">IVA ${p.iva}%</td><td class="print-preco" style="padding:8px 12px;text-align:right;font-family:'DM Mono',monospace;color:var(--muted)">${eur(ivaVal)}</td></tr>
       </table>
     </div>
+    ${htmlRent}
     ${htmlTipos}
     ${htmlFases}
     <div class="total-box print-total">
@@ -2599,7 +2645,7 @@ function resetPrecos() {
   document.getElementById('p_iva').value=23;
   document.getElementById('p_margem').value=20;
   document.getElementById('p_desc').value=0;
-  [['p_cx_deriv',1.5],['p_cx_apar',0.3],['p_ligador',0.35],['p_lig_cx',4],['p_dj10',8],['p_dj16',9],['p_dj20',10],['p_dj32',12],['p_dif30',45],['p_dif300',35],['p_estore_motor',65],['p_estore_mo',45],['p_estore_lig',20],['p_sanca_mat',12],['p_sanca_mo',20],['p_fita_led',6],['p_fase1_pct',60]].forEach(function(a){ var el=document.getElementById(a[0]); if(el) el.value=a[1]; });
+  [['p_cx_deriv',1.5],['p_cx_apar',0.3],['p_ligador',0.35],['p_lig_cx',4],['p_lig_luz',2],['p_lig_manual',0],['p_dj10',8],['p_dj16',9],['p_dj20',10],['p_dj32',12],['p_dif30',45],['p_dif300',35],['p_estore_motor',65],['p_estore_mo',45],['p_estore_lig',20],['p_sanca_mat',12],['p_sanca_mo',20],['p_fita_led',6],['p_fase1_pct',60]].forEach(function(a){ var el=document.getElementById(a[0]); if(el) el.value=a[1]; });
   calcular(); toast('Preços reposto para valores padrão.');
 }
 
