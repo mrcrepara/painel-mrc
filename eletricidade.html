@@ -239,6 +239,12 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
         <div class="fg"><label>Diferencial 30mA</label><input type="number" id="p_dif30" value="45" step="0.5" oninput="calcular()"></div>
         <div class="fg"><label>Diferencial 300mA (geral)</label><input type="number" id="p_dif300" value="35" step="0.5" oninput="calcular()"></div>
       </div>
+      <div class="frow">
+        <div class="fg"><label>Caixa de derivação</label><input type="number" id="p_cx_deriv" value="1.5" step="0.05" oninput="calcular()"></div>
+        <div class="fg"><label>Caixa de aparelhagem</label><input type="number" id="p_cx_apar" value="0.3" step="0.05" oninput="calcular()"></div>
+        <div class="fg"><label>Ligador rápido (tipo Wago)</label><input type="number" id="p_ligador" value="0.35" step="0.05" oninput="calcular()"></div>
+        <div class="fg"><label>Ligadores por caixa de derivação</label><input type="number" id="p_lig_cx" value="4" step="1" min="0" oninput="calcular()"></div>
+      </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:4px">A tua margem de material é aplicada por cima destes valores.</div>
       <div style="font-size:11px;font-weight:700;color:var(--text);margin:12px 0 6px;font-family:'DM Mono',monospace;letter-spacing:1px">🪟 ESTORES ELÉTRICOS &amp; SANCAS</div>
       <div class="frow">
@@ -1902,6 +1908,9 @@ function calcular() {
     janMatItems.push({cat:'Sancas',desc:'Driver/fonte 24V p/ fita LED',qty:totDriversSanca,pu:25*mat_m,unit:'un.'});
   }
 
+  const _nCxDeriv = Math.ceil((tot.tomadas+tot.luzes+tot.interruptores)*0.3);
+  const _nCxApar = tot.tomadas + tot.interruptores + _divs.reduce((s,d)=>s+(d.usbc||0),0);
+  const _nLig = _nCxDeriv * Math.max(0, gi('p_lig_cx'));
   const PRECO_MAT = {
     tomada: 4.50 * mat_m, tomadaIP: 8 * mat_m,
     interruptor: 3.80 * mat_m, interruptorDuplo: 6.50 * mat_m,
@@ -1911,7 +1920,7 @@ function calcular() {
     quadro12: 45 * mat_m, quadro24: 75 * mat_m, quadro36: 120 * mat_m, quadro48: 160 * mat_m, quadro60: 200 * mat_m, quadro72: 240 * mat_m,
     cabo15: 0.85 * mat_m, cabo25: 1.20 * mat_m, cabo6: 2.80 * mat_m,
     tubo20: (gf('p_tubovd')||0.45) * mat_m, tubo25: ((gf('p_tubovd')||0.45)*1.4) * mat_m, tuboCor20: (gf('p_tubocor')||0.35) * mat_m, tuboCor25: ((gf('p_tubocor')||0.35)*1.5) * mat_m,
-    caixasDerivacao: 1.50 * mat_m
+    caixasDerivacao: (gf('p_cx_deriv')||1.5) * mat_m
   };
 
   // Material total
@@ -1984,7 +1993,9 @@ function calcular() {
       ]:[]),
       ...(mCaboAlarme>0?[{cat:'Segurança & Vigilância', desc:'Cabo alarme 4×0.22mm² (detectores/teclado)', qty:mCaboAlarme, pu:0.45*mat_m, unit:'m'}]:[]),
     ]:[]),
-    {cat:'Caixas & Acessórios', desc:'Caixas de derivação', qty:Math.ceil((tot.tomadas+tot.luzes+tot.interruptores)*0.3), pu:PRECO_MAT.caixasDerivacao},
+    {cat:'Caixas & Acessórios', desc:'Caixas de derivação', qty:_nCxDeriv, pu:PRECO_MAT.caixasDerivacao},
+    ...(_nCxApar>0?[{cat:'Caixas & Acessórios', desc:'Caixas de aparelhagem (tomadas e comandos)', qty:_nCxApar, pu:(gf('p_cx_apar')||0)*mat_m}]:[]),
+    ...(_nLig>0?[{cat:'Caixas & Acessórios', desc:'Ligadores rápidos (derivações)', qty:_nLig, pu:(gf('p_ligador')||0)*mat_m}]:[]),
     // Cabo por cor (fase / neutro / terra) — total dividido pelos 3 condutores
     ...[['castanho (fase)'],['azul (neutro)'],['verde/amarelo (terra)']].map(c=>({cat:'Cabos', desc:`Cabo H07V-K 2.5mm² ${c[0]} — tomadas`, qty:Math.ceil(tot.cabo25/3), pu:PRECO_MAT.cabo25, unit:'m'})),
     ...[['castanho (fase)'],['azul (neutro)'],['verde/amarelo (terra)']].map(c=>({cat:'Cabos', desc:`Cabo H07V-K 1.5mm² ${c[0]} — iluminação`, qty:Math.ceil(tot.cabo15/3), pu:PRECO_MAT.cabo15, unit:'m'})),
@@ -2588,7 +2599,7 @@ function resetPrecos() {
   document.getElementById('p_iva').value=23;
   document.getElementById('p_margem').value=20;
   document.getElementById('p_desc').value=0;
-  [['p_dj10',8],['p_dj16',9],['p_dj20',10],['p_dj32',12],['p_dif30',45],['p_dif300',35],['p_estore_motor',65],['p_estore_mo',45],['p_estore_lig',20],['p_sanca_mat',12],['p_sanca_mo',20],['p_fita_led',6],['p_fase1_pct',60]].forEach(function(a){ var el=document.getElementById(a[0]); if(el) el.value=a[1]; });
+  [['p_cx_deriv',1.5],['p_cx_apar',0.3],['p_ligador',0.35],['p_lig_cx',4],['p_dj10',8],['p_dj16',9],['p_dj20',10],['p_dj32',12],['p_dif30',45],['p_dif300',35],['p_estore_motor',65],['p_estore_mo',45],['p_estore_lig',20],['p_sanca_mat',12],['p_sanca_mo',20],['p_fita_led',6],['p_fase1_pct',60]].forEach(function(a){ var el=document.getElementById(a[0]); if(el) el.value=a[1]; });
   calcular(); toast('Preços reposto para valores padrão.');
 }
 
