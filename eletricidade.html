@@ -361,6 +361,7 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
   <div class="stitle">4 — Resultados & Orçamento</div>
 
   <div class="kpi-grid" id="kpiGrid"></div>
+  <div id="rentBar" class="no-print" style="display:none;margin:0 0 12px;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer" onclick="mudarTab('orcamento')"></div>
 
   <div class="tabs no-print">
     <button class="tab active" id="tabMat" onclick="mudarTab('materiais')">📦 Materiais</button>
@@ -2152,6 +2153,16 @@ function calcular() {
       <div style="font-size:12px;margin-top:8px;color:${okRent?'var(--green,#10C97A)':'var(--red,#f87171)'}">${!_dias?'Indica os dias de trabalho previstos para ver o ganho por dia.':okRent?`✅ Acima do teu objetivo de ${eur(alvo)}/dia.`:`⚠ Abaixo do teu objetivo de ${eur(alvo)}/dia — faltam ${eur(falta)} (sem IVA) neste orçamento.`}</div>
       <div style="font-size:11px;color:var(--muted);margin-top:6px">Não inclui impostos, segurança social nem desgaste de ferramentas.</div>
     </div>`;
+  { const rb = document.getElementById('rentBar');
+    if(rb){
+      rb.style.display = 'block';
+      rb.style.border = '2px solid ' + (okRent ? 'var(--green,#10C97A)' : 'var(--red,#f87171)');
+      rb.style.color = okRent ? 'var(--green,#10C97A)' : 'var(--red,#f87171)';
+      rb.innerHTML = `📊 A minha rentabilidade: fica para mim <span style="font-family:'DM Mono',monospace">${eur(ganhoLiq)}</span>` +
+        (_dias ? ` · <span style="font-family:'DM Mono',monospace">${eur(porDia)}</span> por dia (${_dias} dias)` : '') +
+        (okRent ? ' ✅' : ` ⚠ faltam ${eur(falta)} para o teu objetivo`) +
+        ` <span style="font-size:11px;color:var(--muted);font-weight:400">(sem IVA · só tu vês · toca para ver o detalhe)</span>`;
+    } }
   const htmlTipos = !extrasList.length ? '' : `
     <div style="border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:8px;font-family:'DM Mono',monospace">RESUMO POR TIPO DE TRABALHO (c/ IVA)</div>
