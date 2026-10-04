@@ -1097,6 +1097,11 @@ function calcDiv(tipo, m2) {
   return r;
 }
 
+// Em divisões com focos LED, os focos SÃO os pontos de luz: só contam à parte os "pontos de luz extra"
+function _temLED(d){ return (d.led_tipo||'normal') !== 'normal'; }
+function _nFocos(d){ return _temLED(d) ? Math.ceil((d.m2||0)/(d.led_esp||2)) : 0; }
+function _luzesMO(d, c){ c = c || calcDivComExtras(d); return _temLED(d) ? Math.max(0, d.luz_extra||0) : c.luzes; }
+
 function calcDivComExtras(div) {
   const base = calcDiv(div.tipo, div.m2);
   return {
@@ -1294,7 +1299,7 @@ function gerarDocOrcamento(modo){
     if(d.usbc) it.push(d.usbc+' carregador(es) USB-C');
     { const nTV=(d.tmista||0)+(d.trvsat||0)+(d.tv||0); if(nTV) it.push(nTV+' tomada(s) TV'); }
     if(c.interruptores) it.push(c.interruptores+' comandos');
-    if(c.luzes) it.push(c.luzes+' pontos de luz');
+    { const lz=_luzesMO(d,c), nf=_nFocos(d); if(nf) it.push(nf+' focos LED'); if(lz) it.push(lz+(nf?' outros pontos de luz':' pontos de luz')); }
     if(d.estores) it.push(d.estores+' estore(s) elétrico(s)');
     if(d.sanca_m) it.push(d.sanca_m+' m de sanca'+(d.sanca_led?' c/ LED':''));
     return `<tr><td><b>${_esc(d.nome)}</b></td><td class="n">${d.m2||0} m²</td><td>${it.join(' · ')}</td></tr>`;
@@ -1508,7 +1513,7 @@ function _gerarPdfNativo(matPrecos){
     if(d.usbc) it.push(pl(d.usbc,'carregador USB-C','carregadores USB-C'));
     { const nTV=(d.tmista||0)+(d.trvsat||0)+(d.tv||0); if(nTV) it.push(pl(nTV,'tomada TV','tomadas TV')); }
     if(c.interruptores) it.push(pl(c.interruptores,'comando','comandos'));
-    if(c.luzes) it.push(pl(c.luzes,'ponto de luz','pontos de luz'));
+    { const lz=_luzesMO(d,c), nf=_nFocos(d); if(nf) it.push(pl(nf,'foco LED','focos LED')); if(lz) it.push(nf?pl(lz,'outro ponto de luz','outros pontos de luz'):pl(lz,'ponto de luz','pontos de luz')); }
     if(d.estores) it.push(pl(d.estores,'estore elétrico','estores elétricos'));
     if(d.sanca_m) it.push(d.sanca_m+' m de sanca'+(d.sanca_led?' c/ LED':''));
     const ln = _pdfWrap(it.join(' · '), 8.5, false, CW-200);
@@ -1755,7 +1760,7 @@ function calcular() {
     const nCircTom = nTomPts ? Math.max(1, Math.ceil(nTomPts/8)) : 0;
     const nCircLuz = (c.luzes || c.interruptores) ? 1 : 0;
     const percTom = nCircTom*dist + nTomPts*2.5;
-    const percLuz = nCircLuz*dist + (c.luzes + c.interruptores)*2;
+    const percLuz = nCircLuz*dist + (_luzesMO(d, c) + c.interruptores)*2;
     tot.cabo25 += Math.ceil(percTom * 3 * 1.05);
     tot.cabo15 += Math.ceil(percLuz * 3 * 1.05);
     const perc = Math.ceil((percTom + percLuz) * 1.05);
@@ -1949,7 +1954,7 @@ function calcular() {
   const _nCxDeriv = Math.ceil((tot.tomadas+tot.luzes+tot.interruptores)*0.3);
   const _nCxApar = tot.tomadas + tot.interruptores + _divs.reduce((s,d)=>s+(d.usbc||0),0);
   const _nLig = gi('p_lig_manual') > 0 ? gi('p_lig_manual')
-    : _nCxDeriv * Math.max(0, gi('p_lig_cx')) + (tot.luzes + totalFocosLED + totEstores) * Math.max(0, gi('p_lig_luz'));
+    : _nCxDeriv * Math.max(0, gi('p_lig_cx')) + (_divs.reduce((s,d)=>s+_luzesMO(d),0) + totalFocosLED + totEstores) * Math.max(0, gi('p_lig_luz'));
   const PRECO_MAT = {
     tomada: 4.50 * mat_m, tomadaIP: 8 * mat_m,
     interruptor: 3.80 * mat_m, interruptorDuplo: 6.50 * mat_m,
@@ -2056,8 +2061,9 @@ function calcular() {
   // Mão de Obra
   const maoItems = _divs.map(d => {
     const c = calcDivComExtras(d);
-    const mo = c.tomadas*p.tomada + c.interruptores*p.inter + c.luzes*p.luz;
-    return {div:d.nome, tomadas:c.tomadas, inter:c.interruptores, luzes:c.luzes, total:mo};
+    const lz = _luzesMO(d, c);
+    const mo = c.tomadas*p.tomada + c.interruptores*p.inter + lz*p.luz;
+    return {div:d.nome, tomadas:c.tomadas, inter:c.interruptores, luzes:lz, total:mo};
   });
   const moLED = totalFocosLED * p.luz; // mesmo custo MO por ponto LED
   const _nDisjMO = (typeof quadroNovo!=='undefined' && !quadroNovo) ? Math.max(1, nDisjuntores-2) : nDisjuntores;
@@ -2141,8 +2147,13 @@ function calcular() {
       const f1Rest = Math.max(0, _r2(f1Total - adiant));
       const f2Val = _r2(total - adiant - f1Rest);
       if(adiant>0) pagamento.push({quando:'Adjudicação / início da obra', desc:`Adiantamento de ${pagPct}%`, valor:adiant});
-      if(f1Rest>0) pagamento.push({quando:'Conclusão da 1ª fase', desc:'Restante da infraestrutura (tubagem, caixas e cabos)', valor:f1Rest});
-      pagamento.push({quando:'Conclusão da obra', desc:'2ª fase — aparelhagem e iluminação', valor:f2Val});
+      if(f1Rest >= total*0.10){
+        pagamento.push({quando:'Conclusão da 1ª fase', desc:'Restante da infraestrutura (tubagem, caixas e cabos)', valor:f1Rest});
+        pagamento.push({quando:'Conclusão da obra', desc:'2ª fase — aparelhagem e iluminação', valor:f2Val});
+      } else {
+        // Adiantamento já cobre (quase) toda a 1ª fase: não faz sentido um pagamento intermédio pequeno
+        pagamento.push({quando:'Conclusão da obra', desc:`Restante (${(100-pagPct)}%)`, valor:_r2(total-adiant)});
+      }
     } else {
       if(adiant>0) pagamento.push({quando:'Adjudicação / início da obra', desc:`Adiantamento de ${pagPct}%`, valor:adiant});
       pagamento.push({quando:'Conclusão da obra', desc:`Restante (${100-pagPct}%)`, valor:_r2(total-adiant)});
@@ -2208,7 +2219,7 @@ function calcular() {
   document.getElementById('kpiGrid').innerHTML =
     kpi('Tomadas', tot.tomadas, 'un.', 'yellow') +
     kpi('Interruptores', tot.interruptores, 'un.', 'blue') +
-    kpi('Pontos de Luz', tot.luzes + divsSemLED, 'un.', 'orange') +
+    kpi('Pontos de Luz', _divs.reduce((s,d)=>s+_luzesMO(d)+_nFocos(d),0), 'un.', 'orange') +
     (totalFocosLED>0 ? kpi('Focos LED', totalFocosLED+' · '+totalPotLED+'W', '', 'teal') : '') +
     kpi('Cabo Total', (tot.cabo25+tot.cabo15+tot.cabo6).toFixed(0), 'm', 'teal') +
     (temATI ? kpi('Pontos ATI', totTV+totRJ45+totRJ11, 'un.', 'blue') : '') +
