@@ -1216,7 +1216,12 @@ function novoOrcamento(){
   var sel = document.getElementById('cli_sel'); if(sel) sel.value = '';
   var dt = document.getElementById('orc_data'); if(dt) dt.value = new Date().toISOString().slice(0,10);
   try { var pp = JSON.parse(localStorage.getItem('eletro_precos_padrao') || 'null'); if(pp) aplicarPrecos(pp); } catch(e){}
+  // Opções que são de cada obra voltam sempre ao início (os teus preços mantêm-se)
+  var JOB = {p_quadro_tipo:'novo', p_quadro_mod:'auto', p_dias:'1', p_desc:'0', p_lig_manual:'0'};
+  Object.keys(JOB).forEach(function(id){ var el=document.getElementById(id); if(el) el.value = JOB[id]; });
+  _editId = null;
   renderDivs(); calcular();
+  var lst = document.getElementById('divList'); if(lst && !_divs.length) lst.innerHTML = '';
   window.scrollTo({top:0, behavior:'smooth'});
   toast('Novo orçamento — escolhe o cliente e adiciona as divisões');
 }
@@ -1741,6 +1746,9 @@ function calcular() {
     document.getElementById('tblMao').querySelector('tbody').innerHTML='';
     document.getElementById('tblCabo').querySelector('tbody').innerHTML='';
     document.getElementById('orcFinal').innerHTML='';
+    window._orcDoc = null;
+    var _rb = document.getElementById('rentBar'); if(_rb) _rb.style.display = 'none';
+    if(typeof autoSaveSession === 'function') autoSaveSession(); // grava também o orçamento vazio (botão Novo / apagar tudo)
     return;
   }
 
