@@ -1748,6 +1748,8 @@ function calcular() {
     document.getElementById('orcFinal').innerHTML='';
     window._orcDoc = null;
     var _rb = document.getElementById('rentBar'); if(_rb) _rb.style.display = 'none';
+    ['barMat','barMO','barCabo','barIVA','barTotal'].forEach(function(id){ var el=document.getElementById(id); if(el) el.textContent='—'; });
+    document.querySelectorAll('#secOrcamento tbody, #tblMat tbody, #tblMao tbody, #tblCabo tbody').forEach(function(tb){ tb.innerHTML=''; });
     if(typeof autoSaveSession === 'function') autoSaveSession(); // grava também o orçamento vazio (botão Novo / apagar tudo)
     return;
   }
