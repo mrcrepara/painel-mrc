@@ -673,8 +673,12 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
           </div>
         </div>
         <div class="frow">
+          <div class="fg" id="ledQtdDiv">
+            <label>Nº de focos (0 = automático)</label>
+            <input type="number" id="f_led_qtd" value="0" min="0" step="1" oninput="previewDiv()" placeholder="ex: 3">
+          </div>
           <div class="fg" id="ledEspDiv">
-            <label>Espaçamento (m²/foco)</label>
+            <label>Espaçamento (m²/foco) — só no automático</label>
             <select id="f_led_esp" onchange="previewDiv()">
               <option value="1.5">1.5m²/foco (muito iluminado)</option>
               <option value="2" selected>2m²/foco (standard)</option>
@@ -1099,7 +1103,13 @@ function calcDiv(tipo, m2) {
 
 // Em divisões com focos LED, os focos SÃO os pontos de luz: só contam à parte os "pontos de luz extra"
 function _temLED(d){ return (d.led_tipo||'normal') !== 'normal'; }
-function _nFocos(d){ return _temLED(d) ? Math.ceil((d.m2||0)/(d.led_esp||2)) : 0; }
+function _nFocos(d){ if(!_temLED(d)) return 0; return (d.led_qtd||0) > 0 ? d.led_qtd : Math.ceil((d.m2||0)/(d.led_esp||2)); }
+// Pontos de comando reais: se indicaste simples/comutação/inversor, conta cada aparelho (comutação = 2, inversor = 3)
+function _nComandos(d, c){
+  const exp = (d.int_simples||0) + (d.int_comut||0)*2 + (d.int_inver||0)*3;
+  c = c || calcDivComExtras(d);
+  return exp > 0 ? Math.max(exp, c.interruptores) : c.interruptores;
+}
 function _luzesMO(d, c){ c = c || calcDivComExtras(d); return _temLED(d) ? Math.max(0, d.luz_extra||0) : c.luzes; }
 
 function calcDivComExtras(div) {
@@ -1222,7 +1232,7 @@ function renderDivs() {
     return `<div class="div-item">
       <div>
         <div class="div-nome">${d.nome}</div>
-        <div class="div-m2">${d.m2}m² · 📐${d.dist||5}m QS · 🔌${c.tomadas} tomadas · 💡${c.luzes} luzes · ⚡${(d.int_simples||0)+(d.int_comut||0)+(d.int_inver||0)||c.interruptores} cmd.${(d.led_tipo&&d.led_tipo!=='normal')?' · 💡LED '+({'2700':'🟠','3000':'🟡','4000':'⚪','5000':'🌤','6000':'🔵'}[d.led_cor||'4000']||'')+(d.led_cor||'4000')+'K':''}${(d.tmista||d.trvsat||d.tv||d.rj45)?' · 📡ATI'+(d.tmista?' '+d.tmista+'×mista':''):''}${d.camaras?' · 🔒CAM':''}</div>
+        <div class="div-m2">${d.m2}m² · 📐${d.dist||5}m QS · 🔌${c.tomadas} tomadas · 💡${c.luzes} luzes · ⚡${_nComandos(d,c)} cmd.${(d.led_tipo&&d.led_tipo!=='normal')?' · 💡LED '+({'2700':'🟠','3000':'🟡','4000':'⚪','5000':'🌤','6000':'🔵'}[d.led_cor||'4000']||'')+(d.led_cor||'4000')+'K':''}${(d.tmista||d.trvsat||d.tv||d.rj45)?' · 📡ATI'+(d.tmista?' '+d.tmista+'×mista':''):''}${d.camaras?' · 🔒CAM':''}</div>
         ${((d.tmista||0)+(d.trvsat||0)+(d.tv||0))?`<div style="font-size:11px;color:var(--teal,#2dd4bf);margin-top:2px">📺 ${(d.tmista||0)+(d.trvsat||0)+(d.tv||0)} tomada(s) TV${d.tmista?' · '+d.tmista+' c/ RJ45':''}</div>`:''}
         ${(d.estores||d.sanca_m)?`<div style="font-size:11px;color:var(--blue);margin-top:2px">🪟 ${d.estores?d.estores+' estore(s) elétrico(s)':''}${d.estores&&d.sanca_m?' · ':''}${d.sanca_m?d.sanca_m+'m sanca'+(d.sanca_led?' c/ LED':''):''}</div>`:''}
         ${d.notas?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${d.notas}</div>`:''}
@@ -1298,7 +1308,7 @@ function gerarDocOrcamento(modo){
     if(c.tomadas) it.push(c.tomadas+' tomadas');
     if(d.usbc) it.push(d.usbc+' carregador(es) USB-C');
     { const nTV=(d.tmista||0)+(d.trvsat||0)+(d.tv||0); if(nTV) it.push(nTV+' tomada(s) TV'); }
-    if(c.interruptores) it.push(c.interruptores+' comandos');
+    { const nc=_nComandos(d,c); if(nc) it.push(nc+(nc===1?' comando':' comandos')); }
     { const lz=_luzesMO(d,c), nf=_nFocos(d); if(nf) it.push(nf+' focos LED'); if(lz) it.push(lz+(nf?' outros pontos de luz':' pontos de luz')); }
     if(d.estores) it.push(d.estores+' estore(s) elétrico(s)');
     if(d.sanca_m) it.push(d.sanca_m+' m de sanca'+(d.sanca_led?' c/ LED':''));
@@ -1512,7 +1522,7 @@ function _gerarPdfNativo(matPrecos){
     if(c.tomadas) it.push(pl(c.tomadas,'tomada','tomadas'));
     if(d.usbc) it.push(pl(d.usbc,'carregador USB-C','carregadores USB-C'));
     { const nTV=(d.tmista||0)+(d.trvsat||0)+(d.tv||0); if(nTV) it.push(pl(nTV,'tomada TV','tomadas TV')); }
-    if(c.interruptores) it.push(pl(c.interruptores,'comando','comandos'));
+    { const nc=_nComandos(d,c); if(nc) it.push(pl(nc,'comando','comandos')); }
     { const lz=_luzesMO(d,c), nf=_nFocos(d); if(nf) it.push(pl(nf,'foco LED','focos LED')); if(lz) it.push(nf?pl(lz,'outro ponto de luz','outros pontos de luz'):pl(lz,'ponto de luz','pontos de luz')); }
     if(d.estores) it.push(pl(d.estores,'estore elétrico','estores elétricos'));
     if(d.sanca_m) it.push(d.sanca_m+' m de sanca'+(d.sanca_led?' c/ LED':''));
@@ -1760,7 +1770,7 @@ function calcular() {
     const nCircTom = nTomPts ? Math.max(1, Math.ceil(nTomPts/8)) : 0;
     const nCircLuz = (c.luzes || c.interruptores) ? 1 : 0;
     const percTom = nCircTom*dist + nTomPts*2.5;
-    const percLuz = nCircLuz*dist + (_luzesMO(d, c) + c.interruptores)*2;
+    const percLuz = nCircLuz*dist + (_luzesMO(d, c) + _nComandos(d, c))*2;
     tot.cabo25 += Math.ceil(percTom * 3 * 1.05);
     tot.cabo15 += Math.ceil(percLuz * 3 * 1.05);
     const perc = Math.ceil((percTom + percLuz) * 1.05);
@@ -1898,7 +1908,7 @@ function calcular() {
     const le=d.led_esp||2;
     const lt2=d.led_tensao||'230';
     if(lt==='normal'){divsSemLED+=c.luzes;return;}
-    const nF=Math.ceil(d.m2/le);
+    const nF=(d.led_qtd||0)>0 ? d.led_qtd : Math.ceil(d.m2/le);
     const needsDriver=lt2!=='230'&&lt!=='led_fita';
     const nD=needsDriver?Math.ceil(nF/6):0;
     const nC=lt==='led_car'?Math.ceil(d.m2/1.5):0;
@@ -1952,7 +1962,7 @@ function calcular() {
   }
 
   const _nCxDeriv = Math.ceil((tot.tomadas+tot.luzes+tot.interruptores)*0.3);
-  const _nCxApar = tot.tomadas + tot.interruptores + _divs.reduce((s,d)=>s+(d.usbc||0),0);
+  const _nCxApar = tot.tomadas + _divs.reduce((s,d)=>s+_nComandos(d)+(d.usbc||0),0);
   const _nLig = gi('p_lig_manual') > 0 ? gi('p_lig_manual')
     : _nCxDeriv * Math.max(0, gi('p_lig_cx')) + (_divs.reduce((s,d)=>s+_luzesMO(d),0) + totalFocosLED + totEstores) * Math.max(0, gi('p_lig_luz'));
   const PRECO_MAT = {
@@ -2062,11 +2072,15 @@ function calcular() {
   const maoItems = _divs.map(d => {
     const c = calcDivComExtras(d);
     const lz = _luzesMO(d, c);
-    const mo = c.tomadas*p.tomada + c.interruptores*p.inter + lz*p.luz;
-    return {div:d.nome, tomadas:c.tomadas, inter:c.interruptores, luzes:lz, total:mo};
+    // Se os comandos foram indicados (simples/comutação/inversor), a MO deles está na linha "Comando iluminação"
+    const temExp = ((d.int_simples||0)+(d.int_comut||0)+(d.int_inver||0)) > 0;
+    const ni = temExp ? 0 : c.interruptores;
+    const mo = c.tomadas*p.tomada + ni*p.inter + lz*p.luz;
+    return {div:d.nome, tomadas:c.tomadas, inter:ni, luzes:lz, total:mo};
   });
   const moLED = totalFocosLED * p.luz; // mesmo custo MO por ponto LED
-  const _nDisjMO = (typeof quadroNovo!=='undefined' && !quadroNovo) ? Math.max(1, nDisjuntores-2) : nDisjuntores;
+  const _nProtNovas = matItems.filter(i=>/^(Disjuntor|Interruptor diferencial)/.test(i.desc)).reduce((s,i)=>s+i.qty,0);
+  const _nDisjMO = (typeof quadroNovo!=='undefined' && !quadroNovo) ? Math.max(1, _nProtNovas) : nDisjuntores;
   const moQuadro = ((typeof quadroNovo!=='undefined' && !quadroNovo) ? 0 : p.quadro) + _nDisjMO * p.disj;
   const nEV = _divs.filter(d=>d.eq_ev).length;
   const moEquip = (totCircDed-nEV) * 45 + nEV * 120; // Wallbox = 120€ MO instalação // 45€ por circuito dedicado (puxada + tomada)
@@ -2415,7 +2429,8 @@ function previewDiv() {
   const ledPot = parseInt(document.getElementById('f_led_pot')?.value)||7;
   const ledEsp = parseFloat(document.getElementById('f_led_esp')?.value)||2;
   const ledTensao = document.getElementById('f_led_tensao')?.value||'230';
-  const nFocos = ledTipo!=='normal' ? Math.ceil(m2/ledEsp) : 0;
+  const ledQtd = parseInt(document.getElementById('f_led_qtd')?.value)||0;
+  const nFocos = ledTipo!=='normal' ? (ledQtd>0 ? ledQtd : Math.ceil(m2/ledEsp)) : 0;
   const potTotal = nFocos * ledPot;
   const needsDriver = ledTensao!=='230' && ledTipo!=='normal' && ledTipo!=='led_fita';
   const nDrivers = needsDriver ? Math.ceil(nFocos/6) : 0;
@@ -2534,6 +2549,7 @@ function abrirModal(div) {
   document.getElementById('f_led_tipo').value = div ? (div.led_tipo||'normal') : 'normal';
   document.getElementById('f_led_pot').value = div ? (div.led_pot||7) : 7;
   document.getElementById('f_led_esp').value = div ? (div.led_esp||2) : 2;
+  document.getElementById('f_led_qtd').value = div ? (div.led_qtd||0) : 0;
   document.getElementById('f_led_tensao').value = div ? (div.led_tensao||'230') : '230';
   const _elCor = document.getElementById('f_led_cor'); if(_elCor) _elCor.value = div ? (div.led_cor||'4000') : '4000';
   document.getElementById('f_int_simples').value = div ? (div.int_simples||0) : 0;
@@ -2599,6 +2615,7 @@ function guardarDiv() {
     led_tipo: gv('f_led_tipo')||'normal',
     led_pot: parseInt(document.getElementById('f_led_pot')?.value)||7,
     led_esp: parseFloat(document.getElementById('f_led_esp')?.value)||2,
+    led_qtd: Math.max(0, parseInt(document.getElementById('f_led_qtd')?.value)||0),
     led_tensao: gv('f_led_tensao')||'230',
     led_cor: gv('f_led_cor')||'4000',
     int_simples: parseInt(document.getElementById('f_int_simples')?.value)||0,
