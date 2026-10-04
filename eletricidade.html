@@ -270,7 +270,8 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
         <div class="fg"><label>Quadro elétrico — tipo</label>
           <select id="p_quadro_tipo" onchange="calcular()">
             <option value="novo">Quadro novo (completo)</option>
-            <option value="existente">Aproveitar o existente (só proteções dos circuitos novos)</option>
+            <option value="existente">Aproveitar o existente + proteções novas para os circuitos novos</option>
+            <option value="ligar">Aproveitar o existente sem proteções novas (liga aos disjuntores que já existem)</option>
           </select>
         </div>
         <div class="fg"><label>Quadro elétrico — tamanho</label>
@@ -1997,8 +1998,10 @@ function calcular() {
       (selQ!=='auto' && quadroMod<modOcup ? ' <span style="color:var(--red)">⚠ quadro escolhido é pequeno</span>' : '');
   }
   const quadroPreco = PRECO_MAT['quadro'+quadroMod];
-  const quadroNovo = (document.getElementById('p_quadro_tipo')?.value || 'novo') !== 'existente';
-  if(!quadroNovo && qInfo) qInfo.innerHTML = 'Quadro existente — só entram os disjuntores e diferenciais dos circuitos novos.';
+  const _qTipo = document.getElementById('p_quadro_tipo')?.value || 'novo';
+  const quadroNovo = _qTipo === 'novo';
+  if(_qTipo==='existente' && qInfo) qInfo.innerHTML = 'Quadro existente — só entram os disjuntores e diferenciais dos circuitos novos.';
+  if(_qTipo==='ligar' && qInfo) qInfo.innerHTML = 'Quadro existente — sem disjuntores novos (os circuitos ligam às proteções que já existem).';
   const matItems = [
     ...(quadroNovo ? [
       {cat:'Quadro Elétrico', desc:`Quadro ${quadroMod} módulos (${quadroMod/12} fila${quadroMod>12?'s':''})`, qty:1, pu:quadroPreco},
@@ -2066,6 +2069,7 @@ function calcular() {
     {cat:'Iluminação LED', desc:'Cabo 1.5mm² (circuito focos LED)', qty:totalCabo15LED, pu:PRECO_MAT.cabo15, unit:'m'},
   ].filter(i=>i.qty>0);
 
+  if(_qTipo === 'ligar'){ for(let k=matItems.length-1;k>=0;k--){ if(matItems[k].cat==='Quadro Elétrico') matItems.splice(k,1); } }
   const totalMat = matItems.reduce((s,i)=>s+i.qty*i.pu,0);
 
   // Mão de Obra
@@ -2080,7 +2084,7 @@ function calcular() {
   });
   const moLED = totalFocosLED * p.luz; // mesmo custo MO por ponto LED
   const _nProtNovas = matItems.filter(i=>/^(Disjuntor|Interruptor diferencial)/.test(i.desc)).reduce((s,i)=>s+i.qty,0);
-  const _nDisjMO = (typeof quadroNovo!=='undefined' && !quadroNovo) ? Math.max(1, _nProtNovas) : nDisjuntores;
+  const _nDisjMO = quadroNovo ? nDisjuntores : (_qTipo==='ligar' ? _nProtNovas : Math.max(1, _nProtNovas));
   const moQuadro = ((typeof quadroNovo!=='undefined' && !quadroNovo) ? 0 : p.quadro) + _nDisjMO * p.disj;
   const nEV = _divs.filter(d=>d.eq_ev).length;
   const moEquip = (totCircDed-nEV) * 45 + nEV * 120; // Wallbox = 120€ MO instalação // 45€ por circuito dedicado (puxada + tomada)
@@ -2268,7 +2272,7 @@ function calcular() {
   maoItems.forEach(i => {
     html2 += `<tr><td style="font-weight:700">${i.div}</td><td style="font-family:'DM Mono',monospace">${i.tomadas}×${eur(p.tomada)}</td><td style="font-family:'DM Mono',monospace">${i.inter}×${eur(p.inter)}</td><td style="font-family:'DM Mono',monospace">${i.luzes}×${eur(p.luz)}</td><td style="font-weight:700;color:var(--yellow);font-family:'DM Mono',monospace">${eur(i.total)}</td></tr>`;
   });
-  html2 += `<tr><td colspan="4" style="color:var(--muted)">${quadroNovo?'Quadro elétrico + '+nDisjuntores+' disjuntores':'Ligação ao quadro existente — '+_nDisjMO+' disjuntor(es)'}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moQuadro)}</td></tr>`;
+  if(moQuadro>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">${quadroNovo?'Quadro elétrico + '+nDisjuntores+' disjuntores':(_nDisjMO?'Ligação ao quadro existente — '+_nDisjMO+' proteção(ões)':'Ligação aos circuitos existentes')}</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moQuadro)}</td></tr>`;
   if(moEquip>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Circuitos dedicados (${totCircDed} circuitos × 45€)</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moEquip)}</td></tr>`;
   if(moSwitch>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">Comando iluminação (${totIntSimples} simples · ${totComut} comut. · ${totInver} inv.)</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moSwitch)}</td></tr>`;
   if(moATI>0) html2 += `<tr><td colspan="4" style="color:var(--muted)">ATI — Telecomunicações (${totTV+totRJ45+totRJ11} pontos × 18€)</td><td style="font-family:'DM Mono',monospace;color:var(--yellow);font-weight:700">${eur(moATI)}</td></tr>`;
