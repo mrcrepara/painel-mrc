@@ -172,6 +172,7 @@ body[data-print="somentemat"] .print-iva { display: none !important; }
     </div>
   </div>
   <div class="hlinks" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <button onclick="novoOrcamento()" style="padding:7px 14px;background:var(--yellow,#F5C842);color:#000;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">➕ Novo</button>
     <button onclick="guardarOrcamento()" style="padding:7px 14px;background:#10C97A;color:#000;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">💾 Guardar</button>
     <button onclick="carregarOrcamento()" style="padding:7px 14px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">📂 Carregar</button>
     <button onclick="descarregarPDF()" style="padding:7px 14px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">⬇ PDF</button>
@@ -1183,6 +1184,20 @@ function addDivisoesTipo(tipo) { tipo = tipo || 't3';
 
 // ── Render Divisões ──────────────────────────────────────
 const TIPO_NOME = {sala:'Sala',quarto:'Quarto',cozinha:'Cozinha',banho:'Casa de Banho',hall:'Hall',garagem:'Garagem',exterior:'Exterior',escritorio:'Escritório',lavandaria:'Lavandaria'};
+
+// ── Novo orçamento: limpa divisões e cliente, mantém os teus preços guardados ──
+function novoOrcamento(){
+  if(_divs.length && !confirm('Começar um orçamento novo?\n\nO orçamento atual vai ser limpo. Se ainda não o guardaste, carrega primeiro em Cancelar e depois em 💾 Guardar.')) return;
+  _divs = []; _moEntradas = [];
+  try { if(typeof _plantaMarks !== 'undefined') _plantaMarks = []; } catch(e){}
+  ['cli_nome','cli_morada','orc_ref'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  var sel = document.getElementById('cli_sel'); if(sel) sel.value = '';
+  var dt = document.getElementById('orc_data'); if(dt) dt.value = new Date().toISOString().slice(0,10);
+  try { var pp = JSON.parse(localStorage.getItem('eletro_precos_padrao') || 'null'); if(pp) aplicarPrecos(pp); } catch(e){}
+  renderDivs(); calcular();
+  window.scrollTo({top:0, behavior:'smooth'});
+  toast('Novo orçamento — escolhe o cliente e adiciona as divisões');
+}
 
 function renderDivs() {
   const el = document.getElementById('divList');
